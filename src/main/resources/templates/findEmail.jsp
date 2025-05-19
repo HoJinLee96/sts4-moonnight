@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>아이디 찾기</title>
+<style type="text/css">
+* {
+	font-family: 'SF_HambakSnow', sans-serif;
+}
+</style>
+<style type="text/css">
+.container {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding-top: 20px;
+	min-height: 700px;
+	display: flex;
+	justify-content: center; /* 수평 중앙 정렬 */
+}
+#loginForm label[for="phone"] {
+	text-align: left;
+	display: block;
+	margin: 0px;
+	padding: 0px;
+	margin-top: 15px; /* input과의 간격을 조정 */
+	font-size: 14px;
+}
+
+#phone, #verificationSmsCode {
+	width: 250px;
+	height: 40px;
+	border: none;
+	border-bottom: 2px solid #ccc;
+	outline: none;
+	transition: border-bottom-color 0.3s;
+	margin-right: 20px;
+}
+
+#phone:focus {
+	border-bottom: 2px solid #20367a;
+}
+
+#input-wrapper {
+	position: relative;
+	display: none; /* none <-> inline-block */
+}
+
+#verificationTimeMessage {
+	position: absolute;
+	top: 60%;
+	right: 24px;
+	transform: translateY(-50%);
+	font-size: 14px;
+	color: red;
+	pointer-events: none; /* 타이머가 클릭되지 않도록 설정 */
+}
+
+#sendSmsButton, #verifySmsCodeButton {
+	border: none;
+	background-color: #20367a;
+	color: white;
+	width: 130px;
+	height: 40px;
+	margin: 0px 3px;
+	border-radius: 8px;
+}
+
+#sendSmsButton:hover, #verifySmsCodeButton:hover, #confirmButton:hover {
+	border: 1px solid #20367a;
+	background-color: white;
+	color: #20367a;
+	cursor: pointer;
+}
+
+#confirmDiv {
+	display: none; /* none <-> block */
+	text-align: center;
+}
+
+#confirmButton {
+	border: none;
+	background-color: #20367a;
+	color: white;
+	width: 130px;
+	height: 40px;
+	border-radius: 8px;
+	margin: 0 auto;
+}
+
+#confirmEmail {
+	padding: 10px 20px;
+	background-color: #ededed;
+}
+
+/* 닫기 버튼 스타일 */
+.close {
+	position: absolute;
+	top: 10px;
+	left: 10px; /* 왼쪽 위에 위치 */
+	color: #aaa;
+	font-size: 28px;
+	font-weight: bold;
+	cursor: pointer;
+}
+
+.close:hover, .close:focus {
+	color: #20367a;
+	text-decoration: none;
+	cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+	<div class="container">
+		<div id="formDiv">
+			<span class="close" onclick="window.close()">&times;</span>
+			<h2>이메일 찾기</h2>
+			<br>
+			<label for="phone">휴대폰 번호</label>
+			<br>
+			<input type="text" id="phone" name="phone" required maxlength="13" value="010-" >
+			<button class="sendSmsButton" id="sendSmsButton" type="button">인증번호 발송</button>
+			<br> 
+			<span id="phoneMessage"></span> 
+			<br><br>
+			<div id="input-wrapper">
+				<label for="verificationCode">인증번호</label> 
+				<br> 
+				<input type="text" id="verificationSmsCode" name="verificationSmsCode" required maxlength="5" readonly disabled>
+				<div id="verificationTimeMessage"></div>
+			</div>
+				<button class="verifySmsCodeButton" id="verifySmsCodeButton" type="button" disabled style="display:none;">인증번호 확인</button>
+				<br> 
+				<span id="verificationSmsMessage"></span>
+			<br> <br> <br> <br>
+			<div id="confirmDiv">
+				<span>가입 하신 이메일 </span>
+				<br> <br> <br>
+				<span id="confirmEmail"></span>
+				<br> <br> <br>
+				<button id="confirmButton" type="button" onclick="window.close()">확인</button>
+			</div>
+
+
+		</div>
+	</div>
+
+</body>
+<script>
+	import {
+		validatePhone,
+		sendSms,
+		verifySmsCode,
+		startVerificationTimer
+	} from '/js/smsVerification.js';
+	
+	document.getElementById("sendSmsButton").addEventListener("click", () => {
+		var reqPhone = document.getElementById("phone").value;
+		var message = document.getElementById("phoneMessage");
+
+	    validatePhone(
+			reqPhone,
+			() => {
+	        	sendSms(
+				reqPhone,
+	          	() => {
+					alert("인증번호 발송 완료");
+					message.style.color = 'green';
+					message.innerText = "인증번호 발송 완료";
+					document.getElementById("phone").setAttribute("readonly",true);
+					document.getElementById("phone").setAttribute("disabled",true);
+					document.getElementById("sendSmsButton").innerText = "인증번호 재발송";
+					document.getElementById("verificationSmsCode").removeAttribute("readonly");
+					document.getElementById("verificationSmsCode").removeAttribute("disabled");
+					document.getElementById("verifySmsCodeButton").removeAttribute("disabled");
+	            startVerificationTimer(() => {
+	              document.getElementById("verificationMailMessage").innerText = "시간 초과. 다시 인증해주세요.";
+	            });
+	          },
+	          (status) => {
+	            const msg = status === 429 ? "잠시 후 다시 시도해주세요." : "서버 오류 발생";
+	            document.getElementById("emailMessage").innerText = msg;
+	          }
+	        );
+	      },
+	      (status) => {
+			let msg;
+			if(status === 404){
+				msg = "휴대폰 번호를 확인해 주세요.";
+			}else if(status === 409){
+				msg = "이미 가입된 휴대폰 번호 입니다.";
+			}else{
+				msg = "서버 오류 발생";
+			}
+			message.style.color = 'red';
+			message.innerText = msg;
+		  }
+	    );
+	  });
+
+	document.getElementById("verifySmsCodeButton").addEventListener("click", () => {
+
+		var message = document.getElementById("verificationSmsMessage");
+		var phone = document.getElementById("phone").value;
+		var code = document.getElementById("verificationSmsCode").value;
+
+		verifySmsCode(phone,code,
+		(json)=>{
+			alert("인증 성공");
+			message.style.color = 'green';
+		    message.innerText = "인증 성공";
+		    document.getElementById("phone").setAttribute("readonly",true);
+			document.getElementById("phone").setAttribute("disabled",true);
+			document.getElementById("sendSmsButton").setAttribute("disabled", true);
+			document.getElementById("verificationSmsCode").setAttribute("readonly", true);
+			document.getElementById("verificationSmsCode").setAttribute("disabled", true);
+			document.getElementById("verifySmsCodeButton").setAttribute("disabled", true);
+		},
+		(status)=>{
+			let msg;
+			if(status === 400){
+				msg = "인증 번호를 확인해 주세요.";
+			}
+			else if(status === 401){
+				msg = "인증 번호가 일치하지 않습니다.";
+			}
+			else if(status === 408){
+				msg = "시간 초과. 다시 인증해주세요.";
+			}else if(status === 404){
+				msg = "잘못된 요청입니다.";
+			}else{
+				msg = "서버 오류 발생";
+			}
+			message.style.color = 'red';
+			message.innerText = msg;
+		});
+	});
+
+	
+</script>
+</html>

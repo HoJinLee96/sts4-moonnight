@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{main/base}">
+<head>
+<title>주소록</title>
+<th:block layout:fragment="custom-head">
+<style type="text/css">
+p{
+	margin: 0px;
+}
+.contentTitle{
+	padding-bottom : 15px;
+	border-bottom: 4px solid #20367a;
+}
+.address{
+	display: flex;
+	border: 2px solid #afafaf;
+	border-radius: 10px;
+	padding: 15px 15px;
+	margin-top: 10px;
+}
+.sortedAddress{
+	width: 100vw;
+    min-width: 615px;
+    max-width: 899px;
+}
+.buttonDiv{
+	line-height: 42px;
+}
+.buttonDiv button{
+	width: 47px;
+	color: #20367a;
+	background: white;
+	border: 1px solid #20367a;
+	border-radius: 10px;
+	cursor: pointer;
+	padding: 5px 10px;
+}
+.buttonDiv button:hover{
+	background: #20367a;
+	border: 1px solid white;
+	color: white;
+}
+.addressNickname{
+    min-width: 615px;
+    max-width: 799px;
+}
+.sortedAddressText{
+    min-width: 615px;
+    max-width: 799px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+</style>
+
+<!--오버레이-->
+<style type="text/css">
+.overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, 0.5);
+	display: none;
+	justify-content: center;
+	align-items: center;
+	z-index: 1000;
+}
+
+.popContent {
+	width: 500px;
+	height: 650px;
+	background-color: white;
+	padding: 40px 30px;
+	border-radius: 10px;
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+	margin: 0px auto;
+	margin-top: 150px;
+	position: relative;
+}
+
+.closeBtn {
+	position:absolute;
+	top:5px;
+	left:15px;
+	color:#aaa;
+	font-size:34px;
+	font-weight:bold;
+	margin-bottom: 10px;
+	cursor: pointer;
+}
+.close:hover {
+	color:#20367a;
+}
+.name, .postcode, .mainAddress, .detailAddress{
+	display:block;
+	background: none;
+	border: none;
+	border-bottom: 2px solid #aaa;
+	font-size: 16px;
+	width: 500px;
+	padding: 10px 5px;
+	outline: none;
+	transition: border-bottom-color 0.3s;
+}
+.name{
+	margin-bottom: 30px;
+}
+.name:focus{
+	border-bottom: 2px solid #20367a;
+}
+.postcode{
+	width: 100px !important;
+}
+.postcode, .mainAddress{
+	height:43px;
+	cursor: text;
+	margin-bottom: 10px;
+	text-align: left;
+}
+#detailAddress{
+	height: 43px;
+}
+#detailAddress:focus{
+	border-bottom: 2px solid #20367a;
+}
+.iframe p{
+	color: #8b8b8b;
+}
+
+.addAddress{
+	position:relative;
+	border: 2px solid #afafaf;
+	border-radius: 10px;
+	border-style:dotted;
+	padding: 15px 15px;
+	margin-top: 10px;
+	height: 42px;
+	cursor: pointer;
+}
+.plusButton{
+	position: absolute;
+	color:#aaa;
+	font-size:24px;
+	top: 30%;
+	left: 50%;
+}
+
+.updateButton{
+	font-size:16px;
+    position: absolute;
+    width: 500px;
+    bottom: 20px;
+	color: white;
+    background: #20367a;
+    border: 1px solid white;
+    border-radius: 10px;
+    cursor: pointer;
+    padding: 10px 20px;
+}
+
+
+</style>
+
+<script type="module">
+	import { getMyAddress, getMyAddressList, registerAddress, updateAddress, updatePrimary, deleteAddress } from '/js/address.js';
+	document.addEventListener("DOMContentLoaded", function() {
+		const addressList = getMyAddressList();
+		console.log(addressList);
+		
+		if (addressList && addressList.length > 0) {
+		    const contentDiv = document.querySelector('.content'); // 이 부분은 아래 th:each로 대체 가능
+
+		    // JavaScript로 HTML 동적 생성 대신, 아래 Thymeleaf의 th:each 사용 권장
+		    // addressList.forEach(function(address, index) { ... });
+
+		    // 버튼 이벤트 리스너 등은 유지
+		    setupEventListeners(addressList);
+		}
+		
+		const addAddressContainer = document.getElementById('addAddressContainer');
+		if (addAddressContainer && (!addressList || addressList.length < 5)) {
+		     // th:if로 제어하므로 JS 로직 불필요하거나 단순화 가능
+		     const addAddressDiv = document.createElement('div');
+		     // ... (주소 추가 버튼 생성 로직)
+		     addAddressContainer.appendChild(addAddressDiv); // 또는 그냥 HTML에 미리 만들기
+		}
+		
+	});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+	if(${sessionScope.addressListJson!=null}){
+			var addressList = JSON.parse('${addressListJson}');
+		    var contentDiv = document.querySelector('.content');
+
+		    // addressList를 반복하여 HTML 요소를 생성
+		    addressList.forEach(function(address, index) {
+		        // 주소 요소 생성
+		        var addressDiv = document.createElement('div');
+		        addressDiv.classList.add('address');
+		        addressDiv.id = "address" + index;  // id에 인덱스를 추가하여 유일하게 만듦
+
+
+		        // 배송지명 값
+		        var addressNicknameP = document.createElement('p');
+		        addressNicknameP.classList.add('addressNickname');
+		        addressNicknameP.textContent = address.name || '이름 없음';  // AddressDto에 'name'이 있는 경우 사용
+
+		        // 주소 값
+		        var sortedAddressText = document.createElement('p');
+		        sortedAddressText.classList.add('sortedAddressText');
+		        sortedAddressText.textContent = '(' + address.postcode + ') ' + address.mainAddress + ' ' + address.detailAddress;
+		        
+		        // 주소 합친 div
+		        var sortedAddressDiv = document.createElement('div');
+		        sortedAddressDiv.classList.add('sortedAddress');
+		        sortedAddressDiv.id = "sortedAddress" + index;  // id에 인덱스를 추가하여 유일하게 만듦
+
+		        sortedAddressDiv.appendChild(addressNicknameP);
+		        sortedAddressDiv.appendChild(sortedAddressText);
+
+		        // hidden input (addressId)
+		        var addressIdInput = document.createElement('input');
+		        addressIdInput.type = 'hidden';
+		        addressIdInput.id = 'addressId' + index;
+		        addressIdInput.value = address.addressId; // AddressDto에 'addressId'가 있는 경우 사용
+
+		        // 버튼 div
+		        var buttonDiv = document.createElement('div');
+		        buttonDiv.classList.add('buttonDiv');
+
+		        // 대표 선택 버튼
+		        if(!address.isPrimary){
+		        var choiceButton = document.createElement('button');
+		        choiceButton.type = 'button';
+		        choiceButton.id = 'choiceAddress' + index;
+		        choiceButton.textContent = '대표 선택';
+		        buttonDiv.appendChild(choiceButton);
+		        }
+		        
+		        // 수정 버튼
+		        var updateButton = document.createElement('button');
+		        updateButton.type = 'button';
+		        updateButton.id = 'updateAddress' + index;
+		        updateButton.textContent = '수정';
+		        buttonDiv.appendChild(updateButton);
+		        
+				if(!address.isPrimary){
+		        var deleteButton = document.createElement('button');
+		        deleteButton.type = 'button';
+		        deleteButton.id = 'deleteAddress' + index;
+		        deleteButton.textContent = '삭제';
+		        buttonDiv.appendChild(deleteButton);
+		        }
+
+		        // 요소들을 addressDiv에 추가
+		        /* addressDiv.appendChild(nameP); */
+		        addressDiv.appendChild(sortedAddressDiv);
+		        addressDiv.appendChild(addressIdInput);
+		        addressDiv.appendChild(buttonDiv);
+
+		        // addressDiv를 contentDiv에 추가
+		        contentDiv.appendChild(addressDiv);
+		    });
+		    
+		    var updateButtons = document.querySelectorAll('button[id^="updateAddress"]');
+		    var deleteButtons = document.querySelectorAll('button[id^="deleteAddress"]');
+		    var choiceButtons = document.querySelectorAll('button[id^="choiceAddress"]');
+
+		    updateButtons.forEach(function(button, index) {
+		        button.addEventListener('click', function() {
+		            var addressId = this.closest('.address').querySelector('input[id^="addressId"]').value;
+		            var address = addressList.find(function(item) {
+		                return String(item.addressId) === String(addressId);
+		            });
+		        	footerlayerLoad(address);
+		        });
+		    });
+
+		    deleteButtons.forEach(function(button) {
+		        button.addEventListener('click', function() {
+		            var addressId = this.closest('.address').querySelector('input[id^="addressId"]').value;
+		            deleteAddress(addressId);
+		        });
+		    });
+		    
+		    choiceButtons.forEach(function(button) {
+		        button.addEventListener('click', function() {
+		            var addressId = this.closest('.address').querySelector('input[id^="addressId"]').value;
+		            updateAddressId(addressId);
+		        });
+		    });
+	}
+	if(${sessionScope.addressListJson}.length<5){
+        var addAddressDiv = document.createElement('div');
+        addAddressDiv.classList.add('addAddress');
+        addAddressDiv.addEventListener('click', function() {
+        	footerlayerLoad();
+        });
+        
+        var plusButton = document.createElement('div');
+        plusButton.classList.add('plusButton');
+        plusButton.textContent = '+';
+        
+        addAddressDiv.appendChild(plusButton);
+        contentDiv.appendChild(addAddressDiv);
+
+	}
+});
+</script>
+
+</th:block>
+</head>
+
+<div layout:fragment="content">
+    <div class="container">
+        <div th:replace="~{common/fragments/mypageSidebar :: sidebarFragment}"></div>
+		 <div class="content">
+            <p class="headerFont contentTitle">주소록</p>
+
+            <div th:if="${addressList == null or #lists.isEmpty(addressList)}">
+                <p>등록된 주소가 없습니다.</p>
+            </div>
+
+            <div th:unless="${addressList == null or #lists.isEmpty(addressList)}"
+                 th:each="address, iterStat : ${addressList}" class="address" th:id="'address' + ${iterStat.index}">
+
+                <div class="sortedAddress" th:id="'sortedAddress' + ${iterStat.index}">
+                    <p class="addressNickname" th:text="${address.name ?: '별칭 없음'}"></p> <p class="sortedAddressText"
+                       th:text="'(' + ${address.postcode} + ') ' + ${address.mainAddress} + ' ' + ${address.detailAddress}">
+                       </p>
+                </div>
+
+                <div class="buttonDiv">
+                    <button th:unless="${iterStat.index == 0}"
+                            type="button"
+                            class="choiceButton"
+                            th:data-address-id="${address.addressId}">대표 선택</button>
+
+                    <button type="button"
+                            class="updateButton"
+                            th:data-address-id="${address.addressId}"
+                            th:data-address-name="${address.name}"
+                            th:data-address-postcode="${address.postcode}"
+                            th:data-address-main="${address.mainAddress}"
+                            th:data-address-detail="${address.detailAddress}">수정</button>
+                            <button th:unless="${iterStat.index == 0}"
+                            type="button"
+                            class="deleteButton"
+                            th:data-address-id="${address.addressId}">삭제</button>
+                </div>
+            </div>
+
+            <div th:if="${addressList == null or #lists.size(addressList) < 5}"
+                 class="addAddress" id="addAddressContainer"> <div class="plusButton">+</div>
+            </div>
+
+            </div>
+    </div>
+</div>
+<script>
+
+function footerlayerLoad(address) {
+
+    var overlay = $('<div class="overlay"></div>');
+    var popContent = $('<div class="popContent"></div>');
+    var closeBtn = $('<span class="closeBtn" onclick="window.close()">&times;</span>');
+    var head = $('<h3>입력한 정보를 확인 후 저장해주세요</h3>');
+	var iframe = $('<div class ="iframe"></div>')
+    .attr('id', address?address.addressId:'');
+    var nameLabel = $('<p>이름</p>');
+	var name = $('<input type="text" class="name" id="name" maxlength="20" placeholder="이름">' )
+    .val(address?address.name:'');
+    var addressLabel = $('<p>주소</p>');
+    var postcode = $('<input class="postcode" id="postcode" placeholder="우편번호" readonly>')
+    .val(address?address.postcode:'')
+	.on('click', function() {
+    searchAddress();
+	});
+    var mainAddress = $('<input class="mainAddress" id="mainAddress" placeholder="주소" readonly>')
+    .val(address?address.mainAddress:'')
+    .on('click', function() {
+    searchAddress();
+	});
+    var detailAddress = $('<input type="text" class="detailAddress" id="detailAddress" type="text" maxlength="50" placeholder="상세주소">')
+    .val(address?address.detailAddress:'');
+    var buttonDiv = $('<div class="overayButtonDiv"></div>');
+    var updateButton = $('<button type="button" class="updateButton">확인</button>')
+    .on('click', function(){
+        if (address) {
+            updateAddress(address);
+        } else {
+        	registerAddress();
+        }
+    });
+
+    
+    closeBtn.on('click', function() {
+        overlay.remove();
+    });
+    
+    popContent.on('click', function(event) {
+        event.stopPropagation();
+    });
+    
+    overlay.on('click', function() {
+        overlay.remove();
+    });
+
+    iframe.append(closeBtn);
+    iframe.append(nameLabel);
+    iframe.append(name);
+    iframe.append(addressLabel);
+    iframe.append(postcode);
+    iframe.append(mainAddress);
+    iframe.append(detailAddress);
+    iframe.append(updateButton);
+    iframe.append(buttonDiv);
+    popContent.append(head);
+    popContent.append(iframe);
+    overlay.append(popContent);
+    $('body').append(overlay);
+    overlay.fadeIn();
+}
+
+
+</script>
+
+<!-- 주소 검색 api -->
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script src="../static/js/daumAddressSearch4.js"></script>
+</th:block>
+</html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+	<title th:block="${title}">기본 제목</title>
+	<link rel="stylesheet" th:href="@{/css/header.css}" />
+	<link rel="stylesheet" th:href="@{/css/footer.css}" />
+	<th:block layout:fragment="custom-head"></th:block>
+</head>
+<body>
+	<div th:replace="~{main/header :: headerFragment}"></div>
+	<!--
+	<div th:replace="~{${content}}"></div>
+	--> 
+	
+
+	<div layout:fragment="content">
+	    <!-- 각 페이지에서 채울 영역 -->
+	</div>
+
+	<div th:replace="~{main/footer :: footerFragment}"></div>
+	<th:block layout:fragment="custom-script"></th:block>
+</body>
+</html>

@@ -1,0 +1,116 @@
+package net.chamman.moonnight.domain.address;
+
+import static net.chamman.moonnight.global.exception.HttpStatusCode.CREATE_SUCCESS;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.DELETE_SUCCESS;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.READ_NO_DATA;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.READ_SUCCESS;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.UPDATE_SUCCESS;
+import java.util.List;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import net.chamman.moonnight.global.annotation.AutoSetMessageResponse;
+import net.chamman.moonnight.global.security.principal.CustomUserDetails;
+import net.chamman.moonnight.global.util.ApiResponseDto;
+
+@Tag(name = "AddressController", description = "주소 정보 관련 API")
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/address")
+public class AddressController {
+
+  private final AddressService addressService;
+
+  @Operation(summary = "주소 등록", description = "AddressRequestDto 통해 주소 등록.")
+  @AutoSetMessageResponse
+  @PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
+  @PostMapping("/private/register")
+  public ResponseEntity<ApiResponseDto<AddressResponseDto>> registerAddress(
+      @AuthenticationPrincipal CustomUserDetails userDetails,
+      @Valid @RequestBody AddressRequestDto addressDto){
+
+    AddressResponseDto addressResponseDto = addressService.registerAddress(userDetails.getUserId(), addressDto);
+    
+    return ResponseEntity.ok(ApiResponseDto.of(CREATE_SUCCESS, addressResponseDto));
+  }
+  
+  @Operation(summary = "주소 조회", description = "유저 단일 주소 조회")
+  @AutoSetMessageResponse
+  @PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
+  @GetMapping("/private/{addressId}")
+  public ResponseEntity<ApiResponseDto<AddressResponseDto>> getAddress(
+      @AuthenticationPrincipal CustomUserDetails userDetails,
+      @PathVariable int addressId) {
+    
+    AddressResponseDto addressResponseDto = addressService.getAddress(userDetails.getUserId(), addressId);
+    
+    return ResponseEntity.ok(ApiResponseDto.of(READ_SUCCESS, addressResponseDto));
+  }
+  
+  @Operation(summary = "주소 리스트 조회", description = "유저 주소 리스트 조회")
+  @AutoSetMessageResponse
+  @PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
+  @GetMapping("/private/getList")
+  public ResponseEntity<ApiResponseDto<List<AddressResponseDto>>> getAddressList(
+      @AuthenticationPrincipal CustomUserDetails userDetails) {
+    
+    List<AddressResponseDto> list = addressService.getAddressList(userDetails.getUserId());
+    if(list==null || list.size()==0) {
+      return ResponseEntity.ok(ApiResponseDto.of(READ_NO_DATA,null));
+    }
+    return ResponseEntity.ok(ApiResponseDto.of(READ_SUCCESS,list));
+  }
+  
+  @Operation(summary = "주소 수정", description = "유저 본인 주소 수정")
+  @AutoSetMessageResponse
+  @PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
+  @PatchMapping("/private/{addressId}")
+  public ResponseEntity<ApiResponseDto<AddressResponseDto>> updateAddress(
+      @AuthenticationPrincipal CustomUserDetails userDetail,
+      @Valid @PathVariable int addressId,
+      @Valid @RequestBody AddressRequestDto addressRequestDto) {
+    
+    AddressResponseDto addressResponseDto =addressService.updateAddress(userDetail.getUserId(), addressId, addressRequestDto);
+    
+    return ResponseEntity.ok(ApiResponseDto.of(UPDATE_SUCCESS,addressResponseDto));  
+  }
+  
+  @Operation(summary = "대표 주소 설정", description = "유저 본인 주소 대표 주소 설정")
+  @AutoSetMessageResponse
+  @PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
+  @PatchMapping("/private/primary/{addressId}")
+  public ResponseEntity<ApiResponseDto<Void>> updatePrimary(
+      @AuthenticationPrincipal CustomUserDetails userDetail,
+      @PathVariable int addressId) {
+     
+    addressService.updatePrimary(userDetail.getUserId(), addressId);
+    
+    return ResponseEntity.ok(ApiResponseDto.of(UPDATE_SUCCESS,  null));
+  }
+  
+  @Operation(summary = "주소 삭제", description = "유저 본인 주소 삭제")
+  @AutoSetMessageResponse
+  @PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
+  @DeleteMapping("/private/{addressId}")
+  public ResponseEntity<ApiResponseDto<AddressRequestDto>> deleteAddress(
+      @AuthenticationPrincipal CustomUserDetails userDetail,
+      @Valid @PathVariable int addressId) {
+    
+    addressService.deleteAddress(userDetail.getUserId(), addressId);
+    
+    return ResponseEntity.ok(ApiResponseDto.of(DELETE_SUCCESS, null));  
+  }
+  
+}

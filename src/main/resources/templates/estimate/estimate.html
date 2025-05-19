@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{main/base}">
+<head>
+	<title>로그인</title>
+	<th:block layout:fragment="custom-head">
+<style type="text/css">
+
+.container{
+	width: 1350px;
+	margin: 0 auto;
+	padding: 50px;
+}
+.container h1{
+    border-bottom: 4px solid #20367a;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+    }
+#estimate{
+	display: flex;
+}
+#rightDiv{
+}
+h1{
+margin-top: 0px;
+margin-bottom: 10px;
+}
+table{
+margin-right: 60px;
+    margin-left: 20px;
+}
+.tableHeader {
+    height: 30px;
+}
+#phone{
+width: 200px !important;
+}
+#formContainer input[type="text"], #formContainer input[type="email"]{
+    border: 1.5px solid #efefef;
+    width: 500px;
+    height: 30px;
+    border-radius: 5px;
+    padding-left: 10px;
+    outline:none;
+}
+#formContainer input:focus{
+	border: 1.5px solid black;
+	transition: border-color 0.3s;
+}
+#postcode{
+width:100px !important;
+}
+#content {
+    border: 1.5px solid #efefef;
+    width: 500px;
+    height: 400px;
+    border-radius: 5px;
+    padding-left: 10px;
+    padding-top: 10px;
+    resize: none;
+    outline:none;
+}
+#content:focus {
+    border-color: black;
+   	transition: border-color 0.3s;
+}
+#submitButton {
+    width: 120px;
+    height: 50px;
+    font-size: 18px;
+    border: none;
+    background-color: #20367a;
+    color: white;
+    border-radius: 5px;
+}
+#submitButton:hover {
+cursor:pointer;
+    border: 1px solid #20367a;
+    padding-left: 10px;
+    background-color: white;
+    color: #20367a;
+}
+.buttonDiv{
+    text-align: right;
+    width: 730px;
+    margin-top: 80px;
+}
+#agreeMentDiv{
+margin-bottom:15px;
+    position: relative;
+}
+#agreementClick{
+    text-decoration: none;
+    color: black;
+}
+ #agreement:hover{
+cursor:pointer;
+    position: relative;
+    top: 1px;
+}
+label[for="agreement"]{
+cursor:pointer;
+}
+#agreementMessage{
+    position: absolute;
+    right: 0px;
+    top: -40px;
+    }
+</style>
+
+<!-- 이미지 업로드 -->
+<style type="text/css">
+#preview{
+	display: flex;
+    flex-wrap: wrap;
+    width: 720px;
+    height: 290px;
+    border: 1px solid #efefef;
+    border-radius: 5px;
+    margin-top: 15px;
+    gap:5px;
+}
+.image-preview{
+    position: relative;
+}
+.image-preview img{
+    border-radius: 20px;
+}
+.image-preview button{
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    border: none;
+    background: none;
+    font-size: 25px;
+    color: white;
+}
+.image-preview button:hover{
+	cursor:pointer;
+	color:#c4c4c4;
+}
+#dal6{
+	width: 730px;
+	height: 280px;
+	margin-top: 50px;
+}
+	
+.custom-image-label {
+	display: inline-block;
+    padding: 5px 10px;
+    background-color: #20367a;
+    color: white;
+    border: 1px solid #20367a;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: 3px;
+}
+
+.custom-image-label:hover {
+	border: 1px solid #20367a;
+    background-color: white;
+    color:#20367a;
+}
+#receiveAgreeMessage, #emailMessage, #agreementMessage{
+	color: red;
+}
+#headerContainer, .background-image, .top_inner, .top_main, .footer{
+	min-width: 1450px !important;
+} 
+.flexTd{
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+</style>
+
+<script type="text/javascript">
+document.addEventListener("DOMContentLoaded", function() {
+	var name ="";
+	var phone ="010-";
+	var email ="";
+	var postcode ="";
+	var mainAddress ="";
+	var detailAddress ="";
+		
+	document.getElementById("name").value=name;
+	document.getElementById("phone").value=phone;
+	document.getElementById("email").value=email;
+	document.getElementById("postcode").value=postcode;
+	document.getElementById("mainAddress").value=mainAddress;
+	document.getElementById("detailAddress").value=detailAddress;
+});
+
+</script>
+
+</th:block>
+</head>
+
+<div layout:fragment="content">
+
+	<div class="container">
+
+		<h1>청소 견적 문의하기</h1>
+		<div id="formContainer">
+			<form id="estimate">
+				<div>
+					<table>
+						<tr>
+							<td class="tableHeader">성함 (상호명)</td>
+						</tr>
+						<tr>
+							<td><input type="text" id="name" maxlength="20"></td>
+						</tr>
+
+						<tr>
+							<td class="tableHeader">연락처<span style="color: red">＊</span> <span id="receiveAgreeMessage"></span></td>
+						</tr>
+						<tr>
+							<td class = "flexTd">
+							<input type="text" id="phone" oninput="formatPhoneNumber(this)" maxlength="13" value="010-" required>
+							수신 동의 :
+							<input type="checkbox" class="agreeInput" id="eamilAgree">
+							<label for="eamilAgree">이메일</label> 
+							<input type="checkbox" class="agreeInput" id="smsAgree">
+							<label for="smsAgree">문자</label>
+							<input type="checkbox" class="agreeInput" id="callAgree">
+							<label for="callAgree">전화</label>
+							</td>
+						</tr>
+						<tr>
+							<td></td>
+						</tr>
+
+						<tr>
+							<td class="tableHeader">이메일 <span id="emailMessage"></span></td>
+						</tr>
+						<tr>
+							<td><input type="email" id="email"
+								maxlength="30"></td>
+						</tr>
+
+						<tr>
+							<td class="tableHeader">주소<span style="color: red">＊</span></td>
+						</tr>
+						<tr>
+							<td><input type="text" id="postcode" placeholder="우편번호" readonly></td>
+						</tr>
+						<tr>
+							<td><input type="text" id="mainAddress"
+								placeholder="주소" readonly></td>
+						</tr>
+						<tr>
+							<td><input type="text" id="detailAddress"
+								 autocomplete="off" placeholder="상세주소"></td>
+						</tr>
+						<tr>
+							<td><span id="addressMessage"></span></td>
+						</tr>
+
+						<tr>
+							<td class="tableHeader">내용</td>
+						</tr>
+						<tr>
+							<td><textarea id="content" placeholder="접수 내용"
+									></textarea></td>
+						</tr>
+					</table>
+				</div>
+
+				<div id="rightDiv">
+					이미지 첨부 <input type="file" id="image-input" accept="image/*"
+						multiple style="display: none;"> <label for="image-input"
+						class="custom-image-label">사진 선택</label>
+					<div id="preview"></div>
+					<img id="dal6" src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/dal6.png" alt="dal6">
+					<div class="buttonDiv">
+						<div id="agreeMentDiv">
+						<p id="agreementMessage"> </p>
+							<input type="checkbox" id="agreement">
+							<label for ="agreement"> 개인정보 수집 및 이용 동의</label>
+						<a id="agreementClick" href="javascript:;"
+							onclick="javascript:footerlayerLoad('static/infoAgreement.html'); return false;">[원본]</a>
+						</div>
+						<input id="submitButton" type="submit" value="등록">
+					</div>
+				</div>
+				<div id="overlay"></div>
+			</form>
+		</div>
+
+	</div>
+
+</div>
+<th:block layout:fragment="custom-script">
+<script th:src="@{/js/footerlayerLoad.js}"></script>
+<script type="text/javascript">
+var postcodeInput = document.getElementById('postcode');
+var mainAddress = document.getElementById('mainAddress');
+var postcodeValue = "";
+var mainAddressValue = "";
+
+postcodeInput.addEventListener('click', function() {
+	searchAddress(function(postcode, address){
+        postcodeValue = postcode;
+        mainAddressValue = address;
+        postcodeInput.value=postcode;
+        mainAddress.value=address;
+		document.getElementById("detailAddress").focus();
+	});
+});
+mainAddress.addEventListener('click', function() {
+	searchAddress(function(postcode, address){
+        postcodeValue = postcode;
+        mainAddressValue = address;
+        postcodeInput.value=postcode;
+        mainAddress.value=address;
+		document.getElementById("detailAddress").focus();
+	});
+});
+document.getElementById('mainAddress').addEventListener('input',function(event){
+	event.target.value=mainAddressValue;
+});
+document.getElementById('postcode').addEventListener('input',function(event){
+	event.target.value=postcodeValue;
+});
+
+</script>
+<!-- 주소 검색 api -->
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script src="/js/daumAddressSearch4.js"></script>
+<!-- 이미지 압축 Compressor.js 라이브러리 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.0.6/compressor.min.js"></script>
+
+<!--휴대폰 번호 포맷 -->
+<script type="text/javascript">
+//휴대폰 번호 규칙
+function formatPhoneNumber(input) {
+	let value = input.value.replace(/[^0-9]/g, ''); // 숫자 이외의 문자를 제거합니다.
+	let formattedValue = value;
+
+	// 앞 세 자리를 "010"으로 고정합니다.
+	if (value.startsWith('010')) {
+		value = value.slice(3); // 앞 세 자리("010")를 잘라냅니다.
+	}
+
+	if (value.length <= 4) {
+		formattedValue = '010-' + value; // 4자리 이하의 숫자만 있을 경우
+	} else if (value.length <= 7) {
+		formattedValue = '010-' + value.slice(0, 4) + '-' + value.slice(4); // 5~7자리의 경우
+	} else {
+		formattedValue = '010-' + value.slice(0, 4) + '-'
+				+ value.slice(4, 8); // 8자리 이상의 경우
+	}
+
+	input.value = formattedValue;
+}
+</script>
+
+<!-- 이미지 첨부 -->
+<script type="text/javascript">
+const MAX_IMAGES = 10; // 최대 이미지 수
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+let selectedImages = []; // 업로드된 base64 이미지 저장소
+let selectedFiles = [];  // 실제 파일 객체 저장소
+
+const imageInput = document.getElementById('image-input');
+const previewContainer = document.getElementById('preview');
+const form = document.getElementById('estimate');
+
+// 이미지 파일 선택 시 처리
+imageInput.addEventListener('change', handleImageSelection);
+
+function handleImageSelection(event) {
+    const files = Array.from(event.target.files);
+    const remainingSlots = MAX_IMAGES - selectedImages.length;
+
+    // 추가할 이미지가 최대 개수를 초과할 경우
+    if (files.length > remainingSlots) {
+        alert('최대 10장의 이미지 업로드 할 수 있습니다.');
+        // UX상 맞지않는거 같아서 주석 처리
+        /* files.splice(remainingSlots); */  // 남은 슬롯 만큼만 파일을 선택
+        return;
+    }
+    for (const file of files) {
+        if (file.size > MAX_FILE_SIZE) {
+            alert('이미지 1장 최대 용량은 10MB입니다.\n제외 후 업로드 진행됩니다.');
+            break;
+        }
+    }
+    files.forEach(file => {
+         if(file.size < MAX_FILE_SIZE) {
+            selectedFiles.push(file); // 선택된 파일을 배열에 저장
+            compressAndPreviewImage(file);  // 파일 압축 및 미리보기
+        }
+    });
+
+    updateInputFiles(); // input의 파일 리스트를 동기화
+}
+
+// Compressor.js를 이용해 이미지 압축 및 미리보기 처리
+function compressAndPreviewImage(file) {
+    new Compressor(file, {
+        quality: 0.5,
+        success(result) {
+            const reader = new FileReader();
+            reader.readAsDataURL(result);
+            reader.onload = () => {
+                const imageDataUrl = reader.result;
+                selectedImages.push(imageDataUrl);
+                displayPreview(imageDataUrl);
+            };
+        },
+        error(err) {
+            console.error(err.message);
+        }
+    });
+}
+
+// 미리보기 이미지 생성 및 삭제 버튼 추가
+function displayPreview(imageDataUrl) {
+    const div = document.createElement('div');
+    div.classList.add('image-preview');
+    
+    const img = document.createElement('img');
+    img.src = imageDataUrl;
+    img.style.width = '140px';
+    img.style.height = '140px';
+
+    const removeButton = document.createElement('button');
+    removeButton.innerHTML = '&times;';
+    removeButton.addEventListener('click', () => {
+        const index = selectedImages.indexOf(imageDataUrl);
+        if (index !== -1) {
+            selectedImages.splice(index, 1);
+            selectedFiles.splice(index, 1); // 파일 배열에서도 동일한 위치에서 제거
+            div.remove();
+            updateInputFiles(); // input 파일 리스트 업데이트
+        }
+    });
+
+    div.appendChild(img);
+    div.appendChild(removeButton);
+    previewContainer.appendChild(div);
+}
+
+// input의 파일 리스트를 selectedFiles 배열과 동기화
+function updateInputFiles() {
+    const dataTransfer = new DataTransfer();
+    selectedFiles.forEach(file => {
+        dataTransfer.items.add(file); // 선택된 파일들을 다시 input에 추가
+    });
+    imageInput.files = dataTransfer.files; // input 파일 리스트 업데이트
+}
+</script>
+
+<!-- 메인 js ===================================================================== -->
+<script type="text/javascript">
+form.addEventListener('submit', (event) => {
+    event.preventDefault();
+
+	  const agreementCheck = document.getElementById('agreement');
+	  const agreementMessage = document.getElementById('agreementMessage');
+	  
+	  //휴대폰
+	  let phone = document.getElementById("phone").value;
+	  const receiveAgreeMessage = document.getElementById('receiveAgreeMessage');
+	  
+	  if(phone.length<13){
+		  receiveAgreeMessage.innerText="휴대폰 번호를 확인해 주세요.";
+		  alert("휴대폰 번호를 확인해 주세요.");
+		  return;
+	  }else{
+		  receiveAgreeMessage.innerText="";
+	  }
+	  
+	  // 수신방법 이메일인지 확인
+	  let eamilAgree = document.getElementById("eamilAgree").checked;
+	  if(eamilAgree){
+		  let email = document.getElementById("email").value;
+		  if(!email){
+			  document.getElementById("emailMessage").textContent = "수신할 이메일을 작성해 주세요.";
+			  alert("수신할 이메일을 작성해 주세요.");
+			  return;
+		  }
+	  }else{
+		  document.getElementById("emailMessage").textContent = "";
+	  }
+	  
+	  // 모든 체크박스를 가져옴
+	  const checkboxes = document.querySelectorAll('.agreeInput');
+	  let checkedCount = 0;
+
+	  // 선택된 체크박스 수를 셈
+	  checkboxes.forEach(function(checkbox) {
+	    if (checkbox.checked) {
+	      checkedCount++;
+	    }
+	  });
+
+	  // 최소 1개
+	  if (checkedCount < 1) {
+		  receiveAgreeMessage.textContent = "수신 방법 선택해 주세요.";
+		  alert("수신 방법 선택해 주세요. ");
+		  return;
+	  } else {
+		  receiveAgreeMessage.textContent = "";
+	  }
+	  
+	  //주소 값 가져옴
+	  let mainAddress = document.getElementById("mainAddress").value;
+	  //주소 에러 메시지 요소
+	  const addressMessage = document.getElementById('addressMessage');
+	  
+	  if(mainAddress.length===0){
+		  addressMessage.style.color="red";
+		  addressMessage.innerText="주소를 입력 해주세요.";
+		  alert("주소를 입력 해주세요.");
+		  return;
+	  }else{
+		  addressMessage.innerText="";
+	  }
+
+	  if(!agreementCheck.checked){
+		  agreementMessage.textContent = "개인정보처리방침에 동의해 주세요.";
+		  alert("개인정보처리방침에 동의해 주세요.");
+		  return;
+	  }else{
+		  agreementMessage.textContent ="";
+	  }
+
+    const name = document.getElementById('name').value;
+    /* const phone = document.getElementById('phone').value; */
+    /* const eamilAgree = document.getElementById('eamilAgree').checked; */
+    const smsAgree = document.getElementById('smsAgree').checked;
+    const callAgree = document.getElementById('callAgree').checked;
+    const email = document.getElementById('email').value;
+    const postcode = document.getElementById('postcode').value;
+    /* const mainAddress = document.getElementById('mainAddress').value; */
+    const detailAddress = document.getElementById('detailAddress').value;
+    const content = document.getElementById('content').value;
+    const estimateDto = {
+        name: name,
+        phone: phone,
+        email: email,
+        emailAgree: eamilAgree,
+        smsAgree: smsAgree,
+        callAgree: callAgree,
+        postcode: postcode,
+        mainAddress: mainAddress,
+        detailAddress: detailAddress,
+        content: content,
+        imageList: selectedImages
+    };
+    
+    // 서버로 데이터 전송 함수 호출
+    sendEstimateToServer(estimateDto);
+});
+
+// 서버로 데이터 전송하는 함수
+function sendEstimateToServer(estimateDto) {
+    fetch('/estimate/register', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(estimateDto)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('서버 응답 오류');
+        }
+        alert("이용해 주셔서 감사합니다.\n빠른 답변 드리겠습니다.");
+        window.location.href = '/home';
+    })
+    .catch(error => {
+        console.error('에러 발생:', error);
+        alert('제출에 실패했습니다.');
+    });
+}
+</script>
+</th:block>
+</html>
