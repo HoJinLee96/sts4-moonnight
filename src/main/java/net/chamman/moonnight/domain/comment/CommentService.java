@@ -88,9 +88,8 @@ public class CommentService {
 	
 	/** 댓글 수정
 	 * @param userId
-	 * @param estimateId
-	 * @param commentId
-	 * @param newText
+	 * @param encodedCommentId
+	 * @param commentRequestDto
 	 * 
 	 * @throws NoSuchDataException {@link #getAuthorizedComment} 찾을 수 없는 데이터
 	 * @throws StatusDeleteException {@link #getAuthorizedComment} 이미 삭제된 댓글
@@ -99,13 +98,13 @@ public class CommentService {
 	@Transactional
 	public void updateComment(int userId, int encodedCommentId, CommentRequestDto commentRequestDto) {
 		
-		Comment comment = getAuthorizedComment(userId, obfuscator.decode(encodedCommentId));
+		Comment comment = getAuthorizedComment(userId, encodedCommentId);
 		comment.setCommentText(commentRequestDto.commentText());
 	}
 	
 	/**
 	 * @param userId
-	 * @param commentId
+	 * @param encodedCommentId
 	 * 
 	 * @throws NoSuchDataException {@link #getAuthorizedComment} 찾을 수 없는 데이터
 	 * @throws StatusDeleteException {@link #getAuthorizedComment} 이미 삭제된 댓글
@@ -114,19 +113,21 @@ public class CommentService {
 	@Transactional
 	public void deleteComment(int userId, int encodedCommentId) {
 		
-		Comment comment = getAuthorizedComment(userId, obfuscator.decode(encodedCommentId));
+		Comment comment = getAuthorizedComment(userId, encodedCommentId);
 		comment.setCommentStatus(CommentStatus.DELETE);
 	}
 	
 	/** 댓글 Get
 	 * @param userId
-	 * @param commentId
+	 * @param encodedCommentId
 	 * @throws NoSuchDataException {@link #getAuthorizedComment} 찾을 수 없는 데이터
 	 * @throws StatusDeleteException {@link #getAuthorizedComment} 이미 삭제된 댓글
 	 * @throws ForbiddenException {@link #getAuthorizedComment} 댓글 권한 없음
 	 * @return 댓글
 	 */
-	private Comment getAuthorizedComment(int userId, int commentId) {
+	private Comment getAuthorizedComment(int userId, int encodedCommentId) {
+		
+		int commentId = obfuscator.decode(encodedCommentId);
 		
 		userService.getUserByUserId(userId);
 
