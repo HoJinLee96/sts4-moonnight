@@ -11,6 +11,7 @@ public enum HttpStatusCode {
 	SUCCESS(200,"2000","message.success"),
 	SUCCESS_NO_DATA(200,"2001","message.success.no_data"),
 	READ_SUCCESS(200,"2002","message.success.read"),
+	READ_SUCCESS_NO_DATA(200,"2003","message.success.read_no_data"),
 	CREATE_SUCCESS(201,"2010","message.success.create"),
 	UPDATE_SUCCESS(201,"2011","message.success.update"),
 	DELETE_SUCCESS(201,"2012","message.success.delete"),
@@ -40,12 +41,17 @@ public enum HttpStatusCode {
 	
 	
 	// Address 454
-	ADDRESSS_NOT_FOUND(404,"4540","message.address.address_not_found"),
-	ADDRESSS_AUTHORIZATION_FAILED(401,"4541","message.sign.authorization_failed"),
-	ADDRESS_INVALID_VALUE(400,"4542","message.address.address_invalid_value"),
+	ADDRESSS_NOT_FOUND(404,"4540","message.address.not_found"),
+	ADDRESS_INVALID_VALUE(400,"4542","message.address.invalid_value"),
 	
 	// Comment 455
+	COMMENT_NOT_FOUND(404,"4550","message.comment.not_found"),
+	COMMENT_DELETED(400,"4551","message.comment.deleted"),
+
+	
 	// Estimate 456
+	ESTIMATE_NOT_FOUND(404,"4560","message.estimate.not_found"),
+
 	
 	// JWT Token 457
 	JWT_ILLEGAL(404,"4570","meesage.token.not_found"), // 토큰 없음
@@ -60,8 +66,9 @@ public enum HttpStatusCode {
 	TOKEN_SET_FIAL(500,"5001","error.message"), // 토큰 Redis 저장 실패
 	
 	// Verification 459
-	VERIFY_EXPIRED(404,"4590","시간이 만료되어, 재인증 해야 합니다."),
-	TOO_MANY_REQUEST(429,"4591","요청 횟수를 초과했습니다. 잠시 후 시도해 주세요."),
+	VERIFY_NOT_FOUD(404,"4590","존재하지 않는 인증을 인증 요청입니다."),
+	VERIFY_EXPIRED(404,"4591","시간이 만료되어, 재인증 해야 합니다."),
+	TOO_MANY_REQUEST(429,"4592","인증 요청 횟수를 초과했습니다. 잠시 후 시도해 주세요."),
 	
 	// Crypto 460
 	ENCRYPT_FAIL(500,"4601","message.common.internal_server_error"),

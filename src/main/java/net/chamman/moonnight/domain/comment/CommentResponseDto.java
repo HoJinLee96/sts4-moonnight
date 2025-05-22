@@ -15,10 +15,10 @@ public record CommentResponseDto(
     boolean isMine
 
 ) {
-  public static CommentResponseDto fromEntity(int estimateId, Comment comment, int userId, Obfuscator obfuscator) {
+  public static CommentResponseDto fromEntity(Comment comment, int userId, Obfuscator obfuscator) {
     boolean isMine = comment.getUser().getUserId()==userId;
     return CommentResponseDto.builder()
-    .estimateId(obfuscator.encode(estimateId))
+    .estimateId(obfuscator.encode(comment.getEstimate().getEstimateId()))
     .commentId(obfuscator.encode(comment.getCommentId()))
     .commentText(comment.getCommentText())
     .createdAt(comment.getCreatedAt())

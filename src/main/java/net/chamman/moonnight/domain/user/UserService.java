@@ -2,6 +2,7 @@ package net.chamman.moonnight.domain.user;
 
 import static net.chamman.moonnight.global.exception.HttpStatusCode.EMAIL_ALREADY_EXISTS;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.PHONE_ALREADY_EXISTS;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.SIGNIN_FAILED;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.TOKEN_ILLEGAL;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.USER_NOT_FOUND;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.USER_STATUS_DELETE;
@@ -27,8 +28,12 @@ import net.chamman.moonnight.global.exception.NoSuchDataException;
 import net.chamman.moonnight.global.exception.StatusDeleteException;
 import net.chamman.moonnight.global.exception.StatusStayException;
 import net.chamman.moonnight.global.exception.StatusStopException;
+import net.chamman.moonnight.global.exception.crypto.DecryptException;
+import net.chamman.moonnight.global.exception.sign.MismatchPasswordException;
 import net.chamman.moonnight.global.exception.token.CustomTokenException;
 import net.chamman.moonnight.global.exception.token.IllegalTokenException;
+import net.chamman.moonnight.global.exception.token.NoSuchTokenException;
+import net.chamman.moonnight.global.exception.token.TokenValueMismatchException;
 
 @Service
 @Slf4j
@@ -42,10 +47,10 @@ public class UserService {
 	
 	/** 
 	 * @param userId
-	 * @throws NoSuchDataException
-	 * @throws StatusStayException
-	 * @throws StatusStopException
-	 * @throws StatusDeleteExceptions
+	 * @throws NoSuchDataException {@link #getUserByUserId} 찾을 수 없는 유저
+	 * @throws StatusStayException {@link #validateStatus} 일시정지 유저
+	 * @throws StatusStopException {@link #validateStatus} 중지 유저
+	 * @throws StatusDeleteException {@link #validateStatus} 탈퇴 유저
 	 * @return userId 일치하는 User 조회 및 status 검사
 	 */
 	public User getUserByUserId(int userId) {
@@ -78,10 +83,10 @@ public class UserService {
 	/**
 	 * @param userProvider
 	 * @param phone
-	 * @throws NoSuchDataException
-	 * @throws StatusStayException
-	 * @throws StatusStopException
-	 * @throws StatusDeleteExceptions
+	 * @throws NoSuchDataException {@link #getUserByUserProviderAndPhone}
+	 * @throws StatusStayException {@link #validateStatus}
+	 * @throws StatusStopException {@link #validateStatus}
+	 * @throws StatusDeleteExceptions {@link #validateStatus}
 	 * @return userProvider, phone 일치하는 User 조회 및 status 검사
 	 */
 	public User getUserByUserProviderAndPhone(UserProvider userProvider, String phone) {
@@ -97,10 +102,10 @@ public class UserService {
 	 * @param userProvider
 	 * @param email
 	 * @param phone
-	 * @throws NoSuchDataException
-	 * @throws StatusStayException
-	 * @throws StatusStopException
-	 * @throws StatusDeleteExceptions
+	 * @throws NoSuchDataException {@link #getUserByUserProviderAndEmailAndPhone}
+	 * @throws StatusStayException {@link #validateStatus}
+	 * @throws StatusStopException {@link #validateStatus}
+	 * @throws StatusDeleteExceptions {@link #validateStatus}
 	 * @return userProvider, email, phone 일치하는 User 조회 및 status 검사
 	 */
 	public User getUserByUserProviderAndEmailAndPhone(UserProvider userProvider, String email, String phone) {
@@ -116,10 +121,10 @@ public class UserService {
 	 * @param userProvider
 	 * @param phone
 	 * @param token 휴대폰 인증 토큰
-	 * @throws IllegalTokenException redis에 저장되어있는 key의 value와 request 값 불일치.
-	 * @throws StatusStayException
-	 * @throws StatusStopException
-	 * @throws StatusDeleteExceptions
+	 * @throws TokenValueMismatchException {@link #validateByReidsValue} Redis에 저장되어있는 Key의 Value와 Request 값 불일치.
+	 * @throws StatusStayException {@link #getUserByUserProviderAndPhone}
+	 * @throws StatusStopException {@link #getUserByUserProviderAndPhone}
+	 * @throws StatusDeleteExceptions {@link #getUserByUserProviderAndPhone}
 	 * @return 휴대폰 인증 토큰과 userProvider, phone 일치하는 User 조회 및 status 검사
 	 */
 	public User getUserByVerifyPhone(UserProvider userProvider, String phone, String token) {
@@ -140,9 +145,9 @@ public class UserService {
 	/**
 	 * @param userProvider
 	 * @param email
-	 * @throws StatusStayException
-	 * @throws StatusStopException
-	 * @throws StatusDeleteExceptions
+	 * @throws StatusStayException {@link #getUserByUserProviderAndPhone}
+	 * @throws StatusStopException {@link #getUserByUserProviderAndPhone}
+	 * @throws StatusDeleteExceptions {@link #getUserByUserProviderAndPhone}
 	 * @return userProvider, email 일치하는 유저 
 	 */
 //	public boolean isActiveByUserProviderAndEmail(UserProvider userProvider, String email) {
@@ -153,18 +158,18 @@ public class UserService {
 //		return true;
 //	}
 	
-	/**
+	/** 비밀번호 찾기 자격 검증
 	 * @param userProvider
 	 * @param email
 	 * @param phone
 	 * @param token 휴대폰 인증 토큰
-	 * @throws IllegalTokenException redis에 저장되어있는 key의 value와 request 값 불일치.
+	 * @throws TokenValueMismatchException {@link #validateByReidsValue} Redis에 저장되어있는 Key의 Value와 Request 값 불일치.
 	 * @throws NoSuchDataException
 	 * @throws StatusStayException
 	 * @throws StatusStopException
 	 * @throws StatusDeleteExceptions
 	 * @throws CustomTokenException UUID 토큰 생성 및 Reids 저장 실패
-	 * @return 비밀번호 찾기 자격 부여 토큰
+	 * @return 토큰
 	 */
 	public String createFindPwTokenByVerifyPhone(UserProvider userProvider, String email, String phone, String token) {
 		
@@ -181,12 +186,12 @@ public class UserService {
 		}
 	}
 	
-	/**
+	/** 비밀번호 찾기 자격 검증
 	 * @param userProvider
 	 * @param email
 	 * @param token
-	 * @throws IllegalTokenException redis에 저장되어있는 key의 value와 request 값 불일치.
-	 * @return
+	 * @throws TokenValueMismatchException {@link #validateByReidsValue} Redis에 저장되어있는 Key의 Value와 Request 값 불일치.
+	 * @return 토큰
 	 */
 	public String createFindPwTokenByVerifyEmail(UserProvider userProvider, String email, String token) {
 		
@@ -203,10 +208,11 @@ public class UserService {
 		}
 	}
 	
-	/**
+	/** 비밀번호 재검증 및 토큰 발행
 	 * @param userId
 	 * @param password
-	 * @return
+	 * @throws MismatchPasswordException {@link #verifyPasswordAndCreatePasswordToken}
+	 * @return 토큰
 	 */
 	@Transactional
 	public String verifyPasswordAndCreatePasswordToken(int userId, String password) {
@@ -214,21 +220,27 @@ public class UserService {
 		User user = getUserByUserId(userId);     
 		
 		if(!passwordEncoder.matches(password, user.getPassword())) {
-			throw new IllegalArgumentException("비밀번호가 틀립니다.");
+			throw new MismatchPasswordException(SIGNIN_FAILED,"비밀번호 불일치.");
 		}
 		
 		return tokenStore.createAccessPaaswordToken(user.getEmail());
 	}
 	
-	/**
+	/** 비밀번호 변경
 	 * @param token
 	 * @param userProvider
 	 * @param newPassword
 	 * @param ip
-	 * @return
+	 * @throws IllegalTokenException {@link TokenProvider#getAccessFindpwToken} 적합하지 않은 토큰
+	 * @throws NoSuchTokenException {@link TokenProvider#getAccessFindpwToken} 토큰을 찾지 못한 경우
+     * @throws DecryptException {@link TokenProvider#getAccessFindpwToken} 복호화 실패 
+	 * @throws NoSuchDataException {@link #getUserByUserProviderAndEmail}
+	 * @throws StatusStayException {@link #getUserByUserProviderAndEmail}
+	 * @throws StatusStopException {@link #getUserByUserProviderAndEmail}
+	 * @throws StatusDeleteExceptions {@link #getUserByUserProviderAndEmail}
 	 */
 	@Transactional
-	public UserResponseDto updatePasswordByFindPwToken(String token, UserProvider userProvider, String newPassword, String ip) {
+	public void updatePasswordByFindPwToken(String token, UserProvider userProvider, String newPassword, String ip) {
 		
 		String email = tokenStore.getAccessFindpwToken(token);
 		
@@ -241,21 +253,27 @@ public class UserService {
 			userRepository.flush();
 			
 			// 로그인 실패기록에 비밀번호 변경으로 초기화 진행
-			loginLogService.loginFailLogResolveByUpdatePassword(userProvider, email, ip);
+			signLogService.signFailLogResolveByUpdatePassword(userProvider, email, ip);
 			
-			return UserResponseDto.fromEntity(userRepository.getReferenceById(user.getUserId())); 
 		} finally {
 			tokenStore.removeToken(TokenType.ACCESS_FINDPW , token);
 		}
 	}
 	
-	/**
+	/** 휴대폰 번호 변경
 	 * @param userProvider
 	 * @param email
 	 * @param phone
 	 * @param token
-	 * @throws IllegalTokenException redis에 저장되어있는 key의 value와 request 값 불일치.
-	 * @return
+	 * @throws IllegalTokenException {@link TokenProvider#getVerificationPhone} 적합하지 않은 토큰
+	 * @throws NoSuchTokenException {@link TokenProvider#getVerificationPhone} 토큰을 찾지 못한 경우
+     * @throws DecryptException {@link TokenProvider#getVerificationPhone} 복호화 실패 
+	 * @throws TokenValueMismatchException {@link #validateByReidsValue} Redis에 저장되어있는 Key의 Value와 Request 값 불일치.
+	 * @throws NoSuchDataException {@link #getUserByUserProviderAndEmail}
+	 * @throws StatusStayException {@link #getUserByUserProviderAndEmail}
+	 * @throws StatusStopException {@link #getUserByUserProviderAndEmail}
+	 * @throws StatusDeleteExceptions {@link #getUserByUserProviderAndEmail}
+	 * @return 유저
 	 */
 	@Transactional
 	public UserResponseDto updatePhoneByVerification(UserProvider userProvider, String email, String phone, String token) {
@@ -275,11 +293,14 @@ public class UserService {
 		}
 	}
 	
-	/**
+	/** 유저 상태 DELETE로 변경
 	 * @param userProvider
 	 * @param email
 	 * @param token
-	 * @throws IllegalTokenException redis에 저장되어있는 key의 value와 request 값 불일치.
+	 * @throws IllegalTokenException {@link TokenProvider#getAccessPasswordToken} 적합하지 않은 토큰
+	 * @throws NoSuchTokenException {@link TokenProvider#getAccessPasswordToken} 토큰을 찾지 못한 경우
+     * @throws DecryptException {@link TokenProvider#getAccessPasswordToken} 복호화 실패 
+	 * @throws TokenValueMismatchException {@link #validateByReidsValue} Redis에 저장되어있는 Key의 Value와 Request 값 불일치.
 	 */
 	@Transactional
 	public void deleteUser(UserProvider userProvider, String email, String token) {
@@ -296,10 +317,10 @@ public class UserService {
 		}
 	}
 	
-	/**
+	/** LOCAL 유저 이메일 중복 검사
 	 * @param userProvider
 	 * @param email
-	 * @throws DuplicationException 이메일 중복
+	 * @throws DuplicationException {@link #isEmailExists} 이메일 중복
 	 */
 	public void isEmailExists(UserProvider userProvider, String email) {
 		Optional<User> user = userRepository.findByUserProviderAndEmail(userProvider, email)
@@ -310,7 +331,7 @@ public class UserService {
 		}
 	}
 	
-	/**
+	/** LOCAL 유저 휴대폰 번호 중복 검사
 	 * @param userProvider
 	 * @param phone
 	 * @throws DuplicationException {@link #isPhoneExists} 휴대폰 중복
@@ -323,11 +344,11 @@ public class UserService {
 		}
 	}
 	
-	/**
+	/** 유저 상태 검사
 	 * @param user
-	 * @throws StatusStayException
-	 * @throws StatusStopException
-	 * @throws StatusDeleteExceptions
+	 * @throws StatusStayException {@link #validateStatus}
+	 * @throws StatusStopException {@link #validateStatus}
+	 * @throws StatusDeleteExceptions {@link #validateStatus}
 	 */
 	@SuppressWarnings("incomplete-switch")
 	private void validateStatus(User user) {
@@ -341,9 +362,9 @@ public class UserService {
 	
 	/**
 	 * @param userStatus
-	 * @throws StatusStayException
-	 * @throws StatusStopException
-	 * @throws StatusDeleteExceptions
+	 * @throws StatusStayException {@link #validateStatus}
+	 * @throws StatusStopException {@link #validateStatus}
+	 * @throws StatusDeleteExceptions {@link #validateStatus}
 	 */
 //	@SuppressWarnings("incomplete-switch")
 //	private void validateStatus(UserStatus userStatus) {
@@ -354,14 +375,14 @@ public class UserService {
 //		}
 //	}
 	
-	/**
+	/** Redis에 저장되어있는 Key의 Value와 Request 값 비교
 	 * @param requestValue
 	 * @param redisValue
-	 * @throws IllegalTokenException redis에 저장되어있는 key의 value와 request 값 불일치.
+	 * @throws TokenValueMismatchException {@link #validateByReidsValue} Redis에 저장되어있는 Key의 Value와 Request 값 불일치.
 	 */
 	private void validateByReidsValue(String requestValue, String redisValue) {
 		if(!Objects.equals(requestValue,redisValue)) {
-			throw new IllegalTokenException(TOKEN_ILLEGAL,"redis에 저장되어있는 key의 value와 request 값 불일치. 입력값: {"+requestValue+"} != 저장값: {"+redisValue+"}.");
+			throw new TokenValueMismatchException(TOKEN_ILLEGAL,"redis에 저장되어있는 key의 value와 request 값 불일치. 입력값: {"+requestValue+"} != 저장값: {"+redisValue+"}.");
 		}
 	}
 	

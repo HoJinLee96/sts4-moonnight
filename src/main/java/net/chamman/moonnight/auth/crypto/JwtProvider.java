@@ -53,13 +53,11 @@ public class JwtProvider {
 	 * @param userId
 	 * @param roles
 	 * @param claims
-     * @throws EncryptException {@link #createAccessToken} 암호화 실패
-	 * @throws CreateJwtException {@link #createAccessToken} 토큰 생성 실패
-     * @throws EncryptException {@link #createRefreshToken} 암호화 실패
-	 * @throws CreateJwtException {@link #createRefreshToken} 토큰 생성 실패
+     * @throws EncryptException {@link #createAccessToken}, {@link #createRefreshToken} 암호화 실패
+	 * @throws CreateJwtException {@link #createAccessToken}, {@link #createRefreshToken} 토큰 생성 실패
 	 * @return 액세스토큰, 리프레쉬토큰
 	 */
-	public Map<String,String> createLoginToken(int userId, List<String> roles, Map<String, Object> claims) {
+	public Map<String,String> createSignToken(int userId, List<String> roles, Map<String, Object> claims) {
 		String accessToken = createAccessToken(userId, roles, claims);
 		String refreshToken = createRefreshToken(userId);
 		return Map.of("accessToken",accessToken,"refreshToken",refreshToken);
@@ -100,7 +98,7 @@ public class JwtProvider {
 		}
 	}
 	
-	/**
+	/** 리프레쉬 토큰 생성
 	 * @param userId
      * @throws EncryptException {@link AesProvider#encrypt} 암호화 실패
 	 * @throws CreateJwtException {@link #createRefreshToken} 토큰 생성 실패
@@ -120,12 +118,12 @@ public class JwtProvider {
 		}
 	}
 	
-	/**
+	/** 휴대폰 인증 로그인 토큰 생성
 	 * @param verificationId
 	 * @param claims
      * @throws EncryptException {@link AesProvider#encrypt} 암호화 실패
 	 * @throws CreateJwtException {@link #createVerifyPhoneToken} 토큰 생성 실패
-	 * @return 휴대폰 인증 게스트 로그인 토큰
+	 * @return 휴대폰 인증 로그인 토큰
 	 */
 	public String createVerifyPhoneToken(int verificationId, Map<String, Object> claims) {
 		try {
@@ -166,8 +164,6 @@ public class JwtProvider {
 	 * @return 복호화된 유저 정보
 	 */
 	public Map<String, Object> validateAccessToken(String token) {
-		
-		
 		try {
 			Claims claims = Jwts.parserBuilder()
 					.setSigningKey(signHmacShaKey)
@@ -212,14 +208,13 @@ public class JwtProvider {
 		}
 	}
 	
-	// 토큰 남은 시간 조회
-	/**
+	/** 토큰 남은 시간 조회
 	 * @param token
-	 * @throws TimeOutJwtException {@link #getLoginJwtRemainingTime} 시간 초과
-	 * @throws ParsingJwtException {@link #getLoginJwtRemainingTime} JWT 파싱 실패
-	 * @return
+	 * @throws TimeOutJwtException {@link #getSignJwtRemainingTime} 시간 초과
+	 * @throws ParsingJwtException {@link #getSignJwtRemainingTime} JWT 파싱 실패
+	 * @return 토큰 남은시간 
 	 */
-	public long getLoginJwtRemainingTime(String token) {
+	public long getSignJwtRemainingTime(String token) {
 		try {
 			Claims claims = Jwts.parserBuilder()
 					.setSigningKey(signHmacShaKey)
@@ -240,7 +235,7 @@ public class JwtProvider {
 	/** Claims 복호화
 	 * @param claims
      * @throws DecryptException {@link AesProvider#decrypt} 복호화 실패
-	 * @return
+	 * @return Claims
 	 */
 	@SuppressWarnings("unused")
 	private Map<String,Object> getDecryptedClaims(Claims claims) {

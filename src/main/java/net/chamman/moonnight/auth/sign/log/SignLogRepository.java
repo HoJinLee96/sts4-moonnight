@@ -26,11 +26,11 @@ public interface SignLogRepository extends JpaRepository<SignLog, Integer>{
                                  @Param("includedResults") List<SignResult> includedResults);
   
   @Transactional @Modifying
-  @Query("UPDATE SignLog l SET l.resolveBy = :loginLogId WHERE l.userProvider = :userProvider AND l.email = :email AND l.resolveBy IS NULL")
+  @Query("UPDATE SignLog l SET l.resolveBy = :signLogId WHERE l.userProvider = :userProvider AND l.email = :email AND l.resolveBy IS NULL")
   int resolveUnresolvedLogs(
       @Param("userProvider") UserProvider userProvider,
       @Param("email") String email,
-      @Param("loginLogId") int loginLogId
+      @Param("signLogId") int signLogId
   );
   
 }
