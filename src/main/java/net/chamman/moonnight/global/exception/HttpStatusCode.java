@@ -72,7 +72,20 @@ public enum HttpStatusCode {
 	
 	// Crypto 460
 	ENCRYPT_FAIL(500,"4601","message.common.internal_server_error"),
-	DECRYPT_FAIL(500,"4602","message.common.internal_server_error")
+	DECRYPT_FAIL(500,"4602","message.common.internal_server_error"),
+	
+	// S3 461
+	S3_UPLOAD_FAIL(500,"4610","message.s3.upload_fail"),
+	S3_DELETE_FAIL(500,"4611","message.s3.delete_fail"),
+	
+	// Mail 462
+	MAIL_SEND_FAIL(500,"4620","message.mail.send_fail"),
+	
+	// sms 463
+	SMS_SEND_FAIL(500,"4630","message.sms.send_fail")
+	
+	
+	
 	
 	; 
 	

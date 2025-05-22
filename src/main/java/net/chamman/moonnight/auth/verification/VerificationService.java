@@ -5,7 +5,6 @@ import static net.chamman.moonnight.global.exception.HttpStatusCode.VERIFY_NOT_F
 
 import java.sql.Timestamp;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -109,7 +108,7 @@ public class VerificationService {
 				.verificationCode(verificationCode);
 		
 		try {
-			int sendStatus = naverMailClient.sendVerificationCode(naverMailPayload);
+			int sendStatus = naverMailClient.sendMail(naverMailPayload);
 			verificationBuilder.sendStatus(sendStatus);
 			if((sendStatus/100)!=2) {
 				System.out.println("인증번호 발송 실패 (sendStatus/100)!=2: "+(sendStatus/100));
