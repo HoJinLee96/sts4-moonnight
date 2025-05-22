@@ -75,9 +75,8 @@ public class VerificationService {
 			}
 		} catch (Exception e) {
 			verificationBuilder.sendStatus(500);
-			e.printStackTrace();
 			log.error("인증번호 발송 실패: phone: {} , ip: {}", recipientPhone, requestIp);
-			throw new IllegalStateException("인증번호 발송 실패. 나중에 다시 시도해주세요.");
+			throw e;
 		}finally {
 			verificationRepository.save(verificationBuilder.build());
 		}
@@ -116,9 +115,8 @@ public class VerificationService {
 			}
 		} catch (Exception e) {
 			verificationBuilder.sendStatus(500);
-			e.printStackTrace();
 			log.error("인증번호 발송 실패: phone: {} , ip: {}", recipientEmail, requestIp);
-			throw new IllegalStateException("인증번호 발송 실패. 나중에 다시 시도해주세요.");
+			throw e;
 		}finally {
 			verificationRepository.save(verificationBuilder.build());
 		}

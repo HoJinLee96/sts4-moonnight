@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 @Component
 @RequiredArgsConstructor
 @PropertySource("classpath:application.properties")
-public class AwsS3Cilent {
+public class AwsS3Client {
 	
 	@Value("${aws.s3.bucket}")
 	private String bucket;

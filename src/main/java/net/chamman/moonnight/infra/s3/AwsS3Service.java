@@ -15,12 +15,12 @@ import net.chamman.moonnight.global.exception.infra.s3.S3UploadException;
 @RequiredArgsConstructor
 public class AwsS3Service {
 
-	private final AwsS3Cilent awsS3Cilent;
+	private final AwsS3Client awsS3Cilent;
 	
 	/** s3 견적서 이미지 업로드
 	 * @param images
 	 * @param phone
-	 * @throws S3UploadException {@link AwsS3Cilent#uploadFile}
+	 * @throws S3UploadException {@link AwsS3Client#uploadFile}
 	 * @return
 	 */
 	public List<String> uploadEstimateImages(List<MultipartFile> images, String phone) {
@@ -33,7 +33,7 @@ public class AwsS3Service {
 	
 	/** 견적서 이미지 경로의 이미지 삭제
 	 * @param imagesPath
-	 * @throws S3DeleteException {@link AwsS3Cilent#deleteFiles}
+	 * @throws S3DeleteException {@link AwsS3Client#deleteFiles}
 	 */
 	public void deleteEstimateImages(List<String> imagesPath) {
 		for(String path : imagesPath) {
