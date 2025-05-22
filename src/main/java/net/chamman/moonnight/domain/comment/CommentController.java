@@ -1,7 +1,13 @@
 package net.chamman.moonnight.domain.comment;
 
-import static net.chamman.moonnight.global.exception.HttpStatusCode.*;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.CREATE_SUCCESS;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.DELETE_SUCCESS;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.READ_SUCCESS;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.READ_SUCCESS_NO_DATA;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.UPDATE_SUCCESS;
+
 import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -10,12 +16,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 import lombok.RequiredArgsConstructor;
-import net.chamman.moonnight.domain.user.User.UserProvider;
 import net.chamman.moonnight.global.annotation.ValidId;
 import net.chamman.moonnight.global.security.principal.CustomUserDetails;
 import net.chamman.moonnight.global.util.ApiResponseDto;
@@ -55,13 +60,13 @@ public class CommentController {
 //  댓글 수정
 	@PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
 	@PatchMapping("/private/{commentId}")
-	public ResponseEntity<ApiResponseDto<CommentResponseDto>> updateComment(
+	public ResponseEntity<ApiResponseDto<Void>> updateComment(
 			@AuthenticationPrincipal CustomUserDetails userDetails, 
 			@ValidId @PathVariable int commentId, 
 			@RequestBody CommentRequestDto commentRequestDto) {
 		
-		CommentResponseDto commentResponseDto = commentService.updateComment(userDetails.getUserProvider(), userDetails.getEmail(), commentRequestDto.estimateId(), commentId, commentRequestDto.commentText());
-		return ResponseEntity.ok(ApiResponseDto.of(UPDATE_SUCCESS, commentResponseDto));
+		commentService.updateComment(userDetails.getUserId(), commentId,commentRequestDto);
+		return ResponseEntity.ok(ApiResponseDto.of(UPDATE_SUCCESS, null));
 	}
 	
 //  댓글 삭제
@@ -71,8 +76,8 @@ public class CommentController {
 			@AuthenticationPrincipal CustomUserDetails userDetails, 
 			@PathVariable int commentId) {
 		
-		commentService.deleteComment(userDetails.getUserProvider(), userDetails.getEmail(), commentId);
-		return ResponseEntity.ok(ApiResponseDto.of(200, "댓글 삭제 성공", null));
+		commentService.deleteComment(userDetails.getUserId(), commentId);
+		return ResponseEntity.ok(ApiResponseDto.of(DELETE_SUCCESS, null));
 	}
 	
 }

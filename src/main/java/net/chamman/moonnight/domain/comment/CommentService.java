@@ -97,10 +97,10 @@ public class CommentService {
 	 * @throws ForbiddenException {@link #getAuthorizedComment} 댓글 권한 없음
 	 */
 	@Transactional
-	public void updateComment(int userId, int encodedCommentId, String newText) {
+	public void updateComment(int userId, int encodedCommentId, CommentRequestDto commentRequestDto) {
 		
 		Comment comment = getAuthorizedComment(userId, obfuscator.decode(encodedCommentId));
-		comment.setCommentText(newText);
+		comment.setCommentText(commentRequestDto.commentText());
 	}
 	
 	/**
