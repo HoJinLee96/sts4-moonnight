@@ -4,9 +4,11 @@ import static net.chamman.moonnight.global.exception.HttpStatusCode.TOKEN_GET_FI
 import static net.chamman.moonnight.global.exception.HttpStatusCode.TOKEN_ILLEGAL;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.TOKEN_NOT_FOUND;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.TOKEN_SET_FIAL;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.TOKEN_VALUE_MISMATCH;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -24,6 +26,7 @@ import net.chamman.moonnight.global.exception.redis.RedisGetException;
 import net.chamman.moonnight.global.exception.redis.RedisSetException;
 import net.chamman.moonnight.global.exception.token.IllegalTokenException;
 import net.chamman.moonnight.global.exception.token.NoSuchTokenException;
+import net.chamman.moonnight.global.exception.token.TokenValueMismatchException;
 
 @Component
 @Slf4j
@@ -62,8 +65,10 @@ public class TokenProvider {
 	/** value가 Map 형식 토큰 생성
 	 * @param type
 	 * @param map
+	 * 
      * @throws EncryptException {@link AesProvider#encrypt} 암호화 실패
      * @throws RedisSetException {@link #createMapToken} value가 Map 형식 토큰 Redis에 저장 실패
+     * 
 	 * @return 토큰
 	 */
 	public String createMapToken(TokenType type, Map<String, String> map) {
@@ -88,12 +93,14 @@ public class TokenProvider {
 		return token;
 	}
 	
-	/**
+	/** 토큰 생성
 	 * @param type
 	 * @param value
+	 * 
 	 * @throws EncryptException 암호화 실패
 	 * @throws RedisSetException
-	 * @return
+	 * 
+	 * @return 토큰
 	 */
 	private String createToken(TokenType type, String value) {
 		try {
@@ -124,7 +131,7 @@ public class TokenProvider {
 		return createToken(TokenType.ACCESS_PASSWORD, email);
 	}
 	
-	/**
+	/** 리프레쉬토큰 Redis set
 	 * @param userId
 	 * @param refreshToken
 	 * @throws RedisSetException {@link #addRefreshJwt} 리프레쉬 토큰 Redis 저장 실패
@@ -137,27 +144,27 @@ public class TokenProvider {
 		}
 	}
 	
-	/**
+	/** 액세스토큰 블랙리스트 Redis set
 	 * @param accessToken
 	 * @param ttl
 	 * @param result
-	 * @throws RedisSetException
+	 * @throws RedisSetException {@link #addAccessJwtBlacklist} Redis 저장 중 오류
 	 */
-	public void addJwtBlacklist(String accessToken, long ttl, String result) {
+	public void addAccessJwtBlacklist(String accessToken, long ttl, String result) {
 		try {
 			redisTemplate.opsForValue().set("jwt:blacklist:"+ accessToken, result, Duration.ofMillis(ttl));
 		} catch (Exception e) {
-			throw new RedisSetException(TOKEN_SET_FIAL,"Access Token Black List Redis 저장 중 오류",e);
+			throw new RedisSetException(TOKEN_SET_FIAL,"Access Token BlackList Redis 저장 중 오류",e);
 		}
 	}
 	
-	/**
+	/** value가 Map 형식 토큰 Get
 	 * @param type
 	 * @param token
      * @throws IllegalTokenException {@link TokenProvider#getMapTokenData}
      * @throws NoSuchTokenException {@link TokenProvider#getMapTokenData} Redis에 일치한 Key 없음
      * @throws DecryptException {@link AesProvider#decrypt} 복호화 실패
-     * @throws RedisGetException {@link TokenProvider#getMapTokenData}
+     * @throws RedisGetException {@link TokenProvider#getMapTokenData} Redis에서 토큰 조회 실패
 	 * @return
 	 */
 	public Map<String, String> getMapTokenData(TokenType type, String token) {
@@ -181,33 +188,41 @@ public class TokenProvider {
 							entry -> aesProvider.decrypt(entry.getValue())
 							));
 			
+		} catch (DecryptException e) {
+			throw e;
 		} catch (Exception e) {
 			throw new RedisGetException(TOKEN_GET_FIAL,"Redis에서 토큰값 가져오는 과정에서 오류",e);
 		}
 	}
 	
-	/**
+	/** 토큰 Get
 	 * @param type
 	 * @param token
-	 * @throws IllegalTokenException {@link TokenProvider#getTokenData(String)} 적합하지 않은 토큰
-	 * @throws NoSuchTokenException {@link TokenProvider#getTokenData(String)} 토큰을 찾지 못한 경우
-     * @throws DecryptException {@link TokenProvider#getTokenData(String)} 복호화 실패 
+	 * @throws IllegalTokenException {@link TokenProvider#getTokenData} 적합하지 않은 토큰
+	 * @throws NoSuchTokenException {@link TokenProvider#getTokenData} 토큰을 찾지 못한 경우
+     * @throws DecryptException {@link AesProvider#decrypt} 복호화 실패
+     * @throws RedisGetException {@link TokenProvider#getMapTokenData} Redis에서 토큰 조회 실패
 	 * @return
 	 */
-	private String getTokenData(TokenType type, String token) {
+	private String getTokenData(TokenType type, String key) {
 	
-		if (token == null || token.isBlank()) {
-			throw new IllegalTokenException(TOKEN_ILLEGAL, type.name() + " Token null 또는 비어있음.");
+		if (key == null || key.isBlank()) {
+			throw new IllegalTokenException(TOKEN_ILLEGAL, type.name() + " Key null 또는 비어있음.");
 		}
 	
-		String key = type.getPrefix() + token;
-		String value = redisTemplate.opsForValue().get(key);
+		String path = type.getPrefix() + key;
+		String value = redisTemplate.opsForValue().get(path);
 	
 		if (value == null) {
-			throw new NoSuchTokenException(TOKEN_NOT_FOUND, type.name() + " Token: " + token + " 없음.");
+			throw new NoSuchTokenException(TOKEN_NOT_FOUND, type.name() + " Key: " + key + " 없음.");
 		}
-	
-		return aesProvider.decrypt(value);
+		try {
+			return aesProvider.decrypt(value);
+		} catch (DecryptException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new RedisGetException(TOKEN_GET_FIAL,"Redis에서 가져오는 과정에서 오류",e);
+		}
 	
 	}
 
@@ -242,5 +257,97 @@ public class TokenProvider {
 	public boolean removeToken(TokenType type, String key) {
 		return redisTemplate.delete(type.getPrefix() + key);
 	}
+	
+	/** 휴대폰 인증 토큰 Get, value 비교
+	 * @param reqPhone
+	 * @param token
+	 * @throws IllegalTokenException {@link #getTokenData} 적합하지 않은 토큰
+	 * @throws NoSuchTokenException {@link #getTokenData} 토큰을 찾지 못한 경우
+     * @throws DecryptException {@link #getTokenData} 복호화 실패
+     * @throws RedisGetException {@link #getTokenData} Redis에서 토큰 조회 실패
+	 * @throws TokenValueMismatchException {@link #validVerificationPhone} 토큰 값과 phone 비교 불일치
+	 * @return 일치 여부
+	 */
+	public boolean validVerificationPhone(String reqPhone, String token) {
+		String value = getTokenData(TokenType.VERIFICATION_PHONE, token);
+		if(!Objects.equals(reqPhone,value)) {
+			throw new TokenValueMismatchException(TOKEN_VALUE_MISMATCH,"Redis 값과 비교 불일치. reqPhone: "+reqPhone+", value: "+value);
+		}
+		return true;
+	}
+	
+	/** 이메일 인증 토큰 Get, value 비교
+	 * @param reqEmail
+	 * @param token
+	 * @throws IllegalTokenException {@link #getTokenData} 적합하지 않은 토큰
+	 * @throws NoSuchTokenException {@link #getTokenData} 토큰을 찾지 못한 경우
+     * @throws DecryptException {@link #getTokenData} 복호화 실패
+     * @throws RedisGetException {@link #getTokenData} Redis에서 토큰 조회 실패
+	 * @throws TokenValueMismatchException {@link #validVerificationEmail} 토큰 값과 email 비교 불일치
+	 * @return 일치 여부
+	 */
+	public boolean validVerificationEmail(String reqEmail, String token) {
+		String value = getTokenData(TokenType.VERIFICATION_EMAIL, token);
+		if(!Objects.equals(reqEmail,value)) {
+			throw new TokenValueMismatchException(TOKEN_VALUE_MISMATCH,"Redis 값과 비교 불일치. reqEmail: "+reqEmail+", value: "+value);
+		}
+		return true;
+	}
+	
+	/** 비밀번호 찾기 토큰 Get, value 비교
+	 * @param reqEmail
+	 * @param token
+	 * @throws IllegalTokenException {@link #getTokenData} 적합하지 않은 토큰
+	 * @throws NoSuchTokenException {@link #getTokenData} 토큰을 찾지 못한 경우
+     * @throws DecryptException {@link #getTokenData} 복호화 실패
+     * @throws RedisGetException {@link #getTokenData} Redis에서 토큰 조회 실패
+	 * @throws TokenValueMismatchException {@link #validAccessFindpwToken} 토큰 값과 email 비교 불일치
+	 * @return 일치 여부
+	 */
+	public boolean validAccessFindpwToken(String reqEmail, String token) {
+		String value = getTokenData(TokenType.ACCESS_FINDPW, token);
+		if(!Objects.equals(reqEmail,value)) {
+			throw new TokenValueMismatchException(TOKEN_VALUE_MISMATCH,"Redis 값과 비교 불일치. reqEmail: "+reqEmail+", value: "+value);
+		}
+		return true;
+	}
+	
+	/** 비밀번호 검증 토큰 Get, value 비교
+	 * @param reqEmail
+	 * @param token
+	 * @throws IllegalTokenException {@link #getTokenData} 적합하지 않은 토큰
+	 * @throws NoSuchTokenException {@link #getTokenData} 토큰을 찾지 못한 경우
+     * @throws DecryptException {@link #getTokenData} 복호화 실패
+     * @throws RedisGetException {@link #getTokenData} Redis에서 토큰 조회 실패
+	 * @throws TokenValueMismatchException {@link #validAccessPasswordToken} 토큰 값과 email 비교 불일치
+	 * @return 일치 여부
+	 */
+	public boolean validAccessPasswordToken(String reqEmail, String token) {
+		String value = getTokenData(TokenType.ACCESS_PASSWORD, token);
+		if(!Objects.equals(reqEmail,value)) {
+			throw new TokenValueMismatchException(TOKEN_VALUE_MISMATCH,"Redis 값과 비교 불일치. reqEmail: "+reqEmail+", value: "+value);
+		}
+		return true;
+	}
+	
+	/** 리프레쉬 토큰 Get, value 비교
+	 * @param reqUserId
+	 * @param token
+	 * @throws NoSuchTokenException {@link #getTokenData} Redis에 없는 키
+	 * @throws TokenValueMismatchException {@link #validRefreshToken} Redis 값과 비교 불일치
+	 * @return 일치 여부
+	 */
+	public boolean validRefreshToken(String userId, String reqRefreshToken) {
+		String path = TokenType.JWT_REFRESH.getPrefix()+userId;
+		String refreshToken = redisTemplate.opsForValue().get(path);
+		if (refreshToken == null) {
+			throw new NoSuchTokenException(TOKEN_NOT_FOUND, userId+"에 일치하는 리프레쉬 토큰 없음.");
+		}
+		if(!Objects.equals(reqRefreshToken,refreshToken)) {
+			throw new TokenValueMismatchException(TOKEN_VALUE_MISMATCH,"Redis 값과 비교 불일치. reqRefreshToken: "+reqRefreshToken+", refreshToken: "+refreshToken);
+		}
+		return true;
+	}
+	
 
 }

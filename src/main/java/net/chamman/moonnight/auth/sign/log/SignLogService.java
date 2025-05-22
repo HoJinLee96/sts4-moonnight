@@ -34,6 +34,18 @@ public class SignLogService {
 					.build());
 	}
 	
+	/**
+	 * @param ip
+	 * @param result
+	 */
+	@Transactional
+	public void registerSignLog(String ip, SignResult result) {
+			signLogRepository.save(SignLog.builder()
+					.requestIp(ip)
+					.signResult(result)
+					.build());
+	}
+	
 	/** 로그인 실패 횟수 검사
 	 * @param userProvider
 	 * @param email

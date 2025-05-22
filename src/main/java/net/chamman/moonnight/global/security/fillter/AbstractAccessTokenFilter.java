@@ -28,7 +28,6 @@ import net.chamman.moonnight.auth.crypto.TokenProvider;
 import net.chamman.moonnight.auth.sign.SignService;
 import net.chamman.moonnight.auth.sign.log.SignLog.SignResult;
 import net.chamman.moonnight.auth.sign.log.SignLogService;
-import net.chamman.moonnight.domain.user.User.UserProvider;
 import net.chamman.moonnight.infra.naver.sms.GuidanceService;
 
 @Slf4j
@@ -128,14 +127,13 @@ public abstract class AbstractAccessTokenFilter <T extends UserDetails> extends 
       log.warn("[블랙리스트 토큰 접근] IP: {}, token: {}", clientIp, accessToken);
       
       // 로그인 로그 남기기
-      signLogService.registerSignLog(
-          UserProvider.LOCAL, null, clientIp, SignResult.BLACKLISTED_TOKEN);
+      signLogService.registerSignLog(clientIp, SignResult.BLACKLIST_TOKEN);
       
       // 관리자 알림 전송
       try {
           guidanceService.sendSecurityAlert("블랙리스트 토큰 접근 시도\nIP: " + clientIp + "\naccessToken: " + accessToken);
       } catch (Exception e) {
-          log.warn("보안 알림 전송 실패: {}", e.getMessage());
+          log.warn("블랙리스트 접근 보안 알림 전송 실패: {}", e);
       }
       return false;
     }

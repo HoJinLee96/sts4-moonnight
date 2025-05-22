@@ -185,7 +185,7 @@ public class SignController {
 //	}
 	
 	
-	@Operation(summary = "LOCAL 로그아웃", description = "LOCAL 로그아웃")
+	@Operation(summary = "로그아웃", description = "로그아웃")
 	@SecurityRequirement(name = "X-Access-Token")
 	@SecurityRequirement(name = "X-Refresh-Token")
 
@@ -204,7 +204,7 @@ public class SignController {
 		
 		String clientIp = (String) request.getAttribute("clientIp");
 		
-		signService.signOutLocal(accessToken, refreshToken, clientIp);
+		signService.signOut(accessToken, refreshToken, clientIp);
 		
 		if(!isMobileApp) {
 			ResponseCookie accessCookie = ResponseCookie.from("X-Access-Token", "")

@@ -67,10 +67,13 @@ public class SignLog {
   
   public enum SignResult {
     //로그인 성공
-    SUCCESS,
+    LOCAL_SUCCESS,
     
-    //비밀번호 업데이트
-    UPDATE_PASSWORD,
+    OAUTH_SUCCESS,
+    
+    AUTH_SUCCESS,
+    
+    REFRESH,
     
     //일치하는 이메일 없음
     INVALID_EMAIL,
@@ -78,8 +81,14 @@ public class SignLog {
     //비밀번호 불일치
     INVALID_PASSWORD,
     
-    //잘못된 OAUTH 토큰
-//    INVALID_OAUTH_TOKEN,
+    //비밀번호 업데이트
+    UPDATE_PASSWORD,
+    
+    LOCAL_FAIL,
+    
+    OAUTH_FAIL,
+    
+    AUTH_FAIL,
     
     //IP 차단
     IP_BLOCKED,
@@ -87,17 +96,19 @@ public class SignLog {
     //서버 에러
 //    SERVER_ERROR,
     
+    BLACKLIST_TOKEN,
+    
+    REFRESH_FAIL,
+    
     // 계정이 STAY 상태 (이메일/휴대폰 인증 필요)
-    ACCOUNT_LOCKED,
+    ACCOUNT_STAY,
     
     // 계정이 STOP 상태 (정지됨)
-    ACCOUNT_SUSPENDED,
+    ACCOUNT_STOP,
     
     // 계정이 DELETE 상태 (탈퇴됨)
-    ACCOUNT_DELETED,
+    ACCOUNT_DELETE;
     
-    
-    BLACKLISTED_TOKEN;
   }
   
 }
