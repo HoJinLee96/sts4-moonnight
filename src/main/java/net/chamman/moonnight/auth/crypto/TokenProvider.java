@@ -7,19 +7,22 @@ import static net.chamman.moonnight.global.exception.HttpStatusCode.TOKEN_SET_FI
 import static net.chamman.moonnight.global.exception.HttpStatusCode.TOKEN_VALUE_MISMATCH;
 
 import java.time.Duration;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.chamman.moonnight.auth.crypto.dto.Encryptable;
+import net.chamman.moonnight.auth.crypto.dto.FindPwTokenDto;
+import net.chamman.moonnight.auth.crypto.dto.PasswordTokenDto;
+import net.chamman.moonnight.auth.crypto.dto.SignUpTokenDto;
+import net.chamman.moonnight.auth.crypto.dto.VerificationEmailTokenDto;
+import net.chamman.moonnight.auth.crypto.dto.VerificationPhoneTokenDto;
 import net.chamman.moonnight.global.exception.crypto.DecryptException;
 import net.chamman.moonnight.global.exception.crypto.EncryptException;
 import net.chamman.moonnight.global.exception.redis.RedisGetException;
@@ -38,19 +41,21 @@ public class TokenProvider {
 	private ObjectMapper objectMapper = new ObjectMapper();
 	
 	public enum TokenType {
-		VERIFICATION_EMAIL("verification:email:", Duration.ofMinutes(5)),
-		VERIFICATION_PHONE("verification:phone:", Duration.ofMinutes(5)),
-		ACCESS_FINDPW("access:findpw:", Duration.ofMinutes(10)),
-		ACCESS_PASSWORD("access:password:", Duration.ofMinutes(10)),
-		ACCESS_SIGNUP("access:signup:", Duration.ofMinutes(20)),
-		JWT_REFRESH("jwt:refresh:",Duration.ofDays(14));
+		VERIFICATION_PHONE("verification:phone:", Duration.ofMinutes(5), VerificationPhoneTokenDto.class),
+		VERIFICATION_EMAIL("verification:email:", Duration.ofMinutes(5), VerificationEmailTokenDto.class),
+		ACCESS_FINDPW("access:findpw:", Duration.ofMinutes(5), FindPwTokenDto.class),
+		ACCESS_PASSWORD("access:password:", Duration.ofMinutes(5), PasswordTokenDto.class),
+		ACCESS_SIGNUP("access:signup:", Duration.ofMinutes(10), SignUpTokenDto.class),
+		JWT_REFRESH("jwt:refresh:",Duration.ofDays(14), null);
 		
 		private final String prefix;
 		private final Duration ttl;
+		private final Class<? extends Encryptable<?>> dtoType;
 		
-		TokenType(String prefix, Duration ttl) {
+		TokenType(String prefix, Duration ttl, Class<? extends Encryptable<?>> dtoType) {
 			this.prefix = prefix;
 			this.ttl = ttl;
+			this.dtoType = dtoType;
 		}
 		
 		public String getPrefix() {
@@ -60,77 +65,82 @@ public class TokenProvider {
 		public Duration getTtl() {
 			return ttl;
 		}
-	}
-	
-	/** value가 Map 형식 토큰 생성
-	 * @param type
-	 * @param map
-	 * 
-     * @throws EncryptException {@link AesProvider#encrypt} 암호화 실패
-     * @throws RedisSetException {@link #createMapToken} value가 Map 형식 토큰 Redis에 저장 실패
-     * 
-	 * @return 토큰
-	 */
-	public String createMapToken(TokenType type, Map<String, String> map) {
-		String token = UUID.randomUUID().toString();
-		try {
-			// 각 value에 AES 암호화 적용
-			Map<String, String> encryptedMap = map.entrySet().stream()
-					.collect(Collectors.toMap(
-							Map.Entry::getKey,
-							entry -> aesProvider.encrypt(entry.getValue())
-							));
-			
-			String json = objectMapper.writeValueAsString(encryptedMap);
-			redisTemplate.opsForValue().set(type.getPrefix() + token, json, type.getTtl());
-			
-		} catch(EncryptException e) {
-			throw e;
-		} catch (Exception e) {
-			throw new RedisSetException(TOKEN_SET_FIAL,type.name()+" Token Redis 저장 중 오류",e);
-		}
 		
-		return token;
+	    public Class<? extends Encryptable<?>> getDtoType() {
+	        return dtoType;
+	    }
 	}
 	
-	/** 토큰 생성
-	 * @param type
-	 * @param value
-	 * 
-	 * @throws EncryptException 암호화 실패
-	 * @throws RedisSetException
-	 * 
-	 * @return 토큰
+	/**
+	 * DTO를 페이로드로 사용하는 토큰 생성
+	 * @param <T> Encryptable를 구현한 DTO 타입
+	 * @param dto 토큰에 담을 데이터 DTO 객체
+	 * @param tokenType 토큰 타입
+     * @throws EncryptException {@link AesProvider#encrypt} 암호화 실패
+     * @throws RedisSetException {@link #createToken} Redis 저장 실패
+	 * @return
 	 */
-	private String createToken(TokenType type, String value) {
-		try {
-			String token = UUID.randomUUID().toString();
-			redisTemplate.opsForValue().set(type.getPrefix() + token, aesProvider.encrypt(value), type.getTtl());
-			return token;
-			
-		} catch(EncryptException e) {
-			throw e;
-		} catch (Exception e) {
-			throw new RedisSetException(TOKEN_SET_FIAL,type.name()+" Token Redis 저장 중 오류",e);
-		}
+	public <T extends Encryptable<T>> String createToken(T dto, TokenType tokenType) {
+		
+	    if (dto.getClass() != tokenType.getDtoType()) {
+	        throw new RedisSetException(TOKEN_SET_FIAL,
+	            "TokenType과 Dto 타입이 일치하지 않습니다. " +
+	            "입력 받은 타입: " + tokenType.getDtoType().getSimpleName() +
+	            ", 입력 받은 Dto 타입: " + dto.getClass().getSimpleName()
+	        );
+	    }
+	    
+	    String token = UUID.randomUUID().toString();
+	    
+	    try {
+	        // 1. DTO에 정의된 방식대로 암호화 수행
+	    	T encryptedDto = dto.encrypt(aesProvider);
+	        
+	        // 2. 암호화된 DTO 객체를 JSON 문자열로 직렬화
+	        String json = objectMapper.writeValueAsString(encryptedDto);
+	        
+	        // 3. Redis에 저장
+	        redisTemplate.opsForValue().set(tokenType.getPrefix() + token, json, tokenType.getTtl());
+	        
+	    } catch (EncryptException e) {
+	        throw e;
+	    } catch (Exception e) {
+	        throw new RedisSetException(TOKEN_SET_FIAL, tokenType.name() + " Token Redis 저장 중 오류", e);
+	    }
+	    
+	    return token;
+	}
+	
+	
+	/**
+	 * @param <T> Encryptable를 구현한 DTO 타입
+	 * @param tokenType 토큰 타입
+	 * @param token 토큰
+	 * @throws IllegalTokenException {@link #getToken} 토큰 null 또는 비어있음
+	 * @throws NoSuchTokenException {@link #getToken} 일치하는 토큰 없음
+     * @throws DecryptException {@link AesProvider#decrypt} 복호화 실패
+     * @throws RedisGetException {@link #getDecryptedTokenDto} Redis 조회 실패
+	 * @return
+	 */
+	public <T extends Encryptable<T>> T getDecryptedTokenDto(TokenType tokenType, String token) {
+		
+	    String json = getToken(tokenType, token);
+	    
+	    try {
+	    	
+	        @SuppressWarnings("unchecked")
+			T encryptedDto = (T) objectMapper.readValue(json, tokenType.getDtoType());
+	        
+	        return encryptedDto.decrypt(aesProvider);
+	        
+	    } catch (DecryptException e) {
+	        throw e;
+	    } catch (Exception e) {
+	        throw new RedisGetException(TOKEN_GET_FIAL, "Redis에서 토큰 조회 중 오류", e);
+	    }
 	}
 
-	public String createVerificationEmailToken(String email) {
-		return createToken(TokenType.VERIFICATION_EMAIL, email);
-	}
-	
-	public String createVerificationPhoneToken(String phone) {
-		return createToken(TokenType.VERIFICATION_PHONE, phone);
-	}
-	
-	public String createAccessFindPwToken(String email) {
-		return createToken(TokenType.ACCESS_FINDPW, email);
-	}
-	
-	public String createAccessPaaswordToken(String email) {
-		return createToken(TokenType.ACCESS_PASSWORD, email);
-	}
-	
+
 	/** 리프레쉬토큰 Redis set
 	 * @param userId
 	 * @param refreshToken
@@ -158,94 +168,6 @@ public class TokenProvider {
 		}
 	}
 	
-	/** value가 Map 형식 토큰 Get
-	 * @param type
-	 * @param token
-     * @throws IllegalTokenException {@link TokenProvider#getMapTokenData}
-     * @throws NoSuchTokenException {@link TokenProvider#getMapTokenData} Redis에 일치한 Key 없음
-     * @throws DecryptException {@link AesProvider#decrypt} 복호화 실패
-     * @throws RedisGetException {@link TokenProvider#getMapTokenData} Redis에서 토큰 조회 실패
-	 * @return
-	 */
-	public Map<String, String> getMapTokenData(TokenType type, String token) {
-		if(token == null || token.isBlank()) {
-			throw new IllegalTokenException(TOKEN_ILLEGAL,type.name()+" Token null 또는 비어있음.");
-		}
-		String key = type.getPrefix() + token;
-		String json = redisTemplate.opsForValue().get(key);
-		
-		if (json == null) {
-			throw new NoSuchTokenException(TOKEN_NOT_FOUND,type.name()+" 일치하는 토큰이 없음.");
-		}
-		
-		try {
-			Map<String, String> encryptedMap = objectMapper.readValue(json, new TypeReference<>() {});
-			
-			// value 복호화 적용
-			return encryptedMap.entrySet().stream()
-					.collect(Collectors.toMap(
-							Map.Entry::getKey,
-							entry -> aesProvider.decrypt(entry.getValue())
-							));
-			
-		} catch (DecryptException e) {
-			throw e;
-		} catch (Exception e) {
-			throw new RedisGetException(TOKEN_GET_FIAL,"Redis에서 토큰값 가져오는 과정에서 오류",e);
-		}
-	}
-	
-	/** 토큰 Get
-	 * @param type
-	 * @param token
-	 * @throws IllegalTokenException {@link TokenProvider#getTokenData} 적합하지 않은 토큰
-	 * @throws NoSuchTokenException {@link TokenProvider#getTokenData} 토큰을 찾지 못한 경우
-     * @throws DecryptException {@link AesProvider#decrypt} 복호화 실패
-     * @throws RedisGetException {@link TokenProvider#getMapTokenData} Redis에서 토큰 조회 실패
-	 * @return
-	 */
-	private String getTokenData(TokenType type, String key) {
-	
-		if (key == null || key.isBlank()) {
-			throw new IllegalTokenException(TOKEN_ILLEGAL, type.name() + " Key null 또는 비어있음.");
-		}
-	
-		String path = type.getPrefix() + key;
-		String value = redisTemplate.opsForValue().get(path);
-	
-		if (value == null) {
-			throw new NoSuchTokenException(TOKEN_NOT_FOUND, type.name() + " Key: " + key + " 없음.");
-		}
-		try {
-			return aesProvider.decrypt(value);
-		} catch (DecryptException e) {
-			throw e;
-		} catch (Exception e) {
-			throw new RedisGetException(TOKEN_GET_FIAL,"Redis에서 가져오는 과정에서 오류",e);
-		}
-	
-	}
-
-	public String getVerificationPhone(String token) {
-		return getTokenData(TokenType.VERIFICATION_PHONE, token);
-	}
-	
-	public String getVerificationEmail(String token) {
-		return getTokenData(TokenType.VERIFICATION_EMAIL, token);
-	}
-	
-	public String getAccessFindpwToken(String token) {
-		return getTokenData(TokenType.ACCESS_FINDPW, token);
-	}
-	
-	public String getAccessPasswordToken(String token) {
-		return getTokenData(TokenType.ACCESS_PASSWORD, token);
-	}
-	
-	public String getRefreshJwt(String token) {
-		return getTokenData(TokenType.JWT_REFRESH, token);
-	}
-	
 	public boolean isBlackList(String accessToken) {
 		return Boolean.TRUE.equals(redisTemplate.hasKey("jwt:blacklist:" + accessToken));
 	}
@@ -256,78 +178,6 @@ public class TokenProvider {
 
 	public boolean removeToken(TokenType type, String key) {
 		return redisTemplate.delete(type.getPrefix() + key);
-	}
-	
-	/** 휴대폰 인증 토큰 Get, value 비교
-	 * @param reqPhone
-	 * @param token
-	 * @throws IllegalTokenException {@link #getTokenData} 적합하지 않은 토큰
-	 * @throws NoSuchTokenException {@link #getTokenData} 토큰을 찾지 못한 경우
-     * @throws DecryptException {@link #getTokenData} 복호화 실패
-     * @throws RedisGetException {@link #getTokenData} Redis에서 토큰 조회 실패
-	 * @throws TokenValueMismatchException {@link #validVerificationPhone} 토큰 값과 phone 비교 불일치
-	 * @return 일치 여부
-	 */
-	public boolean validVerificationPhone(String reqPhone, String token) {
-		String value = getTokenData(TokenType.VERIFICATION_PHONE, token);
-		if(!Objects.equals(reqPhone,value)) {
-			throw new TokenValueMismatchException(TOKEN_VALUE_MISMATCH,"Redis 값과 비교 불일치. reqPhone: "+reqPhone+", value: "+value);
-		}
-		return true;
-	}
-	
-	/** 이메일 인증 토큰 Get, value 비교
-	 * @param reqEmail
-	 * @param token
-	 * @throws IllegalTokenException {@link #getTokenData} 적합하지 않은 토큰
-	 * @throws NoSuchTokenException {@link #getTokenData} 토큰을 찾지 못한 경우
-     * @throws DecryptException {@link #getTokenData} 복호화 실패
-     * @throws RedisGetException {@link #getTokenData} Redis에서 토큰 조회 실패
-	 * @throws TokenValueMismatchException {@link #validVerificationEmail} 토큰 값과 email 비교 불일치
-	 * @return 일치 여부
-	 */
-	public boolean validVerificationEmail(String reqEmail, String token) {
-		String value = getTokenData(TokenType.VERIFICATION_EMAIL, token);
-		if(!Objects.equals(reqEmail,value)) {
-			throw new TokenValueMismatchException(TOKEN_VALUE_MISMATCH,"Redis 값과 비교 불일치. reqEmail: "+reqEmail+", value: "+value);
-		}
-		return true;
-	}
-	
-	/** 비밀번호 찾기 토큰 Get, value 비교
-	 * @param reqEmail
-	 * @param token
-	 * @throws IllegalTokenException {@link #getTokenData} 적합하지 않은 토큰
-	 * @throws NoSuchTokenException {@link #getTokenData} 토큰을 찾지 못한 경우
-     * @throws DecryptException {@link #getTokenData} 복호화 실패
-     * @throws RedisGetException {@link #getTokenData} Redis에서 토큰 조회 실패
-	 * @throws TokenValueMismatchException {@link #validAccessFindpwToken} 토큰 값과 email 비교 불일치
-	 * @return 일치 여부
-	 */
-	public boolean validAccessFindpwToken(String reqEmail, String token) {
-		String value = getTokenData(TokenType.ACCESS_FINDPW, token);
-		if(!Objects.equals(reqEmail,value)) {
-			throw new TokenValueMismatchException(TOKEN_VALUE_MISMATCH,"Redis 값과 비교 불일치. reqEmail: "+reqEmail+", value: "+value);
-		}
-		return true;
-	}
-	
-	/** 비밀번호 검증 토큰 Get, value 비교
-	 * @param reqEmail
-	 * @param token
-	 * @throws IllegalTokenException {@link #getTokenData} 적합하지 않은 토큰
-	 * @throws NoSuchTokenException {@link #getTokenData} 토큰을 찾지 못한 경우
-     * @throws DecryptException {@link #getTokenData} 복호화 실패
-     * @throws RedisGetException {@link #getTokenData} Redis에서 토큰 조회 실패
-	 * @throws TokenValueMismatchException {@link #validAccessPasswordToken} 토큰 값과 email 비교 불일치
-	 * @return 일치 여부
-	 */
-	public boolean validAccessPasswordToken(String reqEmail, String token) {
-		String value = getTokenData(TokenType.ACCESS_PASSWORD, token);
-		if(!Objects.equals(reqEmail,value)) {
-			throw new TokenValueMismatchException(TOKEN_VALUE_MISMATCH,"Redis 값과 비교 불일치. reqEmail: "+reqEmail+", value: "+value);
-		}
-		return true;
 	}
 	
 	/** 리프레쉬 토큰 Get, value 비교
@@ -347,6 +197,27 @@ public class TokenProvider {
 			throw new TokenValueMismatchException(TOKEN_VALUE_MISMATCH,"Redis 값과 비교 불일치. reqRefreshToken: "+reqRefreshToken+", refreshToken: "+refreshToken);
 		}
 		return true;
+	}
+
+	/**
+	 * Redis에서 토큰 조회
+	 * @param tokenType
+	 * @param token
+	 * @throws IllegalTokenException {@link #getToken} 토큰 null 또는 비어있음
+	 * @throws NoSuchTokenException {@link #getToken} 일치하는 토큰 없음
+	 * @return json형식 String
+	 */
+	private String getToken(TokenType tokenType, String token) {
+		if(token == null || token.isBlank()) {
+			throw new IllegalTokenException(TOKEN_ILLEGAL,tokenType.name()+" Token null 또는 비어있음.");
+		}
+		String key = tokenType.getPrefix() + token;
+		String json = redisTemplate.opsForValue().get(key);
+		
+		if (json == null) {
+			throw new NoSuchTokenException(TOKEN_NOT_FOUND,tokenType.name()+" 일치하는 토큰이 없음.");
+		}
+		return json;
 	}
 	
 

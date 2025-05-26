@@ -125,29 +125,18 @@ public class JwtProvider {
 	 * @throws CreateJwtException {@link #createVerifyPhoneToken} 토큰 생성 실패
 	 * @return 휴대폰 인증 로그인 토큰
 	 */
-	public String createVerifyPhoneToken(int verificationId, Map<String, Object> claims) {
+	public String createVerifyPhoneToken(String verificationId, String phone) {
 		try {
 			
-			JwtBuilder builder = Jwts.builder()
-					.setSubject(aesProvider.encrypt(verificationId+"")) 
+			return Jwts.builder()
+					.setSubject(aesProvider.encrypt(verificationId)) 
 					.setIssuedAt(new Date())
 					.setExpiration(new Date(System.currentTimeMillis() + expiration30Minute))
-					.signWith(signHmacShaKey, SignatureAlgorithm.HS256);
+					.signWith(signHmacShaKey, SignatureAlgorithm.HS256)
+					.claim("phone", phone)
+					.claim("roles",List.of("RULE_AUTH"))
+					.compact();
 			
-			if (claims != null) {
-				for (Map.Entry<String, Object> entry : claims.entrySet()) {
-					Object value = entry.getValue();
-					if (value instanceof String strVal) {
-						builder.claim(entry.getKey(), aesProvider.encrypt(strVal));
-					} else {
-						builder.claim(entry.getKey(), value); // 예외 방지
-					}
-				}
-			}
-			
-			builder.claim("roles",List.of("RULE_AUTH"));
-			
-			return builder.compact();
 		} catch (EncryptException e) {
 			throw e;
 		} catch (Exception e) {
