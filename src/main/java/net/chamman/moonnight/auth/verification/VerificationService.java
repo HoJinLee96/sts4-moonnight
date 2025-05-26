@@ -5,7 +5,6 @@ import static net.chamman.moonnight.global.exception.HttpStatusCode.VERIFY_NOT_F
 
 import java.sql.Timestamp;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -76,9 +75,8 @@ public class VerificationService {
 			}
 		} catch (Exception e) {
 			verificationBuilder.sendStatus(500);
-			e.printStackTrace();
 			log.error("인증번호 발송 실패: phone: {} , ip: {}", recipientPhone, requestIp);
-			throw new IllegalStateException("인증번호 발송 실패. 나중에 다시 시도해주세요.");
+			throw e;
 		}finally {
 			verificationRepository.save(verificationBuilder.build());
 		}
@@ -109,7 +107,7 @@ public class VerificationService {
 				.verificationCode(verificationCode);
 		
 		try {
-			int sendStatus = naverMailClient.sendVerificationCode(naverMailPayload);
+			int sendStatus = naverMailClient.sendMail(naverMailPayload);
 			verificationBuilder.sendStatus(sendStatus);
 			if((sendStatus/100)!=2) {
 				System.out.println("인증번호 발송 실패 (sendStatus/100)!=2: "+(sendStatus/100));
@@ -117,9 +115,8 @@ public class VerificationService {
 			}
 		} catch (Exception e) {
 			verificationBuilder.sendStatus(500);
-			e.printStackTrace();
 			log.error("인증번호 발송 실패: phone: {} , ip: {}", recipientEmail, requestIp);
-			throw new IllegalStateException("인증번호 발송 실패. 나중에 다시 시도해주세요.");
+			throw e;
 		}finally {
 			verificationRepository.save(verificationBuilder.build());
 		}

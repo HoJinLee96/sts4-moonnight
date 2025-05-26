@@ -1,14 +1,11 @@
 package net.chamman.moonnight.infra.naver.sms;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URISyntaxException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Service;
-import com.fasterxml.jackson.core.JsonProcessingException;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -23,7 +20,7 @@ public class GuidanceService {
   @Value("${naver-sms.adminPhone}")
   private String adminPhone;
   
-  public void sendEstimateInfoSms(String recipientPhone, String estimateId) throws InvalidKeyException, JsonProcessingException, NoSuchAlgorithmException, UnsupportedEncodingException, URISyntaxException {
+  public void sendEstimateInfoSms(String recipientPhone, String estimateId) {
     String body = "[ 견적 번호 : " + estimateId + " ]\n"+
         "달밤청소 문의 주셔서 감사합니다.\n"+
         "빠른 시일 내에 연락 드리겠습니다.";
@@ -46,7 +43,7 @@ public class GuidanceService {
     naverSmsClient.sendVerificationCode(naverSmsPayload);
   }
   
-  public void sendSecurityAlert(String message) throws InvalidKeyException, JsonProcessingException, NoSuchAlgorithmException, UnsupportedEncodingException, URISyntaxException {
+  public void sendSecurityAlert(String message) {
     
     // 수신자 설정
     SmsRecipientPayload smsRecipientPayload = new SmsRecipientPayload(adminPhone.replaceAll("[^0-9]", ""),message);
