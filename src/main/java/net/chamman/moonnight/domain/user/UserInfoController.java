@@ -203,7 +203,7 @@ public class UserInfoController {
 			@ClientSpecific("X-Access-Password-Token") String accessPasswordToken,
 			@AuthenticationPrincipal CustomUserDetails userDetails) {
 		
-		userService.deleteUser(userDetails.getUserProvider(), userDetails.getEmail(), accessPasswordToken);
+		userService.deleteUser(userDetails.getUserId(), accessPasswordToken);
 		
 		return ResponseEntity.ok(ApiResponseDto.of(DELETE_SUCCESS, null));
 	}

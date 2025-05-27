@@ -22,6 +22,8 @@ public enum HttpStatusCode {
 	REQUEST_BODY_NOT_VALID(400, "4002", "message.common.request_body_not_valid"),
 	METHOD_NOT_ALLOWED(405, "4050", "message.common.method_not_allowed"),
 	INTERNAL_SERVER_ERROR(500, "5000", "message.common.internal_server_error"),
+	TOO_MANY_REQUEST(429,"4290","요청 횟수를 초과했습니다.\n잠시 후 시도해 주세요."),
+
 	
 	// Sign 452
 	USER_NOT_FOUND(404,"4520","message.sign.user_not_found"),
@@ -66,9 +68,13 @@ public enum HttpStatusCode {
 	TOKEN_SET_FIAL(500,"5001","error.message"), // 토큰 Redis 저장 실패
 	
 	// Verification 459
-	VERIFY_NOT_FOUD(404,"4590","존재하지 않는 인증을 인증 요청입니다."),
-	VERIFY_EXPIRED(404,"4591","시간이 만료되어, 재인증 해야 합니다."),
-	TOO_MANY_REQUEST(429,"4592","인증 요청 횟수를 초과했습니다. 잠시 후 시도해 주세요."),
+	VERIFICATION_NOT_FOUND(404,"4590","message.verification.not_found"),
+	VERIFICATION_EXPIRED(400,"4591","message.verification.expired"),
+	TOO_MANY_VERIFY(429,"4592","message.verification.too_many_verify"),
+	MISMATCH_VERIFICATION_CODE(400,"4593","message.verification.mismatch_code"),
+	MISMATCH_RECIPIENT(400,"4594","message.verification.mismatch_recipient"),
+	NOT_VERIFY(404,"4594","message.verification.not_verify"),
+	
 	
 	// Crypto 460
 	ENCRYPT_FAIL(500,"4601","message.common.internal_server_error"),

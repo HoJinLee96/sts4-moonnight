@@ -2,8 +2,10 @@ package net.chamman.moonnight.auth.verification;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+
 import org.hibernate.annotations.Generated;
 import org.hibernate.generator.EventType;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -44,7 +46,7 @@ public class Verification {
   private LocalDateTime createdAt;
 
   @Column(name = "verify")
-  private Boolean verify;
+  private boolean verify;
   
   @Column(name = "verify_at")
   private LocalDateTime verifyAt; 

@@ -2,9 +2,11 @@ package net.chamman.moonnight.auth.sign;
 
 import static net.chamman.moonnight.global.exception.HttpStatusCode.JWT_ILLEGAL;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.SIGNIN_FAILED;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.TOKEN_VALUE_MISMATCH;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,9 +17,11 @@ import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.crypto.JwtProvider;
 import net.chamman.moonnight.auth.crypto.TokenProvider;
 import net.chamman.moonnight.auth.crypto.TokenProvider.TokenType;
+import net.chamman.moonnight.auth.crypto.dto.SignUpTokenDto;
+import net.chamman.moonnight.auth.crypto.dto.VerificationEmailTokenDto;
+import net.chamman.moonnight.auth.crypto.dto.VerificationPhoneTokenDto;
 import net.chamman.moonnight.auth.sign.log.SignLog.SignResult;
 import net.chamman.moonnight.auth.sign.log.SignLogService;
-import net.chamman.moonnight.auth.verification.Verification;
 import net.chamman.moonnight.auth.verification.VerificationService;
 import net.chamman.moonnight.domain.address.Address;
 import net.chamman.moonnight.domain.address.AddressRepository;
@@ -28,7 +32,6 @@ import net.chamman.moonnight.domain.user.UserCreateRequestDto;
 import net.chamman.moonnight.domain.user.UserRepository;
 import net.chamman.moonnight.domain.user.UserService;
 import net.chamman.moonnight.global.exception.DuplicationException;
-import net.chamman.moonnight.global.exception.ExpiredException;
 import net.chamman.moonnight.global.exception.NoSuchDataException;
 import net.chamman.moonnight.global.exception.StatusStayException;
 import net.chamman.moonnight.global.exception.StatusStopException;
@@ -45,6 +48,7 @@ import net.chamman.moonnight.global.exception.sign.TooManySignFailException;
 import net.chamman.moonnight.global.exception.token.IllegalTokenException;
 import net.chamman.moonnight.global.exception.token.NoSuchTokenException;
 import net.chamman.moonnight.global.exception.token.TokenValueMismatchException;
+import net.chamman.moonnight.global.exception.verification.VerificationExpiredException;
 
 @Service
 @Slf4j
@@ -52,8 +56,8 @@ import net.chamman.moonnight.global.exception.token.TokenValueMismatchException;
 public class SignService {
 
 	private final UserService userService;
-	private final AddressRepository addressRepository;
 	private final VerificationService verificationService;
+	private final AddressRepository addressRepository;
 	private final UserRepository userRepository;
 	private final SignLogService signLogService ;
 	private final PasswordEncoder passwordEncoder;
@@ -81,17 +85,19 @@ public class SignService {
 	 * @return
 	 */
 	@Transactional
-	public String createJoinToken(String email, String password, String valificationEmailToken) {
+	public String createSignUpToken(String email, String password, String valificationEmailToken) {
 		
-		try {
-			tokenProvider.validVerificationEmail(email, valificationEmailToken);
-			
-			userService.isEmailExists(UserProvider.LOCAL, email);
-			
-			return tokenProvider.createMapToken(TokenType.ACCESS_SIGNUP, Map.of("email",email,"password",password));
-		} finally {
-			tokenProvider.removeToken(TokenType.VERIFICATION_EMAIL, valificationEmailToken);
-		}
+		VerificationEmailTokenDto verificationEmailTokenDto = tokenProvider.getDecryptedTokenDto(VerificationEmailTokenDto.TOKENTYPE, valificationEmailToken);
+		
+		verificationService.isVerify(verificationEmailTokenDto.getIntVerificationId());
+		
+		userService.isEmailExists(UserProvider.LOCAL, email);
+		
+		String token = tokenProvider.createToken(new SignUpTokenDto(email, password), SignUpTokenDto.TOKENTYPE);
+		
+		tokenProvider.removeToken(TokenType.VERIFICATION_EMAIL, valificationEmailToken);
+		
+		return token; 
 	}
 	
 	/** 회원가입 2차
@@ -110,33 +116,35 @@ public class SignService {
 	 * @return 회원 가입 유저 이름
 	 */
 	@Transactional
-	public String signUpLocalUser(UserCreateRequestDto userCreateRequestDto, String accessJoinToken, String verificationPhoneToken) {
+	public String signUpLocalUser(UserCreateRequestDto userCreateRequestDto, String accessSignUpToken, String verificationPhoneToken) {
 		
-		Map<String,String> mapValue = tokenProvider.getMapTokenData(TokenType.ACCESS_SIGNUP, accessJoinToken);
+		SignUpTokenDto signUpTokenDto = tokenProvider.getDecryptedTokenDto(SignUpTokenDto.TOKENTYPE, accessSignUpToken);
 		String reqPhone = userCreateRequestDto.phone();
 		
-		try {
-			tokenProvider.validVerificationPhone(reqPhone, verificationPhoneToken);
-			
-			userService.isPhoneExists(UserProvider.LOCAL, reqPhone);
-			
-			// 비밀번호 인코딩 후 저장
-			String encodePassoword = passwordEncoder.encode(mapValue.get("password"));
-			
-			User user = userCreateRequestDto.toEntity();
-			user.setEmail(mapValue.get("email"));
-			user.setPassword(encodePassoword);
-			userRepository.save(user);
-			
-			Address address = userCreateRequestDto.toAddressEntity();
-			address.setUser(user);
-			addressRepository.save(address);
-			
-			return userCreateRequestDto.name();
-		} finally {
-			tokenProvider.removeToken(TokenType.ACCESS_SIGNUP, accessJoinToken);
-			tokenProvider.removeToken(TokenType.VERIFICATION_PHONE, verificationPhoneToken);
-		}
+		VerificationPhoneTokenDto verificationPhoneTokenDto = tokenProvider
+				.getDecryptedTokenDto(VerificationPhoneTokenDto.TOKENTYPE, verificationPhoneToken);
+		
+		if(!Objects.equals(reqPhone,verificationPhoneTokenDto.getPhone())) {
+			throw new TokenValueMismatchException(TOKEN_VALUE_MISMATCH,"Redis 값과 비교 불일치. reqPhone: "+reqPhone+", value: "+verificationPhoneTokenDto.getPhone());
+		}		
+		userService.isPhoneExists(UserProvider.LOCAL, reqPhone);
+		
+		// 비밀번호 인코딩 후 저장
+		String encodedPassoword = passwordEncoder.encode(signUpTokenDto.getRawPassword());
+		
+		User user = userCreateRequestDto.toEntity();
+		user.setEmail(signUpTokenDto.getEmail());
+		user.setPassword(encodedPassoword);
+		userRepository.save(user);
+		
+		Address address = userCreateRequestDto.toAddressEntity();
+		address.setUser(user);
+		addressRepository.save(address);
+		
+		tokenProvider.removeToken(SignUpTokenDto.TOKENTYPE, accessSignUpToken);
+		tokenProvider.removeToken(TokenType.VERIFICATION_PHONE, verificationPhoneToken);
+		
+		return userCreateRequestDto.name();
 	}
 	
 	/** LOCAL 유저 로그인
@@ -183,25 +191,27 @@ public class SignService {
 	 * @throws TokenValueMismatchException {@link TokenProvider#validVerificationPhone} 토큰 값과 phone 비교 불일치
 	 * 
 	 * @throws NoSuchDataException {@link VerificationService#findVerification}  최근 인증 요청 없음
-	 * @throws ExpiredException {@link VerificationService#findVerification}  인증 시간 초과
+	 * @throws VerificationExpiredException {@link VerificationService#findVerification}  인증 시간 초과
 	 * 
      * @throws EncryptException {@link JwtProvider#createVerifyPhoneToken} 암호화 실패
 	 * @throws CreateJwtException {@link JwtProvider#createVerifyPhoneToken} 토큰 생성 실패
 	 * 
 	 * @return 휴대폰 인증 로그인 토큰
 	 */
-	@Transactional
-	public String signInAuthSms(String token, String phone, String name, String ip) {
+	public String signInAuthSms(String token, String reqPhone, String name, String ip) {
 		
-		tokenProvider.validVerificationPhone(phone, token);
+		VerificationPhoneTokenDto verificationPhoneTokenDto = tokenProvider.getDecryptedTokenDto(VerificationPhoneTokenDto.TOKENTYPE, token);
 		
-		// ======= 수신자에 일치하는 DB 찾기 및 해당 데이터가 3분 이내인지 검사 =======
-		Verification ver = verificationService.findVerification(phone, ip);
-		
-		String verifyPhoneToken = jwtProvider.createVerifyPhoneToken(ver.getVerificationId(),Map.of("phone",phone,"name",name));
+		verificationService.isVerify(verificationPhoneTokenDto.getIntVerificationId());
+
+		String verifyPhoneToken = jwtProvider.createVerifyPhoneToken(
+				verificationPhoneTokenDto.getVerificationId(),
+				verificationPhoneTokenDto.getPhone());
 		
 		signLogService.registerSignLog(null, verifyPhoneToken, ip, SignResult.AUTH_SUCCESS);
 		
+		tokenProvider.removeToken(TokenType.VERIFICATION_PHONE, token);
+
 		return verifyPhoneToken;
 	}
 	

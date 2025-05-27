@@ -2,6 +2,7 @@ package net.chamman.moonnight.auth.verification;
 
 
 import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -26,8 +27,8 @@ public interface VerificationRepository extends JpaRepository<Verification, Inte
 //      "LIMIT 1")
 //  Optional<Verification> findRecentVerificationWithin10Min(@Param("recipient") String recipient);
 	
-	// verify 상태 및 verify_at 업데이트
-	@Modifying
+	// verify 상태 및 verify_at 업데이트, 수정 이전 flush, 수정 이후 영속성 컨텍스트 clear
+	@Modifying(clearAutomatically = true, flushAutomatically = true)
 	@Query(value = "UPDATE verification SET verify = TRUE, verify_at = NOW() WHERE verification_id = :verId", nativeQuery = true)
 	void markAsVerified(@Param("verId") int verId);
 	
@@ -57,10 +58,8 @@ public interface VerificationRepository extends JpaRepository<Verification, Inte
 		             ELSE FALSE 
 		           END AS is_valid 
 		    FROM verification v 
-		    WHERE v.recipient = :recipient 
-		    ORDER BY v.created_at DESC 
-		    LIMIT 1
+		    WHERE v.verification_id = :verificationId 
 		""", nativeQuery = true)
-	Optional<Object[]> findLatestVerificationWithValidity(@Param("recipient") String recipient);
+	Optional<Object[]> findVerificationWithValidity(@Param("verificationId") int verificationId);
 	
 }

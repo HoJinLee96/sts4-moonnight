@@ -1,6 +1,7 @@
 package net.chamman.moonnight.global.validator;
 
-import static net.chamman.moonnight.global.exception.HttpStatusCode.*;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.TOKEN_NOT_FOUND;
+
 import org.springframework.core.MethodParameter;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -8,11 +9,12 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 import org.springframework.web.util.WebUtils; // Cookie 찾는 데 유용
+
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.global.annotation.ClientSpecific;
-import net.chamman.moonnight.global.exception.jwt.IllegalJwtException;
+import net.chamman.moonnight.global.exception.token.IllegalTokenException;
 
 @Slf4j
 @Component
@@ -32,14 +34,13 @@ public class ClientSpecificArgumentResolver implements HandlerMethodArgumentReso
 
         // @ClientSpecific("여기에_넣은_값") 가져오기
         ClientSpecific clientSpecificAnnotation = parameter.getParameterAnnotation(ClientSpecific.class);
-        String requiredValueName = clientSpecificAnnotation.value();
-        boolean isRequired = clientSpecificAnnotation.required(); // ★ required 속성값 읽기!
-
+        String valueName = clientSpecificAnnotation.value();
+        boolean isRequired = clientSpecificAnnotation.required();
 
         // HttpServletRequest 객체 가져오기 (헤더, 쿠키 등에 접근하기 위해)
         HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
         if (request == null) {
-            throw new IllegalJwtException(TOKEN_NOT_FOUND,"요청 정보를 가져올 수 없습니다.");
+            throw new IllegalTokenException(TOKEN_NOT_FOUND,"요청 정보를 가져올 수 없습니다.");
         }
 
         String clientType = request.getHeader("X-Client-Type");
@@ -49,9 +50,9 @@ public class ClientSpecificArgumentResolver implements HandlerMethodArgumentReso
         String clientTypeKr = isMobileApp ? "모바일 앱" : "웹";
 
         if (isMobileApp) {
-            token = request.getHeader(requiredValueName);
+            token = request.getHeader(valueName);
         } else {
-            Cookie cookie = WebUtils.getCookie(request, requiredValueName);
+            Cookie cookie = WebUtils.getCookie(request, valueName);
             if (cookie != null) {
                 token = cookie.getValue();
             }
@@ -59,15 +60,15 @@ public class ClientSpecificArgumentResolver implements HandlerMethodArgumentReso
 
         // 토큰 유효성 검사 (null 또는 빈 값/공백 체크)
         if (token == null || token.isBlank()) {
-            log.warn("[{}] {} 요청에 필요한 토큰이 없습니다.", requiredValueName, clientTypeKr);
+            log.warn("[{}] {} 요청에 필요한 토큰이 없습니다.", valueName, clientTypeKr);
             if(isRequired) {
-              throw new IllegalJwtException(TOKEN_NOT_FOUND,clientTypeKr + "으로 부터 받은 요청에 필요한 '" + requiredValueName + "' 토큰이 없습니다.");
+              throw new IllegalTokenException(TOKEN_NOT_FOUND,clientTypeKr + "으로 부터 받은 요청에 필요한 '" + valueName + "' 토큰이 없습니다.");
             }else {
               return null;
             }
         }
 
-        log.info("[{}] {} 토큰 '{}' 확인 완료", requiredValueName, clientTypeKr, requiredValueName.toLowerCase().contains("token") ? "****" : token); // 로그에는 토큰값 직접 노출 주의
+        log.info("[{}] {} 토큰 '{}' 확인 완료", valueName, clientTypeKr, valueName.toLowerCase().contains("token") ? "****" : token); // 로그에는 토큰값 직접 노출 주의
         return token;
     }
 
