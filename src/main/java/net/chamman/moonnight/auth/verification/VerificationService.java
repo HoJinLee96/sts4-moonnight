@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.MailSendException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -27,6 +26,7 @@ import net.chamman.moonnight.auth.crypto.dto.VerificationPhoneTokenDto;
 import net.chamman.moonnight.auth.verification.Verification.VerificationBuilder;
 import net.chamman.moonnight.global.exception.NoSuchDataException;
 import net.chamman.moonnight.global.exception.crypto.EncryptException;
+import net.chamman.moonnight.global.exception.infra.MailSendException;
 import net.chamman.moonnight.global.exception.infra.SmsSendException;
 import net.chamman.moonnight.global.exception.redis.RedisSetException;
 import net.chamman.moonnight.global.exception.verification.IllegalVerificationException;

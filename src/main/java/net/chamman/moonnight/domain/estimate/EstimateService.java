@@ -48,9 +48,6 @@ public class EstimateService {
 	 * @param estimateRequestDto
 	 * @param images
 	 * @param userId
-<<<<<<< Updated upstream
-	 * @return
-=======
 	 * 
 	 * @throws S3UploadException {@link AwsS3Service#uploadEstimateImages}
 	 * 
@@ -60,7 +57,6 @@ public class EstimateService {
 	 * @throws StatusDeleteException {@link UserService#getUserByUserId} 탈퇴 유저
 	 * 
 	 * @return 등록된 견적서
->>>>>>> Stashed changes
 	 */
 	@Transactional
 	public EstimateResponseDto registerEstimate(EstimateRequestDto estimateRequestDto, List<MultipartFile> images, int userId)  {

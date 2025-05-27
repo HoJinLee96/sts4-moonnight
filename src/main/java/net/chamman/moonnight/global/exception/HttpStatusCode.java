@@ -84,6 +84,8 @@ public enum HttpStatusCode {
 	SMS_SEND_FAIL(500,"4602","message.common.internal_server_error")
 	
 	
+	
+	
 	; 
 	
 	
