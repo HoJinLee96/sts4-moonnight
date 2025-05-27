@@ -141,7 +141,7 @@ public class SignService {
 		address.setUser(user);
 		addressRepository.save(address);
 		
-		tokenProvider.removeToken(TokenType.ACCESS_SIGNUP, verificationPhoneToken);
+		tokenProvider.removeToken(SignUpTokenDto.TOKENTYPE, accessSignUpToken);
 		tokenProvider.removeToken(TokenType.VERIFICATION_PHONE, verificationPhoneToken);
 		
 		return userCreateRequestDto.name();
