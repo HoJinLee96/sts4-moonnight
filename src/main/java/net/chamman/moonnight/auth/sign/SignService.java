@@ -2,11 +2,9 @@ package net.chamman.moonnight.auth.sign;
 
 import static net.chamman.moonnight.global.exception.HttpStatusCode.JWT_ILLEGAL;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.SIGNIN_FAILED;
-import static net.chamman.moonnight.global.exception.HttpStatusCode.TOKEN_VALUE_MISMATCH;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -48,6 +46,7 @@ import net.chamman.moonnight.global.exception.sign.TooManySignFailException;
 import net.chamman.moonnight.global.exception.token.IllegalTokenException;
 import net.chamman.moonnight.global.exception.token.NoSuchTokenException;
 import net.chamman.moonnight.global.exception.token.TokenValueMismatchException;
+import net.chamman.moonnight.global.exception.verification.NotVerifyException;
 import net.chamman.moonnight.global.exception.verification.VerificationExpiredException;
 
 @Service
@@ -71,16 +70,19 @@ public class SignService {
 	 * @param password
 	 * @param valificationEmailToken
 	 * 
-	 * @throws IllegalTokenException {@link TokenProvider#validVerificationEmail} 적합하지 않은 토큰
-	 * @throws NoSuchTokenException {@link TokenProvider#validVerificationEmail} 토큰을 찾지 못한 경우
-     * @throws DecryptException {@link TokenProvider#validVerificationEmail} 복호화 실패
-     * @throws RedisGetException {@link TokenProvider#validVerificationEmail} Redis에서 토큰 조회 실패
-	 * @throws TokenValueMismatchException {@link TokenProvider#validVerificationEmail} 토큰 값과 email 비교 불일치
+	 * @throws IllegalTokenException {@link TokenProvider#getDecryptedTokenDto} 토큰 문자열 null 또는 비어있음
+	 * @throws NoSuchTokenException {@link TokenProvider#getDecryptedTokenDto} Redis 일치하는 토큰 없음
+     * @throws DecryptException {@link TokenProvider#getDecryptedTokenDto} 복호화 실패
+     * @throws RedisGetException {@link TokenProvider#getDecryptedTokenDto} Redis 조회 실패
+     * 
+	 * @throws NoSuchDataException {@link VerificationService#isVerify} DB verificationId 일치하는 인증 요청 없음.
+	 * @throws VerificationExpiredException {@link VerificationService#isVerify} DB 미인증된 인증 요청(시관 초과된 인증).
+	 * @throws NotVerifyException {@link VerificationService#isVerify} DB 미인증된 인증 요청.
 	 * 
 	 * @throws DuplicationException {@link UserService#isEmailExists} 이메일 중복
 	 * 
-     * @throws EncryptException {@link TokenProvider#createMapToken} 암호화 실패
-     * @throws RedisSetException {@link TokenProvider#removeToken} Redis 저장 실패
+     * @throws EncryptException {@link TokenProvider#createToken} 암호화 실패
+     * @throws RedisSetException {@link TokenProvider#createToken} Redis 저장 실패
      * 
 	 * @return
 	 */
@@ -88,7 +90,6 @@ public class SignService {
 	public String createSignUpToken(String email, String password, String valificationEmailToken) {
 		
 		VerificationEmailTokenDto verificationEmailTokenDto = tokenProvider.getDecryptedTokenDto(VerificationEmailTokenDto.TOKENTYPE, valificationEmailToken);
-		
 		verificationService.isVerify(verificationEmailTokenDto.getIntVerificationId());
 		
 		userService.isEmailExists(UserProvider.LOCAL, email);
@@ -105,11 +106,14 @@ public class SignService {
 	 * @param accessJoinToken 회원가입 1차 토큰
 	 * @param verificationPhoneToken 휴대폰 인증 토큰
 	 * 
-	 * @throws IllegalTokenException {@link TokenProvider#validVerificationPhone} 적합하지 않은 토큰
-	 * @throws NoSuchTokenException {@link TokenProvider#validVerificationPhone} 토큰을 찾지 못한 경우
-     * @throws DecryptException {@link TokenProvider#validVerificationPhone} 복호화 실패
-     * @throws RedisGetException {@link TokenProvider#validVerificationPhone} Redis에서 토큰 조회 실패
-	 * @throws TokenValueMismatchException {@link TokenProvider#validVerificationPhone} 토큰 값과 phone 비교 불일치
+	 * @throws IllegalTokenException {@link TokenProvider#getDecryptedTokenDto} 토큰 문자열 null 또는 비어있음
+	 * @throws NoSuchTokenException {@link TokenProvider#getDecryptedTokenDto} Redis 일치하는 토큰 없음
+     * @throws DecryptException {@link TokenProvider#getDecryptedTokenDto} 복호화 실패
+     * @throws RedisGetException {@link TokenProvider#getDecryptedTokenDto} Redis 조회 실패
+     * 
+	 * @throws NoSuchDataException {@link VerificationService#isVerify} DB verificationId 일치하는 인증 요청 없음.
+	 * @throws VerificationExpiredException {@link VerificationService#isVerify} DB 미인증된 인증 요청(시관 초과된 인증).
+	 * @throws NotVerifyException {@link VerificationService#isVerify} DB 미인증된 인증 요청.
 	 * 
 	 * @throws DuplicationException {@link UserService#isPhoneExists} 휴대폰 중복
 	 * 
@@ -119,15 +123,11 @@ public class SignService {
 	public String signUpLocalUser(UserCreateRequestDto userCreateRequestDto, String accessSignUpToken, String verificationPhoneToken) {
 		
 		SignUpTokenDto signUpTokenDto = tokenProvider.getDecryptedTokenDto(SignUpTokenDto.TOKENTYPE, accessSignUpToken);
-		String reqPhone = userCreateRequestDto.phone();
 		
-		VerificationPhoneTokenDto verificationPhoneTokenDto = tokenProvider
-				.getDecryptedTokenDto(VerificationPhoneTokenDto.TOKENTYPE, verificationPhoneToken);
-		
-		if(!Objects.equals(reqPhone,verificationPhoneTokenDto.getPhone())) {
-			throw new TokenValueMismatchException(TOKEN_VALUE_MISMATCH,"Redis 값과 비교 불일치. reqPhone: "+reqPhone+", value: "+verificationPhoneTokenDto.getPhone());
-		}		
-		userService.isPhoneExists(UserProvider.LOCAL, reqPhone);
+		VerificationPhoneTokenDto verificationPhoneTokenDto = tokenProvider.getDecryptedTokenDto(VerificationPhoneTokenDto.TOKENTYPE, verificationPhoneToken);
+		verificationService.isVerify(verificationPhoneTokenDto.getIntVerificationId());
+
+		userService.isPhoneExists(UserProvider.LOCAL, verificationPhoneTokenDto.getPhone());
 		
 		// 비밀번호 인코딩 후 저장
 		String encodedPassoword = passwordEncoder.encode(signUpTokenDto.getRawPassword());
@@ -135,6 +135,7 @@ public class SignService {
 		User user = userCreateRequestDto.toEntity();
 		user.setEmail(signUpTokenDto.getEmail());
 		user.setPassword(encodedPassoword);
+		user.setPhone(verificationPhoneTokenDto.getPhone());
 		userRepository.save(user);
 		
 		Address address = userCreateRequestDto.toAddressEntity();
@@ -142,7 +143,7 @@ public class SignService {
 		addressRepository.save(address);
 		
 		tokenProvider.removeToken(SignUpTokenDto.TOKENTYPE, accessSignUpToken);
-		tokenProvider.removeToken(TokenType.VERIFICATION_PHONE, verificationPhoneToken);
+		tokenProvider.removeToken(VerificationPhoneTokenDto.TOKENTYPE, verificationPhoneToken);
 		
 		return userCreateRequestDto.name();
 	}
@@ -184,14 +185,14 @@ public class SignService {
 	 * @param name
 	 * @param ip
 	 * 
-	 * @throws IllegalTokenException {@link TokenProvider#validVerificationPhone} 적합하지 않은 토큰
-	 * @throws NoSuchTokenException {@link TokenProvider#validVerificationPhone} 토큰을 찾지 못한 경우
-     * @throws DecryptException {@link TokenProvider#validVerificationPhone} 복호화 실패
-     * @throws RedisGetException {@link TokenProvider#validVerificationPhone} Redis에서 토큰 조회 실패
-	 * @throws TokenValueMismatchException {@link TokenProvider#validVerificationPhone} 토큰 값과 phone 비교 불일치
-	 * 
-	 * @throws NoSuchDataException {@link VerificationService#findVerification}  최근 인증 요청 없음
-	 * @throws VerificationExpiredException {@link VerificationService#findVerification}  인증 시간 초과
+	 * @throws IllegalTokenException {@link TokenProvider#getDecryptedTokenDto} 토큰 문자열 null 또는 비어있음
+	 * @throws NoSuchTokenException {@link TokenProvider#getDecryptedTokenDto} Redis 일치하는 토큰 없음
+     * @throws DecryptException {@link TokenProvider#getDecryptedTokenDto} 복호화 실패
+     * @throws RedisGetException {@link TokenProvider#getDecryptedTokenDto} Redis 조회 실패
+     * 
+	 * @throws NoSuchDataException {@link VerificationService#isVerify} DB verificationId 일치하는 인증 요청 없음.
+	 * @throws VerificationExpiredException {@link VerificationService#isVerify} DB 미인증된 인증 요청(시관 초과된 인증).
+	 * @throws NotVerifyException {@link VerificationService#isVerify} DB 미인증된 인증 요청.
 	 * 
      * @throws EncryptException {@link JwtProvider#createVerifyPhoneToken} 암호화 실패
 	 * @throws CreateJwtException {@link JwtProvider#createVerifyPhoneToken} 토큰 생성 실패
@@ -201,7 +202,6 @@ public class SignService {
 	public String signInAuthSms(String token, String reqPhone, String name, String ip) {
 		
 		VerificationPhoneTokenDto verificationPhoneTokenDto = tokenProvider.getDecryptedTokenDto(VerificationPhoneTokenDto.TOKENTYPE, token);
-		
 		verificationService.isVerify(verificationPhoneTokenDto.getIntVerificationId());
 
 		String verifyPhoneToken = jwtProvider.createVerifyPhoneToken(

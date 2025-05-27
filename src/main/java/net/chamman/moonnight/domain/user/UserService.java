@@ -34,11 +34,15 @@ import net.chamman.moonnight.global.exception.StatusDeleteException;
 import net.chamman.moonnight.global.exception.StatusStayException;
 import net.chamman.moonnight.global.exception.StatusStopException;
 import net.chamman.moonnight.global.exception.crypto.DecryptException;
+import net.chamman.moonnight.global.exception.crypto.EncryptException;
+import net.chamman.moonnight.global.exception.redis.RedisGetException;
+import net.chamman.moonnight.global.exception.redis.RedisSetException;
 import net.chamman.moonnight.global.exception.sign.MismatchPasswordException;
-import net.chamman.moonnight.global.exception.token.CustomTokenException;
 import net.chamman.moonnight.global.exception.token.IllegalTokenException;
 import net.chamman.moonnight.global.exception.token.NoSuchTokenException;
 import net.chamman.moonnight.global.exception.token.TokenValueMismatchException;
+import net.chamman.moonnight.global.exception.verification.NotVerifyException;
+import net.chamman.moonnight.global.exception.verification.VerificationExpiredException;
 
 @Service
 @Slf4j
@@ -71,10 +75,10 @@ public class UserService {
 	/**
 	 * @param userProvider
 	 * @param email
-	 * @throws NoSuchDataException {@link #getUserByUserProviderAndEmail}
-	 * @throws StatusStayException {@link #validateStatus}
-	 * @throws StatusStopException {@link #validateStatus}
-	 * @throws StatusDeleteExceptions {@link #validateStatus}
+	 * @throws NoSuchDataException {@link #getUserByUserProviderAndEmail} 찾을 수 없는 유저
+	 * @throws StatusStayException {@link #validateStatus} 일시정지 유저
+	 * @throws StatusStopException {@link #validateStatus} 중지 유저
+	 * @throws StatusDeleteException {@link #validateStatus} 탈퇴 유저
 	 * @return userProvider, email 일치하는 User 조회 및 status 검사
 	 */
 	public User getUserByUserProviderAndEmail(UserProvider userProvider, String email) {
@@ -89,10 +93,10 @@ public class UserService {
 	/**
 	 * @param userProvider
 	 * @param phone
-	 * @throws NoSuchDataException {@link #getUserByUserProviderAndPhone}
-	 * @throws StatusStayException {@link #validateStatus}
-	 * @throws StatusStopException {@link #validateStatus}
-	 * @throws StatusDeleteExceptions {@link #validateStatus}
+	 * @throws NoSuchDataException {@link #getUserByUserProviderAndPhone} 찾을 수 없는 유저
+	 * @throws StatusStayException {@link #validateStatus} 일시정지 유저
+	 * @throws StatusStopException {@link #validateStatus} 중지 유저
+	 * @throws StatusDeleteException {@link #validateStatus} 탈퇴 유저
 	 * @return userProvider, phone 일치하는 User 조회 및 status 검사
 	 */
 	public User getUserByUserProviderAndPhone(UserProvider userProvider, String phone) {
@@ -108,10 +112,10 @@ public class UserService {
 	 * @param userProvider
 	 * @param email
 	 * @param phone
-	 * @throws NoSuchDataException {@link #getUserByUserProviderAndEmailAndPhone}
-	 * @throws StatusStayException {@link #validateStatus}
-	 * @throws StatusStopException {@link #validateStatus}
-	 * @throws StatusDeleteExceptions {@link #validateStatus}
+	 * @throws NoSuchDataException {@link #getUserByUserProviderAndEmailAndPhone} 찾을 수 없는 유저
+	 * @throws StatusStayException {@link #validateStatus} 일시정지 유저
+	 * @throws StatusStopException {@link #validateStatus} 중지 유저
+	 * @throws StatusDeleteException {@link #validateStatus} 탈퇴 유저
 	 * @return userProvider, email, phone 일치하는 User 조회 및 status 검사
 	 */
 	public User getUserByUserProviderAndEmailAndPhone(UserProvider userProvider, String email, String phone) {
@@ -127,10 +131,21 @@ public class UserService {
 	 * @param userProvider
 	 * @param phone
 	 * @param token 휴대폰 인증 토큰
-	 * @throws TokenValueMismatchException {@link #validateByReidsValue} Redis에 저장되어있는 Key의 Value와 Request 값 불일치.
-	 * @throws StatusStayException {@link #getUserByUserProviderAndPhone}
-	 * @throws StatusStopException {@link #getUserByUserProviderAndPhone}
-	 * @throws StatusDeleteExceptions {@link #getUserByUserProviderAndPhone}
+	 * 
+	 * @throws IllegalTokenException {@link TokenProvider#getDecryptedTokenDto} 토큰 문자열 null 또는 비어있음
+	 * @throws NoSuchTokenException {@link TokenProvider#getDecryptedTokenDto} Redis 일치하는 토큰 없음
+     * @throws DecryptException {@link TokenProvider#getDecryptedTokenDto} 복호화 실패
+     * @throws RedisGetException {@link TokenProvider#getDecryptedTokenDto} Redis 조회 실패
+     * 
+	 * @throws NoSuchDataException {@link VerificationService#isVerify} DB verificationId 일치하는 인증 요청 없음
+	 * @throws VerificationExpiredException {@link VerificationService#isVerify} DB 미인증된 인증 요청(시관 초과된 인증)
+	 * @throws NotVerifyException {@link VerificationService#isVerify} DB 미인증된 인증 요청
+	 * 
+	 * @throws NoSuchDataException {@link #getUserByUserProviderAndPhone} 찾을 수 없는 유저
+	 * @throws StatusStayException {@link #getUserByUserProviderAndPhone} 일시정지 유저
+	 * @throws StatusStopException {@link #getUserByUserProviderAndPhone} 중지 유저
+	 * @throws StatusDeleteException {@link #getUserByUserProviderAndPhone} 탈퇴 유저
+	 * 
 	 * @return 휴대폰 번호와 일치하는 User
 	 */
 	public User getUserByVerifyPhone(UserProvider userProvider, String phone, String token) {
@@ -165,12 +180,24 @@ public class UserService {
 	 * @param email
 	 * @param phone
 	 * @param token 휴대폰 인증 토큰
-	 * @throws TokenValueMismatchException {@link #validateByReidsValue} Redis에 저장되어있는 Key의 Value와 Request 값 불일치.
-	 * @throws NoSuchDataException
-	 * @throws StatusStayException
-	 * @throws StatusStopException
-	 * @throws StatusDeleteExceptions
-	 * @throws CustomTokenException UUID 토큰 생성 및 Reids 저장 실패
+	 * 
+	 * @throws IllegalTokenException {@link TokenProvider#getDecryptedTokenDto} 토큰 문자열 null 또는 비어있음
+	 * @throws NoSuchTokenException {@link TokenProvider#getDecryptedTokenDto} Redis 일치하는 토큰 없음
+     * @throws DecryptException {@link TokenProvider#getDecryptedTokenDto} 복호화 실패
+     * @throws RedisGetException {@link TokenProvider#getDecryptedTokenDto} Redis 조회 실패
+     * 
+	 * @throws NoSuchDataException {@link VerificationService#isVerify} DB verificationId 일치하는 인증 요청 없음.
+	 * @throws VerificationExpiredException {@link VerificationService#isVerify} DB 미인증된 인증 요청(시관 초과된 인증).
+	 * @throws NotVerifyException {@link VerificationService#isVerify} DB 미인증된 인증 요청.
+	 * 
+	 * @throws NoSuchDataException {@link #getUserByUserProviderAndEmailAndPhone} 찾을 수 없는 유저
+	 * @throws StatusStayException {@link #getUserByUserProviderAndEmailAndPhone} 일시정지 유저
+	 * @throws StatusStopException {@link #getUserByUserProviderAndEmailAndPhone} 중지 유저
+	 * @throws StatusDeleteException {@link #getUserByUserProviderAndEmailAndPhone} 탈퇴 유저
+	 * 
+     * @throws EncryptException {@link TokenProvider#createToken} 암호화 실패
+     * @throws RedisSetException {@link TokenProvider#createToken} Redis 저장 실패
+     * 
 	 * @return 토큰
 	 */
 	public String createFindPwTokenByVerifyPhone(UserProvider userProvider, String email, String phone, String token) {
@@ -191,7 +218,24 @@ public class UserService {
 	 * @param userProvider
 	 * @param email
 	 * @param token
-	 * @throws TokenValueMismatchException {@link #validateByReidsValue} Redis에 저장되어있는 Key의 Value와 Request 값 불일치.
+	 * 
+	 * @throws IllegalTokenException {@link TokenProvider#getDecryptedTokenDto} 토큰 문자열 null 또는 비어있음
+	 * @throws NoSuchTokenException {@link TokenProvider#getDecryptedTokenDto} Redis 일치하는 토큰 없음
+     * @throws DecryptException {@link TokenProvider#getDecryptedTokenDto} 복호화 실패
+     * @throws RedisGetException {@link TokenProvider#getDecryptedTokenDto} Redis 조회 실패
+     * 
+	 * @throws NoSuchDataException {@link VerificationService#isVerify} DB verificationId 일치하는 인증 요청 없음.
+	 * @throws VerificationExpiredException {@link VerificationService#isVerify} DB 미인증된 인증 요청(시관 초과된 인증).
+	 * @throws NotVerifyException {@link VerificationService#isVerify} DB 미인증된 인증 요청.
+	 * 
+	 * @throws NoSuchDataException {@link #getUserByUserProviderAndEmail} 찾을 수 없는 유저
+	 * @throws StatusStayException {@link #getUserByUserProviderAndEmail} 일시정지 유저
+	 * @throws StatusStopException {@link #getUserByUserProviderAndEmail} 중지 유저
+	 * @throws StatusDeleteException {@link #getUserByUserProviderAndEmail} 탈퇴 유저
+	 * 
+     * @throws EncryptException {@link TokenProvider#createToken} 암호화 실패
+     * @throws RedisSetException {@link TokenProvider#createToken} Redis 저장 실패
+	 * 
 	 * @return 토큰
 	 */
 	public String createFindPwTokenByVerifyEmail(UserProvider userProvider, String email, String token) {
@@ -211,7 +255,12 @@ public class UserService {
 	/** 비밀번호 재검증 및 토큰 발행
 	 * @param userId
 	 * @param password
+	 * 
 	 * @throws MismatchPasswordException {@link #verifyPasswordAndCreatePasswordToken}
+	 * 
+     * @throws EncryptException {@link TokenProvider#createToken} 암호화 실패
+     * @throws RedisSetException {@link TokenProvider#createToken} Redis 저장 실패
+     * 
 	 * @return 토큰
 	 */
 	@Transactional
@@ -231,13 +280,15 @@ public class UserService {
 	 * @param userProvider
 	 * @param newPassword
 	 * @param ip
-	 * @throws IllegalTokenException {@link TokenProvider#getAccessFindpwToken} 적합하지 않은 토큰
-	 * @throws NoSuchTokenException {@link TokenProvider#getAccessFindpwToken} 토큰을 찾지 못한 경우
-     * @throws DecryptException {@link TokenProvider#getAccessFindpwToken} 복호화 실패 
-	 * @throws NoSuchDataException {@link #getUserByUserProviderAndEmail}
-	 * @throws StatusStayException {@link #getUserByUserProviderAndEmail}
-	 * @throws StatusStopException {@link #getUserByUserProviderAndEmail}
-	 * @throws StatusDeleteExceptions {@link #getUserByUserProviderAndEmail}
+	 * @throws IllegalTokenException {@link TokenProvider#getDecryptedTokenDto} 토큰 문자열 null 또는 비어있음
+	 * @throws NoSuchTokenException {@link TokenProvider#getDecryptedTokenDto} Redis 일치하는 토큰 없음
+     * @throws DecryptException {@link TokenProvider#getDecryptedTokenDto} 복호화 실패
+     * @throws RedisGetException {@link TokenProvider#getDecryptedTokenDto} Redis 조회 실패
+     * 
+	 * @throws NoSuchDataException {@link #getUserByUserId} 찾을 수 없는 유저
+	 * @throws StatusStayException {@link #validateStatus} 일시정지 유저
+	 * @throws StatusStopException {@link #validateStatus} 중지 유저
+	 * @throws StatusDeleteException {@link #validateStatus} 탈퇴 유저
 	 */
 	@Transactional
 	public void updatePasswordByFindPwToken(String token, UserProvider userProvider, String newPassword, String ip) {
@@ -261,14 +312,19 @@ public class UserService {
 	 * @param email
 	 * @param phone
 	 * @param token
-	 * @throws IllegalTokenException {@link TokenProvider#getVerificationPhone} 적합하지 않은 토큰
-	 * @throws NoSuchTokenException {@link TokenProvider#getVerificationPhone} 토큰을 찾지 못한 경우
-     * @throws DecryptException {@link TokenProvider#getVerificationPhone} 복호화 실패 
-	 * @throws TokenValueMismatchException {@link #validateByReidsValue} Redis에 저장되어있는 Key의 Value와 Request 값 불일치.
-	 * @throws NoSuchDataException {@link #getUserByUserProviderAndEmail}
-	 * @throws StatusStayException {@link #getUserByUserProviderAndEmail}
-	 * @throws StatusStopException {@link #getUserByUserProviderAndEmail}
-	 * @throws StatusDeleteExceptions {@link #getUserByUserProviderAndEmail}
+	 * @throws IllegalTokenException {@link TokenProvider#getDecryptedTokenDto} 토큰 문자열 null 또는 비어있음
+	 * @throws NoSuchTokenException {@link TokenProvider#getDecryptedTokenDto} Redis 일치하는 토큰 없음
+     * @throws DecryptException {@link TokenProvider#getDecryptedTokenDto} 복호화 실패
+     * @throws RedisGetException {@link TokenProvider#getDecryptedTokenDto} Redis 조회 실패
+     * 
+	 * @throws NoSuchDataException {@link VerificationService#isVerify} DB verificationId 일치하는 인증 요청 없음
+	 * @throws VerificationExpiredException {@link VerificationService#isVerify} DB 미인증된 인증 요청(시관 초과된 인증)
+	 * @throws NotVerifyException {@link VerificationService#isVerify} DB 미인증된 인증 요청
+	 * 
+	 * @throws NoSuchDataException {@link #getUserByUserId} 찾을 수 없는 유저
+	 * @throws StatusStayException {@link #getUserByUserId} 일시정지 유저
+	 * @throws StatusStopException {@link #getUserByUserId} 중지 유저
+	 * @throws StatusDeleteException {@link #getUserByUserId} 탈퇴 유저
 	 * @return 유저
 	 */
 	@Transactional
@@ -289,10 +345,17 @@ public class UserService {
 	 * @param userProvider
 	 * @param email
 	 * @param token
-	 * @throws IllegalTokenException {@link TokenProvider#getAccessPasswordToken} 적합하지 않은 토큰
-	 * @throws NoSuchTokenException {@link TokenProvider#getAccessPasswordToken} 토큰을 찾지 못한 경우
-     * @throws DecryptException {@link TokenProvider#getAccessPasswordToken} 복호화 실패 
-	 * @throws TokenValueMismatchException {@link #validateByReidsValue} Redis에 저장되어있는 Key의 Value와 Request 값 불일치.
+	 * @throws IllegalTokenException {@link TokenProvider#getDecryptedTokenDto} 토큰 문자열 null 또는 비어있음
+	 * @throws NoSuchTokenException {@link TokenProvider#getDecryptedTokenDto} Redis 일치하는 토큰 없음
+     * @throws DecryptException {@link TokenProvider#getDecryptedTokenDto} 복호화 실패
+     * @throws RedisGetException {@link TokenProvider#getDecryptedTokenDto} Redis 조회 실패
+     * 
+	 * @throws TokenValueMismatchException {@link #deleteUser} 로그인되어있는 userId와 PasswordToken.userId 불일치
+	 * 
+	 * @throws NoSuchDataException {@link #getUserByUserId} 찾을 수 없는 유저
+	 * @throws StatusStayException {@link #getUserByUserId} 일시정지 유저
+	 * @throws StatusStopException {@link #getUserByUserId} 중지 유저
+	 * @throws StatusDeleteException {@link #getUserByUserId} 탈퇴 유저
 	 */
 	@Transactional
 	public void deleteUser(int userId, String token) {
