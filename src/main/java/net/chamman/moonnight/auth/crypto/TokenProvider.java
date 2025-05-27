@@ -76,6 +76,7 @@ public class TokenProvider {
 	 * @param <T> Encryptable를 구현한 DTO 타입
 	 * @param dto 토큰에 담을 데이터 DTO 객체
 	 * @param tokenType 토큰 타입
+	 * 
      * @throws EncryptException {@link AesProvider#encrypt} 암호화 실패
      * @throws RedisSetException {@link #createToken} Redis 저장 실패
 	 * @return
@@ -116,8 +117,8 @@ public class TokenProvider {
 	 * @param <T> Encryptable를 구현한 DTO 타입
 	 * @param tokenType 토큰 타입
 	 * @param token 토큰
-	 * @throws IllegalTokenException {@link #getToken} 토큰 null 또는 비어있음
-	 * @throws NoSuchTokenException {@link #getToken} 일치하는 토큰 없음
+	 * @throws IllegalTokenException {@link #getToken} 토큰 문자열 null 또는 비어있음
+	 * @throws NoSuchTokenException {@link #getToken} Redis 일치하는 토큰 없음
      * @throws DecryptException {@link AesProvider#decrypt} 복호화 실패
      * @throws RedisGetException {@link #getDecryptedTokenDto} Redis 조회 실패
 	 * @return

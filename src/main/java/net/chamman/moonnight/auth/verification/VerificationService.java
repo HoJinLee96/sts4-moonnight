@@ -176,8 +176,8 @@ public class VerificationService {
 	 * @throws IllegalVerificationException {@link #compareCode} 수신자 불일치
 	 * @throws MismatchCodeException {@link #compareCode} 인증 번호 불일치
 	 * 
-	 * @throws EncryptException {@link TokenProvider#createVerificationPhoneToken} 암호화 실패
-	 * @throws RedisSetException {@link TokenProvider#createVerificationPhoneToken} Redis 저장 실패
+     * @throws EncryptException {@link TokenProvider#createToken} 암호화 실패
+     * @throws RedisSetException {@link TokenProvider#createToken} Redis 저장 실패
 	 * 
 	 * @return 휴대폰 인증 완료 토큰
 	 */
@@ -203,8 +203,8 @@ public class VerificationService {
 	 * @throws IllegalVerificationException {@link #compareCode} 수신자 불일치
 	 * @throws MismatchCodeException {@link #compareCode} 인증 번호 불일치
 	 * 
-	 * @throws EncryptException {@link TokenProvider#createVerificationEmailToken} 암호화 실패
-	 * @throws RedisSetException {@link TokenProvider#createVerificationEmailToken} Redis 저장 실패
+     * @throws EncryptException {@link TokenProvider#createToken} 암호화 실패
+     * @throws RedisSetException {@link TokenProvider#createToken} Redis 저장 실패
 	 * 
 	 * @return 이메일 인증 완료 토큰
 	 */
@@ -232,6 +232,9 @@ public class VerificationService {
 	
 	/** 인증후, 인증 요청 찾기 및 검증 
 	 * @param verificationId
+	 * @throws NoSuchDataException {@link #isVerify} DB verificationId 일치하는 인증 요청 없음.
+	 * @throws VerificationExpiredException {@link #isVerify} DB 미인증된 인증 요청(시관 초과된 인증).
+	 * @throws NotVerifyException {@link #isVerify} DB 미인증된 인증 요청.
 	 * @return
 	 */
 	public Verification isVerify(int verificationId) {
@@ -246,9 +249,9 @@ public class VerificationService {
 			if (!isValid) {
 				verification.setVerify(false);
 				verificationRepository.save(verification);
-				throw new VerificationExpiredException(VERIFICATION_EXPIRED, "시간 초과된 인증 요청");
+				throw new VerificationExpiredException(VERIFICATION_EXPIRED, "미인증된 인증 요청(시관 초과된 인증)");
 			}
-			throw new NotVerifyException(NOT_VERIFY,"미인증");
+			throw new NotVerifyException(NOT_VERIFY,"미인증된 인증 요청");
 		}
 		
 		return verification;
