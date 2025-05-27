@@ -3,10 +3,6 @@ package net.chamman.moonnight.domain.estimate;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.ESTIMATE_NOT_FOUND;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URISyntaxException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -15,8 +11,6 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +22,9 @@ import net.chamman.moonnight.domain.user.UserService;
 import net.chamman.moonnight.global.exception.ForbiddenException;
 import net.chamman.moonnight.global.exception.NoSuchDataException;
 import net.chamman.moonnight.global.exception.StatusDeleteException;
+import net.chamman.moonnight.global.exception.StatusStayException;
+import net.chamman.moonnight.global.exception.StatusStopException;
+import net.chamman.moonnight.global.exception.infra.s3.S3UploadException;
 import net.chamman.moonnight.infra.naver.sms.GuidanceService;
 import net.chamman.moonnight.infra.s3.AwsS3Service;
 
@@ -51,52 +48,53 @@ public class EstimateService {
 	 * @param estimateRequestDto
 	 * @param images
 	 * @param userId
+<<<<<<< Updated upstream
 	 * @return
+=======
+	 * 
+	 * @throws S3UploadException {@link AwsS3Service#uploadEstimateImages}
+	 * 
+	 * @throws NoSuchDataException {@link UserService#getUserByUserId} 찾을 수 없는 유저
+	 * @throws StatusStayException {@link UserService#getUserByUserId} 일시정지 유저
+	 * @throws StatusStopException {@link UserService#getUserByUserId} 중지 유저
+	 * @throws StatusDeleteException {@link UserService#getUserByUserId} 탈퇴 유저
+	 * 
+	 * @return 등록된 견적서
+>>>>>>> Stashed changes
 	 */
 	@Transactional
 	public EstimateResponseDto registerEstimate(EstimateRequestDto estimateRequestDto, List<MultipartFile> images, int userId)  {
 		
 		List<String> imagesPath = null;
-		try {
-			if (images != null && !images.isEmpty()) {
-				imagesPath = awsS3Service.uploadEstimateImages(images, estimateRequestDto.phone());
-			}
-		}catch(IOException e) {
-			log.warn("견적서 이미지 업로드 실패. phone: {}", estimateRequestDto.phone());
-			e.printStackTrace();
+		
+		if (images != null && !images.isEmpty()) {
+			imagesPath = awsS3Service.uploadEstimateImages(images, estimateRequestDto.phone());
 		}
 		
-		User user;
-		try {
-			user = userService.getUserByUserId(userId);
-		}catch(NoSuchElementException e) {
-			user = null;
-		}
+		User user = userService.getUserByUserId(userId);
 		
 		Estimate estimate = estimateRequestDto.toEntity(user, imagesPath);
 		estimateRepository.save(estimate);
 		
-		try {
-			guidanceService.sendEstimateInfoSms(estimate.getPhone(), obfuscator.encode(estimate.getEstimateId())+"");
-		} catch (InvalidKeyException | JsonProcessingException | NoSuchAlgorithmException
-				| UnsupportedEncodingException | URISyntaxException e) {
-			log.warn("견적서 등록 이후 문자 발송 실패. phone: {}, estimateId: {}",estimate.getPhone(), estimate.getEstimateId());
-			e.printStackTrace();
-		}
+		guidanceService.sendEstimateInfoSms(estimate.getPhone(), obfuscator.encode(estimate.getEstimateId())+"");
+		
 		return EstimateResponseDto.fromEntity(estimate, obfuscator);
 	}
 	
-	/** 견적서 조회
+	/** 견적서 조회 (다른 서비스 계층에서 사용)
 	 * @param estimateId
 	 * @throws NoSuchDataException {@link #getEstimateById} 찾을 수 없는 견적서 
-	 * @return
+	 * @return Estimate
 	 */
 	public Estimate getEstimateById(int encodedEstimateId) {
 		return estimateRepository.findById(obfuscator.decode(encodedEstimateId))
 				.orElseThrow(() -> new NoSuchDataException(ESTIMATE_NOT_FOUND,"찾을 수 없는 견적서."));
 	}
 	
-//  1
+	/** OAUTH, LOCAL 견적서 리스트 조회
+	 * @param userId
+	 * @return 견적서 응답 객체 리스트
+	 */
 	public List<EstimateResponseDto> getMyAllEstimate(int userId) {
 		return estimateRepository.findByUser_UserId(userId)
 				.stream()
@@ -105,13 +103,20 @@ public class EstimateService {
 				.collect(Collectors.toList());
 	}
 	
-//  1
+	/** OAUTH, LOCAL 견적서 회
+	 * @param estimateId
+	 * @param userId
+	 * @return 견적서 응답 객체
+	 */
 	public EstimateResponseDto getMyEstimateByEstimateId(int estimateId, int userId) {
 		Estimate estimate = getAuthorizedEstimate(estimateId, userId);
 		return EstimateResponseDto.fromEntity(estimate, obfuscator);
 	}
 	
-//  2
+	/** AUTH 견적서 리스트 조회
+	 * @param phone
+	 * @return
+	 */
 	public List<EstimateResponseDto> getAllEstimateByAuthPhone(String phone) {
 		verificationService.validateVerify(phone);
 		return estimateRepository.findByPhone(phone)

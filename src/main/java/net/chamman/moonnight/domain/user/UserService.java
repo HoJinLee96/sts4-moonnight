@@ -3,7 +3,7 @@ package net.chamman.moonnight.domain.user;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.EMAIL_ALREADY_EXISTS;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.PHONE_ALREADY_EXISTS;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.SIGNIN_FAILED;
-import static net.chamman.moonnight.global.exception.HttpStatusCode.TOKEN_ILLEGAL;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.TOKEN_VALUE_MISMATCH;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.USER_NOT_FOUND;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.USER_STATUS_DELETE;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.USER_STATUS_STAY;
@@ -20,7 +20,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.crypto.TokenProvider;
 import net.chamman.moonnight.auth.crypto.TokenProvider.TokenType;
+import net.chamman.moonnight.auth.crypto.dto.FindPwTokenDto;
+import net.chamman.moonnight.auth.crypto.dto.PasswordTokenDto;
+import net.chamman.moonnight.auth.crypto.dto.VerificationEmailTokenDto;
+import net.chamman.moonnight.auth.crypto.dto.VerificationPhoneTokenDto;
 import net.chamman.moonnight.auth.sign.log.SignLogService;
+import net.chamman.moonnight.auth.verification.VerificationService;
 import net.chamman.moonnight.domain.user.User.UserProvider;
 import net.chamman.moonnight.domain.user.User.UserStatus;
 import net.chamman.moonnight.global.exception.DuplicationException;
@@ -39,12 +44,13 @@ import net.chamman.moonnight.global.exception.token.TokenValueMismatchException;
 @Slf4j
 @RequiredArgsConstructor
 public class UserService {
-	
+
+    private final VerificationService verificationService;
 	private final UserRepository userRepository;
 	private final SignLogService signLogService;
-	private final TokenProvider tokenStore;
+	private final TokenProvider tokenProvider;
 	private final PasswordEncoder passwordEncoder;
-	
+
 	/** 
 	 * @param userId
 	 * @throws NoSuchDataException {@link #getUserByUserId} 찾을 수 없는 유저
@@ -117,7 +123,7 @@ public class UserService {
 		return user;
 	}
 	
-	/**
+	/** 휴대폰 인증 토큰 검증 및 User 반환
 	 * @param userProvider
 	 * @param phone
 	 * @param token 휴대폰 인증 토큰
@@ -125,21 +131,17 @@ public class UserService {
 	 * @throws StatusStayException {@link #getUserByUserProviderAndPhone}
 	 * @throws StatusStopException {@link #getUserByUserProviderAndPhone}
 	 * @throws StatusDeleteExceptions {@link #getUserByUserProviderAndPhone}
-	 * @return 휴대폰 인증 토큰과 userProvider, phone 일치하는 User 조회 및 status 검사
+	 * @return 휴대폰 번호와 일치하는 User
 	 */
 	public User getUserByVerifyPhone(UserProvider userProvider, String phone, String token) {
 		
-		String phoneRedis = tokenStore.getVerificationPhone(token);
+		VerificationPhoneTokenDto verificationPhoneTokenDto = tokenProvider.getDecryptedTokenDto(VerificationPhoneTokenDto.TOKENTYPE, token);
+		verificationService.isVerify(verificationPhoneTokenDto.getIntVerificationId());
 		
-		try {
-			validateByReidsValue(phone, phoneRedis);
-			
-			User user = getUserByUserProviderAndPhone(userProvider, phone);
-			
-			return user;
-		} finally {
-			tokenStore.removeToken(TokenType.VERIFICATION_PHONE, token);
-		}
+		User user = getUserByUserProviderAndPhone(userProvider, phone);
+		
+		tokenProvider.removeToken(TokenType.VERIFICATION_PHONE, token);
+		return user;
 	}
 	
 	/**
@@ -173,17 +175,16 @@ public class UserService {
 	 */
 	public String createFindPwTokenByVerifyPhone(UserProvider userProvider, String email, String phone, String token) {
 		
-		String phoneRedis = tokenStore.getVerificationPhone(token);
+		VerificationPhoneTokenDto verificationPhoneTokenDto = tokenProvider.getDecryptedTokenDto(VerificationPhoneTokenDto.TOKENTYPE, token);
+		verificationService.isVerify(verificationPhoneTokenDto.getIntVerificationId());
 		
-		try {
-			validateByReidsValue(phone, phoneRedis);
-			
-			getUserByUserProviderAndEmailAndPhone(userProvider, email, phone);
-			
-			return tokenStore.createAccessFindPwToken(email);
-		} finally {
-			tokenStore.removeToken(TokenType.VERIFICATION_PHONE, token);
-		}
+		User user = getUserByUserProviderAndEmailAndPhone(userProvider, email, phone);
+		
+		String findPwToken = tokenProvider.createToken(new FindPwTokenDto(user.getUserId()+"", email), FindPwTokenDto.TOKENTYPE); 
+		
+		tokenProvider.removeToken(TokenType.VERIFICATION_PHONE, token);
+		
+		return findPwToken ;
 	}
 	
 	/** 비밀번호 찾기 자격 검증
@@ -194,18 +195,17 @@ public class UserService {
 	 * @return 토큰
 	 */
 	public String createFindPwTokenByVerifyEmail(UserProvider userProvider, String email, String token) {
-		
-		String emailRedis = tokenStore.getVerificationEmail(token);
-		try {
-			validateByReidsValue(email, emailRedis);
-			
-			getUserByUserProviderAndEmail(userProvider, email);
-			
-			return tokenStore.createAccessFindPwToken(email);
-			
-		} finally {
-			tokenStore.removeToken(TokenType.VERIFICATION_EMAIL, token);
-		}
+
+		VerificationEmailTokenDto verificationEmailTokenDto = tokenProvider.getDecryptedTokenDto(VerificationEmailTokenDto.TOKENTYPE, token);
+		verificationService.isVerify(verificationEmailTokenDto.getIntVerificationId());
+
+		User user = getUserByUserProviderAndEmail(userProvider, email);
+
+		String findPwToken = tokenProvider.createToken(new FindPwTokenDto(user.getUserId() + "", email),FindPwTokenDto.TOKENTYPE);
+
+		tokenProvider.removeToken(TokenType.VERIFICATION_EMAIL, token);
+
+		return findPwToken;
 	}
 	
 	/** 비밀번호 재검증 및 토큰 발행
@@ -222,12 +222,12 @@ public class UserService {
 		if(!passwordEncoder.matches(password, user.getPassword())) {
 			throw new MismatchPasswordException(SIGNIN_FAILED,"비밀번호 불일치.");
 		}
-		
-		return tokenStore.createAccessPaaswordToken(user.getEmail());
+
+		return tokenProvider.createToken(new PasswordTokenDto(userId+"", user.getEmail()), PasswordTokenDto.TOKENTYPE);
 	}
 	
 	/** 비밀번호 변경
-	 * @param token
+	 * @param token FindPwToken
 	 * @param userProvider
 	 * @param newPassword
 	 * @param ip
@@ -242,22 +242,18 @@ public class UserService {
 	@Transactional
 	public void updatePasswordByFindPwToken(String token, UserProvider userProvider, String newPassword, String ip) {
 		
-		String email = tokenStore.getAccessFindpwToken(token);
+		FindPwTokenDto findPwTokenDto = tokenProvider.getDecryptedTokenDto(FindPwTokenDto.TOKENTYPE,token);
 		
-		try {
-			
-			User user = getUserByUserProviderAndEmail(userProvider, email);
-			
-			user.setPassword(passwordEncoder.encode(newPassword));
-			user.setUserStatus(UserStatus.ACTIVE);
-			userRepository.flush();
-			
-			// 로그인 실패기록에 비밀번호 변경으로 초기화 진행
-			signLogService.signFailLogResolveByUpdatePassword(userProvider, email, ip);
-			
-		} finally {
-			tokenStore.removeToken(TokenType.ACCESS_FINDPW , token);
-		}
+		User user = getUserByUserId(findPwTokenDto.getIntUserId());
+		
+		user.setPassword(passwordEncoder.encode(newPassword));
+		user.setUserStatus(UserStatus.ACTIVE);
+		userRepository.save(user);
+		
+		// 로그인 실패기록에 비밀번호 변경으로 초기화 진행
+		signLogService.signFailLogResolveByUpdatePassword(userProvider, user.getEmail(), ip);
+		
+		tokenProvider.removeToken(TokenType.ACCESS_FINDPW , token);
 	}
 	
 	/** 휴대폰 번호 변경
@@ -276,24 +272,20 @@ public class UserService {
 	 * @return 유저
 	 */
 	@Transactional
-	public UserResponseDto updatePhoneByVerification(UserProvider userProvider, String email, String phone, String token) {
+	public void updatePhoneByVerification(int userId, String phone, String token) {
+
+		VerificationPhoneTokenDto verificationPhoneTokenDto = tokenProvider.getDecryptedTokenDto(VerificationPhoneTokenDto.TOKENTYPE, token);
+		verificationService.isVerify(verificationPhoneTokenDto.getIntVerificationId());
 		
-		String phoneRedis = tokenStore.getVerificationPhone(token);
-		try {
-			validateByReidsValue(phone, phoneRedis);
-			
-			User user = getUserByUserProviderAndEmail(userProvider, email);
-			
-			user.setPhone(phone);
-			userRepository.flush();
-			
-			return UserResponseDto.fromEntity(userRepository.getReferenceById(user.getUserId())); 
-		} finally {
-			tokenStore.removeToken(TokenType.VERIFICATION_PHONE, token);
-		}
+		User user = getUserByUserId(userId);
+		
+		user.setPhone(phone);
+		userRepository.save(user);
+		
+		tokenProvider.removeToken(TokenType.VERIFICATION_PHONE, token);
 	}
 	
-	/** 유저 상태 DELETE로 변경
+	/** 회원탈퇴 (유저 상태 DELETE로 변경)
 	 * @param userProvider
 	 * @param email
 	 * @param token
@@ -303,18 +295,19 @@ public class UserService {
 	 * @throws TokenValueMismatchException {@link #validateByReidsValue} Redis에 저장되어있는 Key의 Value와 Request 값 불일치.
 	 */
 	@Transactional
-	public void deleteUser(UserProvider userProvider, String email, String token) {
-		String emailRedis = tokenStore.getAccessPasswordToken(token);
-		try {
-			validateByReidsValue(email, emailRedis);
-			
-			User user = getUserByUserProviderAndEmail(userProvider, email);
-			
-			user.setUserStatus(UserStatus.DELETE);
-			
-		} finally {
-			tokenStore.removeToken(TokenType.ACCESS_PASSWORD, token);
+	public void deleteUser(int userId, String token) {
+		
+		PasswordTokenDto passwordTokenDto = tokenProvider.getDecryptedTokenDto(PasswordTokenDto.TOKENTYPE, token);
+		if(!Objects.equals(userId, passwordTokenDto.getIntUserId())) {
+			throw new TokenValueMismatchException(TOKEN_VALUE_MISMATCH,"로그인되어있는 userId와 PasswordToken.userId 불일치"); 
 		}
+		
+		User user = getUserByUserId(userId);
+		
+		user.setUserStatus(UserStatus.DELETE);
+		userRepository.save(user);
+		
+		tokenProvider.removeToken(TokenType.ACCESS_PASSWORD, token);
 	}
 	
 	/** LOCAL 유저 이메일 중복 검사
@@ -380,10 +373,10 @@ public class UserService {
 	 * @param redisValue
 	 * @throws TokenValueMismatchException {@link #validateByReidsValue} Redis에 저장되어있는 Key의 Value와 Request 값 불일치.
 	 */
-	private void validateByReidsValue(String requestValue, String redisValue) {
-		if(!Objects.equals(requestValue,redisValue)) {
-			throw new TokenValueMismatchException(TOKEN_ILLEGAL,"redis에 저장되어있는 key의 value와 request 값 불일치. 입력값: {"+requestValue+"} != 저장값: {"+redisValue+"}.");
-		}
-	}
+//	private void validateByReidsValue(String requestValue, String redisValue) {
+//		if(!Objects.equals(requestValue,redisValue)) {
+//			throw new TokenValueMismatchException(TOKEN_ILLEGAL,"redis에 저장되어있는 key의 value와 request 값 불일치. 입력값: {"+requestValue+"} != 저장값: {"+redisValue+"}.");
+//		}
+//	}
 	
 }

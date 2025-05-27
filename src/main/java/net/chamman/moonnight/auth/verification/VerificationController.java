@@ -23,6 +23,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import net.chamman.moonnight.global.annotation.AutoSetMessageResponse;
+import net.chamman.moonnight.global.annotation.ClientSpecific;
 import net.chamman.moonnight.global.annotation.ValidEmail;
 import net.chamman.moonnight.global.annotation.ValidPhone;
 import net.chamman.moonnight.global.util.ApiResponseDto;
@@ -36,12 +37,13 @@ public class VerificationController {
 	private final VerificationService verificationService;
 	private final RateLimiterStore rateLimiter;
 	
-	@Operation(summary = "휴대폰 문자 인증", description = "휴대폰 문자 인증")
+	@Operation(summary = "휴대폰 문자 인증번호 검사", description = "휴대폰 문자 인증번호 검사")
 	@AutoSetMessageResponse
 	@PostMapping("/public/compare/sms/uuid")
 	public ResponseEntity<ApiResponseDto<Map<String,String>>> compareSmsVerification(
-			@Valid @RequestBody VerificationPhoneRequestDto verificationPhoneRequestDto,
 			@RequestHeader(required = false, value = "X-Client-Type") String userAgent,
+			@ClientSpecific("X-Verification-Id") String verificationId,
+			@Valid @RequestBody VerificationPhoneRequestDto verificationPhoneRequestDto,
 			HttpServletRequest request) {
 		
 		boolean isMobileApp = userAgent != null && userAgent.contains("mobile");
@@ -50,8 +52,9 @@ public class VerificationController {
 		rateLimiter.isAllowedByIp(clientIp);
 		
 		String token = verificationService.compareSms(
-				verificationPhoneRequestDto.phone(), 
-				verificationPhoneRequestDto.verificationCode(), 
+				verificationId,
+				verificationPhoneRequestDto.phone(),
+				verificationPhoneRequestDto.verificationCode(),
 				clientIp);
 		
 		if(isMobileApp) {
@@ -72,11 +75,12 @@ public class VerificationController {
 		}
 	}
 	
-	@Operation(summary = "이메일 인증", description = "이메일 인증")
+	@Operation(summary = "이메일 인증 인증번호 검사", description = "이메일 인증 인증번호 검사")
 	@AutoSetMessageResponse
 	@PostMapping("/public/compare/email/uuid")
 	public ResponseEntity<ApiResponseDto<Map<String,String>>> compareEmailVerification(
 			@RequestHeader(required = false, value = "X-Client-Type")String userAgent,
+			@ClientSpecific("X-Verification-Id") String verificationId,
 			@Valid @RequestBody VerificationEmailRequestDto verificationEmailRequestDto,
 			HttpServletRequest request) {
 		
@@ -86,6 +90,7 @@ public class VerificationController {
 		rateLimiter.isAllowedByIp(clientIp);
 		
 		String token = verificationService.compareEmail(
+				verificationId,
 				verificationEmailRequestDto.email(), 
 				verificationEmailRequestDto.verificationCode(), 
 				clientIp);
@@ -106,39 +111,74 @@ public class VerificationController {
 					.header(HttpHeaders.SET_COOKIE, cookie.toString())
 					.body(ApiResponseDto.of(SUCCESS_NO_DATA, null));
 		}
-		
 	}
 	
 	@Operation(summary = "휴대폰 문자 인증번호 발송", description = "휴대폰 문자 인증번호 발송")
 	@AutoSetMessageResponse
 	@PostMapping("/public/sms")
-	public ResponseEntity<ApiResponseDto<Void>> verifyToSms(
+	public ResponseEntity<ApiResponseDto<Map<String,String>>> verifyToSms(
+			@RequestHeader(required = false, value = "X-Client-Type")String userAgent,
 			@ValidPhone @RequestParam String phone,
 			HttpServletRequest request) {
+		
+		boolean isMobileApp = userAgent != null && userAgent.contains("mobile");
 		
 		String clientIp = (String) request.getAttribute("clientIp");
 		rateLimiter.isAllowedByPhone(phone);
 		rateLimiter.isAllowedByIp(clientIp);
 		
-		verificationService.sendSmsVerificationCode(phone, clientIp);
+		String encodingVerificationId = verificationService.sendSmsVerificationCode(phone, clientIp)+"";
 		
-		return ResponseEntity.ok(ApiResponseDto.of(SUCCESS_NO_DATA,null));
+		if(isMobileApp) {
+			return ResponseEntity.ok(ApiResponseDto.of(SUCCESS, Map.of("X-Verification-Id",encodingVerificationId)));
+		}else {
+			ResponseCookie cookie = ResponseCookie.from("X-Verification-Id", encodingVerificationId)
+					.httpOnly(true)
+					.secure(true)
+					.path("/")
+					.maxAge(Duration.ofMinutes(3))
+					.sameSite("Lax")
+					.build();
+			
+			return ResponseEntity
+					.status(HttpStatus.OK) 
+					.header(HttpHeaders.SET_COOKIE, cookie.toString())
+					.body(ApiResponseDto.of(SUCCESS_NO_DATA, null));
+		}
 	}
 	
 	@Operation(summary = "이메일 인증번호 발송", description = "이메일 인증번호 발송")
 	@AutoSetMessageResponse
 	@PostMapping("/public/email")
-	public ResponseEntity<ApiResponseDto<Void>> verifyToEmail(
+	public ResponseEntity<ApiResponseDto<Map<String,String>>> verifyToEmail(
+			@RequestHeader(required = false, value = "X-Client-Type")String userAgent,
 			@ValidEmail @RequestParam String email,
 			HttpServletRequest request) {
+		
+		boolean isMobileApp = userAgent != null && userAgent.contains("mobile");
 		
 		String clientIp = (String) request.getAttribute("clientIp");
 		rateLimiter.isAllowedByEmail(email);
 		rateLimiter.isAllowedByIp(clientIp);
 		
-		verificationService.sendEmailVerificationCode(email, clientIp);
+		String encodingVerificationId = verificationService.sendEmailVerificationCode(email, clientIp)+"";
 		
-		return ResponseEntity.ok(ApiResponseDto.of(SUCCESS_NO_DATA, null));
+		if(isMobileApp) {
+			return ResponseEntity.ok(ApiResponseDto.of(SUCCESS, Map.of("X-Verification-Id",encodingVerificationId)));
+		}else {
+			ResponseCookie cookie = ResponseCookie.from("X-Verification-Id", encodingVerificationId)
+					.httpOnly(true)
+					.secure(true)
+					.path("/")
+					.maxAge(Duration.ofMinutes(3))
+					.sameSite("Lax")
+					.build();
+			
+			return ResponseEntity
+					.status(HttpStatus.OK) 
+					.header(HttpHeaders.SET_COOKIE, cookie.toString())
+					.body(ApiResponseDto.of(SUCCESS_NO_DATA, null));
+		}
 	}
 	
 }

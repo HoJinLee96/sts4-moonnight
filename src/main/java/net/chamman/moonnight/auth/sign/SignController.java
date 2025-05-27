@@ -247,7 +247,7 @@ public class SignController {
 			throw new IllegalValueException(INVALID_VALUE,"두 비밀번호들가 일치하지 않음. password: "+password+", confirmPassword: "+confirmPassword);
 		}
 		
-		String accessSignUpToken = signService.createJoinToken(email, password, verificationEmailToken);
+		String accessSignUpToken = signService.createSignUpToken(email, password, verificationEmailToken);
 		
 		if(isMobileApp) {
 			return ResponseEntity.ok(ApiResponseDto.of(SUCCESS, Map.of("X-Access-SignUp-Token",accessSignUpToken)));

@@ -32,9 +32,7 @@ public class NaverMailClient {
   private final String mailEndpoint = "/api/v1";
   private final String sendMailUri = "/mails";
 
-  public int sendVerificationCode(NaverMailPayload naverMailPayload)
-          throws InvalidKeyException, UnsupportedEncodingException, NoSuchAlgorithmException, URISyntaxException, JsonProcessingException {
-      
+  public int sendVerificationCode(NaverMailPayload naverMailPayload) {
 
       String time = Long.toString(System.currentTimeMillis());
 
