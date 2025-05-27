@@ -142,7 +142,7 @@ public class VerificationService {
 				.verificationCode(verificationCode);
 		
 		try {
-			int sendStatus = naverMailClient.sendVerificationCode(naverMailPayload);
+			int sendStatus = naverMailClient.sendMail(naverMailPayload);
 			verificationBuilder.sendStatus(sendStatus);
 			if((sendStatus/100)!=2) {
 				System.out.println("인증번호 발송 실패 (sendStatus/100)!=2: "+(sendStatus/100));

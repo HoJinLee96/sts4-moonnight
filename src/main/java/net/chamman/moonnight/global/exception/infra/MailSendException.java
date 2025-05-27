@@ -25,6 +25,4 @@ public class MailSendException extends CustomException{
 		// TODO Auto-generated constructor stub
 	}
 	
-	
-
 }

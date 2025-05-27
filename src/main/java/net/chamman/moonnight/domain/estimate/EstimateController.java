@@ -75,8 +75,7 @@ public class EstimateController {
   @GetMapping("/private/user/{estimateId}")
   public ResponseEntity<ApiResponseDto<EstimateResponseDto>> getMyEstimateByEstimateId(
       @AuthenticationPrincipal CustomUserDetails userDetails,
-      @PathVariable int estimateId
-      ) throws AccessDeniedException {
+      @PathVariable int estimateId) {
     
     EstimateResponseDto estimateResponseDto = estimateService.getMyEstimateByEstimateId(estimateId,userDetails.getUserId());
     
@@ -100,7 +99,7 @@ public class EstimateController {
   @GetMapping("/auth/{estimateId}")
   public ResponseEntity<ApiResponseDto<EstimateResponseDto>> getEstimateByAuthPhone(
       @AuthenticationPrincipal CustomUserDetails userDetails,
-      @PathVariable int estimateId) throws AccessDeniedException {
+      @PathVariable int estimateId)  {
     
     EstimateResponseDto estimateResponseDto = 
         estimateService.getEstimateByEstimateIdAndPhone(estimateId,userDetails.getUsername());
@@ -112,7 +111,7 @@ public class EstimateController {
   @PostMapping("/public/guest")
   public ResponseEntity<?> getEstimateByEstimateIdAndPhone(
       @ValidId @RequestParam int estimateId,
-      @ValidPhone @RequestParam String phone) throws AccessDeniedException {
+      @ValidPhone @RequestParam String phone)  {
     
     EstimateResponseDto estimateResponseDto = estimateService.getEstimateByEstimateIdAndPhone(estimateId,phone);
     
@@ -156,7 +155,7 @@ public class EstimateController {
   @PostMapping("/private/delete")
   public ResponseEntity<ApiResponseDto<EstimateResponseDto>> deleteEstimateByUser(
       @AuthenticationPrincipal CustomUserDetails userDetails,
-      @ValidId @PathVariable int estimateId) throws AccessDeniedException{
+      @ValidId @PathVariable int estimateId) {
     
     estimateService.deleteMyEstimate(estimateId, userDetails.getUserId());
     
@@ -168,7 +167,7 @@ public class EstimateController {
   @PostMapping("/private/auth/delete")
   public ResponseEntity<ApiResponseDto<EstimateResponseDto>> deleteEstimateByAuthPhone(
       @AuthenticationPrincipal CustomUserDetails userDetails,
-      @ValidId @PathVariable int estimateId) throws AccessDeniedException{
+      @ValidId @PathVariable int estimateId) {
     
     estimateService.deleteEstimateByAuth(estimateId, userDetails.getUsername());
     
