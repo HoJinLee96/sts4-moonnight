@@ -39,10 +39,10 @@ public class SignLog {
 
   @Enumerated(EnumType.STRING)
   @Basic(fetch = FetchType.EAGER)
-  @Column(name ="user_provider", nullable = false)
+  @Column(name ="user_provider")
   private UserProvider userProvider;
   
-  @Column(name ="email", length=100, nullable=false)
+  @Column(name ="email", length=100)
   private String email;
   
   @Column(name = "request_ip", length = 50, nullable = false)

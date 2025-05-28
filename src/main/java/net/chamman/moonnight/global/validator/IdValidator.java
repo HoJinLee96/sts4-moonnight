@@ -4,7 +4,7 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import net.chamman.moonnight.global.annotation.ValidId;
 
-public class IdValidator implements ConstraintValidator<ValidId, String> {
+public class IdValidator implements ConstraintValidator<ValidId, Integer> {
 
   private static final String ID_REGEX = "^\\{1,10}$";
 
@@ -14,9 +14,10 @@ public class IdValidator implements ConstraintValidator<ValidId, String> {
   }
 
   @Override
-  public boolean isValid(String value, ConstraintValidatorContext context) {
-    if (value == null || value.isBlank()) return false;
-    return value.matches(ID_REGEX);
+  public boolean isValid(Integer value, ConstraintValidatorContext context) {
+    if (value == null ) return false;
+    String validIdStr = value+"";
+    return validIdStr.matches(ID_REGEX);
   }
   
 }

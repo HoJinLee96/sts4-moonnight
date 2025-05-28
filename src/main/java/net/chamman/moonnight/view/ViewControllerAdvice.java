@@ -4,8 +4,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
+
 import lombok.RequiredArgsConstructor;
-import net.chamman.moonnight.domain.address.AddressService;
 import net.chamman.moonnight.domain.user.User;
 import net.chamman.moonnight.domain.user.UserService;
 import net.chamman.moonnight.global.security.principal.CustomUserDetails;
@@ -15,14 +15,13 @@ import net.chamman.moonnight.global.security.principal.CustomUserDetails;
 public class ViewControllerAdvice {
   
   private final UserService userService;
-  private final AddressService addressService;
+//  private final AddressService addressService;
 
   @ModelAttribute
   public void addUserDetailsToModel(Model model, @AuthenticationPrincipal CustomUserDetails userDetails) {
       if (userDetails != null) {
           // 로그인 되어 있으면 사용자 이름(이나 필요한 다른 정보)을 모델에 추가
         int userId = userDetails.getUserId();
-        User user = userService.getUserByUserId(userId);
           model.addAttribute("userName", userDetails.getName()); // 모델 속성 이름은 원하는 대로 (예: userName)
           model.addAttribute("isAuthenticated", true);
       } else {

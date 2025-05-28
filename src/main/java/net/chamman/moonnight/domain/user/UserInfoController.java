@@ -167,7 +167,7 @@ public class UserInfoController {
 	@Operation(summary = "LOCAL 회원 탈퇴 1단계", description = "회원탈퇴를 위해 비밀번호를 입력받고 Access-Password-Token 발급.")
 	@AutoSetMessageResponse
 	@PreAuthorize("hasRole('LOCAL')")
-	@PostMapping("/private/delete")
+	@PostMapping("/private/password")
 	public ResponseEntity<ApiResponseDto<Map<String,String>>> validPassword(
 			@AuthenticationPrincipal CustomUserDetails userDetails,
 			@RequestHeader(required = false, value = "X-Client-Type")String userAgent,

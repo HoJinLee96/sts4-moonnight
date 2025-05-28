@@ -18,7 +18,7 @@ public interface AddressRepository extends JpaRepository<Address, Integer>{
   
   // 해당 유저의 모든 주소 is_primary 값을 FALSE로 변경하는 메서드
   @Modifying
-  @Query("UPDATE Address a SET a.isPrimary = FALSE WHERE a.userId = :userId")
+  @Query("UPDATE Address a SET a.isPrimary = FALSE WHERE a.user.userId = :userId")
   int unsetPrimaryForUser(@Param("userId") int userId);
   
 }

@@ -23,12 +23,13 @@ public record SimpleEstimateRequestDto(
     
     ) {
   
-  public SimpleEstimate toEntity() {
+  public SimpleEstimate toEntity(String clientIp) {
     return SimpleEstimate.builder()
         .phone(phone)
         .cleaningService(cleaningService)
         .region(region)
         .estimateStatus(EstimateStatus.RECEIVE)
+        .requestIp(clientIp)
         .build();
   }
 

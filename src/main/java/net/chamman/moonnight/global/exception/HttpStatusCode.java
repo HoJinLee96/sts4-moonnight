@@ -23,6 +23,7 @@ public enum HttpStatusCode {
 	METHOD_NOT_ALLOWED(405, "4050", "message.common.method_not_allowed"),
 	INTERNAL_SERVER_ERROR(500, "5000", "message.common.internal_server_error"),
 	TOO_MANY_REQUEST(429,"4290","요청 횟수를 초과했습니다.\n잠시 후 시도해 주세요."),
+	AUTHORIZATION_FAILED(403,"4524","message.common.authorization_failed"),
 
 	
 	// Sign 452
@@ -30,7 +31,6 @@ public enum HttpStatusCode {
 	SIGNIN_FAILED(404,"4521","message.sign.signin_failed"),
 	SIGNIN_FAILED_OUT(404,"4522","message.sign.signin_failed_out"),
 	AUTHENTICATION_FAILED(401,"4523","message.sign.authentication_failed"),
-	AUTHORIZATION_FAILED(403,"4524","message.sign.authorization_failed"),
 	
 	// User 453
 	EMAIL_NOT_EXISTS(200,"2070","message.user.email_not_exists"),
@@ -53,9 +53,10 @@ public enum HttpStatusCode {
 	
 	// Estimate 456
 	ESTIMATE_NOT_FOUND(404,"4560","message.estimate.not_found"),
+	ESTIMATE_DELETED(404,"4560","message.estimate.deleted"),
 
 	
-	// JWT Token 457
+	// JWT 457
 	JWT_ILLEGAL(404,"4570","meesage.token.not_found"), // 토큰 없음
 	JWT_EXPIRED(401,"4571","message.token.expired"), // 토큰 만료
 	JWT_CREATE_FIAL(500,"5001","error.message"), // 토큰 생성 실패
@@ -87,12 +88,12 @@ public enum HttpStatusCode {
 	// Mail 462
 	MAIL_SEND_FAIL(500,"4620","message.mail.send_fail"),
 	
-	// sms 463
-	SMS_SEND_FAIL(500,"4630","message.sms.send_fail")
+	// Sms 463
+	SMS_SEND_FAIL(500,"4630","message.sms.send_fail"),
 	
-	
-	
-	
+	// SimpleEstimate 464
+	SIMPLE_ESTIMATE_NOT_FOUND(404,"4640","message.simple_estimate.not_found"),
+	SIMPLE_ESTIMATE_DELETED(404,"4641","message.simple_estimate.deleted"),	
 	; 
 	
 	

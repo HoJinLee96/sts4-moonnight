@@ -309,7 +309,7 @@ public class SignService {
 		
 //		1. accessToken 블랙리스트 등록
 		long ttl = jwtProvider.getSignJwtRemainingTime(accessToken);
-		tokenProvider.addAccessJwtBlacklist(accessToken, ttl, "logout");
+		tokenProvider.addAccessJwtBlacklist(accessToken, ttl, "SIGNOUT");
 		log.info("로그아웃 - accessToken 블랙리스트 등록. accessToken: {}, ip: {}", accessToken, clientIp);
 			
 //		2. refreshToken 삭제

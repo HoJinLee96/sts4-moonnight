@@ -275,7 +275,7 @@ public class SignController {
 	public ResponseEntity<ApiResponseDto<String>> signup2(
 			@ClientSpecific("X-Access-SignUp-Token") String accessSignUpToken,
 			@ClientSpecific("X-Verification-Phone-Token") String verificationPhoneToken,
-			@RequestBody @Valid UserCreateRequestDto userCreateRequestDto) {
+			@Valid @RequestBody UserCreateRequestDto userCreateRequestDto) {
 		
 		String name = signService.signUpLocalUser(userCreateRequestDto, accessSignUpToken, verificationPhoneToken);
 		
