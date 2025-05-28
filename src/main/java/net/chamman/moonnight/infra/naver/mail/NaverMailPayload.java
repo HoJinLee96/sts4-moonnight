@@ -11,10 +11,10 @@ import lombok.Setter;
 @NoArgsConstructor @AllArgsConstructor
 @Builder
 public class NaverMailPayload {
-  String senderAddress;
-  String title;
-  String body;
-  List<MailRecipientPayload> recipients;
-  boolean individual;
-  boolean advertising;
+	String senderAddress;
+	String title;
+	String body;
+	List<MailRecipientPayload> recipients;
+	boolean individual;
+	boolean advertising;
 }

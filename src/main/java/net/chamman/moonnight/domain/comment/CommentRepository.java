@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface CommentRepository extends JpaRepository<Comment, Integer>{
-  List<Comment> findByEstimate_EstimateId(int estimateId);
+	List<Comment> findByEstimate_EstimateId(int estimateId);
 }

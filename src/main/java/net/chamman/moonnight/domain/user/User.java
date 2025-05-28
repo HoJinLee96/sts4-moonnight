@@ -21,60 +21,58 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "user", uniqueConstraints = {
-    @UniqueConstraint(name = "UK_user_email_user_provider", columnNames = {"email", "user_provider"}) })
+@Table(name = "user", uniqueConstraints = {@UniqueConstraint(name = "UK_user_email_user_provider", columnNames = {"email", "user_provider"}) })
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @Builder
 public class User {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "user_id")
-  private int userId;
-  
-  @Column(name = "user_provider", nullable=false)
-  @Enumerated(EnumType.STRING)
-  @Basic(fetch = FetchType.EAGER)
-  private UserProvider userProvider;
-  
-  @Column(name = "email", length=50, nullable=false)
-  private String email;
-  
-  @Column(name = "password", length=60)
-  private String password;
-  
-  @Column(name = "name", length=20)
-  private String name;
-  
-  @Column(name = "birth", length=10)
-  private String birth;
-  
-  @Column(name = "phone", length=15)
-  private String phone;
-  
-  @Column(name = "user_status", nullable=false)
-  @Enumerated(EnumType.STRING)
-  @Basic(fetch = FetchType.EAGER)
-  private UserStatus userStatus;
-  
-  @Column(name = "marketing_received_status")
-  private Boolean marketingReceivedStatus;
-  
-  @Generated(event = EventType.INSERT)
-  @Column(name = "created_at", updatable = false)
-  private LocalDateTime createdAt;
-
-  @Generated(event = EventType.UPDATE)
-  @Column(name = "updated_at")
-  private LocalDateTime updatedAt;
-  
-  
-  public static enum UserProvider {
-    LOCAL, NAVER, KAKAO
-  }
-
-  public static enum UserStatus {
-    ACTIVE, STAY, STOP, DELETE;
-  }
-  
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "user_id")
+	private int userId;
+	
+	@Column(name = "user_provider", nullable=false)
+	@Enumerated(EnumType.STRING)
+	@Basic(fetch = FetchType.EAGER)
+	private UserProvider userProvider;
+	
+	@Column(name = "email", length=50, nullable=false)
+	private String email;
+	
+	@Column(name = "password", length=60)
+	private String password;
+	
+	@Column(name = "name", length=20)
+	private String name;
+	
+	@Column(name = "birth", length=10)
+	private String birth;
+	
+	@Column(name = "phone", length=15)
+	private String phone;
+	
+	@Column(name = "user_status", nullable=false)
+	@Enumerated(EnumType.STRING)
+	@Basic(fetch = FetchType.EAGER)
+	private UserStatus userStatus;
+	
+	@Column(name = "marketing_received_status")
+	private Boolean marketingReceivedStatus;
+	
+	@Generated(event = EventType.INSERT)
+	@Column(name = "created_at", updatable = false)
+	private LocalDateTime createdAt;
+	
+	@Generated(event = EventType.UPDATE)
+	@Column(name = "updated_at")
+	private LocalDateTime updatedAt;
+	
+	
+	public static enum UserProvider {
+		LOCAL, NAVER, KAKAO
+	}
+	
+	public static enum UserStatus {
+		ACTIVE, STAY, STOP, DELETE;
+	}
 }

@@ -9,24 +9,24 @@ import net.chamman.moonnight.domain.estimate.simple.SimpleEstimate.Region;
 
 @Builder
 public record SimpleEstimateResponseDto(
-    int simpleEstimateId,
-    String phone,
-    CleaningService cleaningService,
-    Region region,
-    EstimateStatus estimateStatus,
-    LocalDateTime createdAt,
-    LocalDateTime updatedAt
-    ) {
-
-  public static SimpleEstimateResponseDto fromEntity(SimpleEstimate simpleEstimate, Obfuscator obfuscator) {
-    return SimpleEstimateResponseDto.builder()
-        .simpleEstimateId(obfuscator.encode(simpleEstimate.getSimpleEstimateId()))
-        .phone(simpleEstimate.getPhone())
-        .cleaningService(simpleEstimate.getCleaningService())
-        .region(simpleEstimate.getRegion())
-        .estimateStatus(simpleEstimate.getEstimateStatus())
-        .createdAt(simpleEstimate.getCreatedAt())
-        .updatedAt(simpleEstimate.getUpdatedAt())
-        .build();
-  }
+		int simpleEstimateId,
+		String phone,
+		CleaningService cleaningService,
+		Region region,
+		EstimateStatus estimateStatus,
+		LocalDateTime createdAt,
+		LocalDateTime updatedAt
+		) {
+	
+	public static SimpleEstimateResponseDto fromEntity(SimpleEstimate simpleEstimate, Obfuscator obfuscator) {
+		return SimpleEstimateResponseDto.builder()
+				.simpleEstimateId(obfuscator.encode(simpleEstimate.getSimpleEstimateId()))
+				.phone(simpleEstimate.getPhone())
+				.cleaningService(simpleEstimate.getCleaningService())
+				.region(simpleEstimate.getRegion())
+				.estimateStatus(simpleEstimate.getEstimateStatus())
+				.createdAt(simpleEstimate.getCreatedAt())
+				.updatedAt(simpleEstimate.getUpdatedAt())
+				.build();
+	}
 }

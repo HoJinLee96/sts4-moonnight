@@ -97,6 +97,7 @@ public class AwsS3Client {
 			throw new S3DeleteException(S3_DELETE_FAIL, e);
 		}
 	}
+	
 }
 	
 //  public Optional<String> uploadImagesToS3(List<File> images, String keyPrefix) throws IOException {

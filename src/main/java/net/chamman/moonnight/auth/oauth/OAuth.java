@@ -44,42 +44,42 @@ import net.chamman.moonnight.domain.user.User;
 @NoArgsConstructor @AllArgsConstructor
 @Builder
 public class OAuth {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "oauth_id") 
-  private int oauthId;
-  
-  @OneToOne(fetch = FetchType.EAGER)
-  @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "FK_user_TO_address_1"))
-  private User user;
-
-  @Column(name = "oauth_provider", nullable=false)
-  @Enumerated(EnumType.STRING)
-  @Basic(fetch = FetchType.EAGER)
-  private OAuthProvider oauthProvider;
-  
-  @Column(name = "oauth_provider_id", length=255, nullable=false)
-  private String oauthProviderId;
-  
-  @Column(name = "oauth_status", nullable=false)
-  @Enumerated(EnumType.STRING)
-  @Basic(fetch = FetchType.EAGER)
-  private OAuthStatus oauthStatus;
-  
-  @Generated(event = EventType.INSERT)
-  @Column(name = "created_at", updatable = false)
-  private LocalDateTime createdAt;
-
-  @Generated(event = EventType.UPDATE)
-  @Column(name = "updated_at")
-  private LocalDateTime updatedAt;
-  
-  public enum OAuthProvider {
-    NAVER, KAKAO
-  }
-  
-  public enum OAuthStatus {
-    ACTIVE, STAY, STOP, DELETE
-  }
-  
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "oauth_id") 
+	private int oauthId;
+	
+	@OneToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "FK_user_TO_address_1"))
+	private User user;
+	
+	@Column(name = "oauth_provider", nullable=false)
+	@Enumerated(EnumType.STRING)
+	@Basic(fetch = FetchType.EAGER)
+	private OAuthProvider oauthProvider;
+	
+	@Column(name = "oauth_provider_id", length=255, nullable=false)
+	private String oauthProviderId;
+	
+	@Column(name = "oauth_status", nullable=false)
+	@Enumerated(EnumType.STRING)
+	@Basic(fetch = FetchType.EAGER)
+	private OAuthStatus oauthStatus;
+	
+	@Generated(event = EventType.INSERT)
+	@Column(name = "created_at", updatable = false)
+	private LocalDateTime createdAt;
+	
+	@Generated(event = EventType.UPDATE)
+	@Column(name = "updated_at")
+	private LocalDateTime updatedAt;
+	
+	public enum OAuthProvider {
+		NAVER, KAKAO
+	}
+	
+	public enum OAuthStatus {
+		ACTIVE, STAY, STOP, DELETE
+	}
+	
 }

@@ -15,8 +15,7 @@ import net.chamman.moonnight.global.validator.ImageValidator;
 @Target({ ElementType.PARAMETER, ElementType.FIELD })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ImageConstraint {
-  String message() default "validation.image.invalid";
-  Class<?>[] groups() default {};
-  Class<? extends Payload>[] payload() default {};
-
+	String message() default "validation.image.invalid";
+	Class<?>[] groups() default {};
+	Class<? extends Payload>[] payload() default {};
 }

@@ -11,21 +11,20 @@ import net.chamman.moonnight.global.validator.ClientSpecificArgumentResolver;
 
 @Configuration
 @RequiredArgsConstructor
-public class MvcConfig implements WebMvcConfigurer 
-{
-
-  private final ClientIpInterceptor clientIpInterceptor;
-  private final ClientSpecificArgumentResolver clientSpecificArgumentResolver;
-
-
+public class MvcConfig implements WebMvcConfigurer {
+	
+	private final ClientIpInterceptor clientIpInterceptor;
+	private final ClientSpecificArgumentResolver clientSpecificArgumentResolver;
+	
+	
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
-	  registry.addInterceptor(clientIpInterceptor)
-      .addPathPatterns("/**"); 
+		registry.addInterceptor(clientIpInterceptor)
+		.addPathPatterns("/**"); 
 	}
-
-    @Override
-    public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
-        resolvers.add(clientSpecificArgumentResolver);
-    }
+	
+	@Override
+	public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
+		resolvers.add(clientSpecificArgumentResolver);
+	}
 }

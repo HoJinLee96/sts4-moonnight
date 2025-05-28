@@ -39,6 +39,7 @@ public class DaumMapClient {
 	 * 
 	 * @return
 	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public boolean validateAddress(String postcode, String mainAddress) {
 		HttpHeaders headers = new HttpHeaders();
 		headers.add("Authorization", "KakaoAK "+kakaoApiRestApiKey);

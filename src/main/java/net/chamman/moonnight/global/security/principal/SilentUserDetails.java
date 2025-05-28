@@ -7,28 +7,29 @@ import org.springframework.security.core.userdetails.UserDetails;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+@SuppressWarnings("serial")
 @Getter
 @AllArgsConstructor
 public class SilentUserDetails implements UserDetails{
   
-  private final int userId;
-  private final String name;
-  private final List<GrantedAuthority> authorities; 
-
-  @Override
-  public Collection<? extends GrantedAuthority> getAuthorities() {
-    return authorities;
-  }
-
-  @Override
-  public String getPassword() {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public String getUsername() {
-    return userId+"";
-  }
+	private final int userId;
+	private final String name;
+	private final List<GrantedAuthority> authorities; 
+	
+	@Override
+	public Collection<? extends GrantedAuthority> getAuthorities() {
+		return authorities;
+	}
+	
+	@Override
+	public String getPassword() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
+	public String getUsername() {
+		return userId+"";
+	}
 
 }
