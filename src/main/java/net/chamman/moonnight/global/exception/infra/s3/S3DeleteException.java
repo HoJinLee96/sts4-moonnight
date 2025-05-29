@@ -1,9 +1,9 @@
 package net.chamman.moonnight.global.exception.infra.s3;
 
-import net.chamman.moonnight.global.exception.CustomException;
+import net.chamman.moonnight.global.exception.CriticalException;
 import net.chamman.moonnight.global.exception.HttpStatusCode;
 
-public class S3DeleteException extends CustomException{
+public class S3DeleteException extends CriticalException{
 
 	public S3DeleteException(HttpStatusCode httpStatusCode, Exception e) {
 		super(httpStatusCode, e);

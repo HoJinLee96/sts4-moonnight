@@ -18,7 +18,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.global.annotation.AutoSetMessageResponse;
-import net.chamman.moonnight.global.exception.infra.DaumStateException;
 import net.chamman.moonnight.global.util.ApiResponseDto;
 
 @Slf4j
@@ -30,13 +29,16 @@ public class GlobalExceptionHandler {
 	private final MessageSource messageSource;
 	
 	@AutoSetMessageResponse
-	@ExceptionHandler(DaumStateException.class)
-	public ResponseEntity<ApiResponseDto<Void>> handleDaumStateException(DaumStateException e) {
-		log.error("심각 익셉션 발생.", e);
-		HttpStatusCode httpStatusCode = e.getHttpStatusCode();
+	@ExceptionHandler(CriticalException.class)
+	public ResponseEntity<ApiResponseDto<Void>> handleCriticalException(CriticalException ex) {
+		HttpStatusCode httpStatusCode = ex.getHttpStatusCode();
+		log.error("{} 발생.\n[httpStatusCode: {}]\n[exception: {}]",
+				ex.getClass().getSimpleName(),
+				httpStatusCode.toString(),
+				ex
+				);
 		return ResponseEntity.status(httpStatusCode.getStatus()).body(ApiResponseDto.of(httpStatusCode, null));
 	}
-	
 	
 	@AutoSetMessageResponse
 	@ExceptionHandler(CustomException.class)

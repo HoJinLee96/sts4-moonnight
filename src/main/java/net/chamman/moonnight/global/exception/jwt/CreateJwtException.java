@@ -1,9 +1,9 @@
 package net.chamman.moonnight.global.exception.jwt;
 
-import net.chamman.moonnight.global.exception.CustomException;
+import net.chamman.moonnight.global.exception.CriticalException;
 import net.chamman.moonnight.global.exception.HttpStatusCode;
 
-public class CreateJwtException extends CustomException{
+public class CreateJwtException extends CriticalException{
 
 	public CreateJwtException(HttpStatusCode httpStatusCode, Exception e) {
 		super(httpStatusCode, e);

@@ -1,9 +1,9 @@
 package net.chamman.moonnight.global.exception.redis;
 
-import net.chamman.moonnight.global.exception.CustomException;
+import net.chamman.moonnight.global.exception.CriticalException;
 import net.chamman.moonnight.global.exception.HttpStatusCode;
 
-public class RedisSetException extends CustomException{
+public class RedisSetException extends CriticalException{
 
 	public RedisSetException(HttpStatusCode httpStatusCode, Exception e) {
 		super(httpStatusCode, e);
