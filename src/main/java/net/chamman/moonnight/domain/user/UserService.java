@@ -2,6 +2,7 @@ package net.chamman.moonnight.domain.user;
 
 import static net.chamman.moonnight.global.exception.HttpStatusCode.EMAIL_ALREADY_EXISTS;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.PHONE_ALREADY_EXISTS;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.SIGNIN_FAILED;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.TOKEN_VALUE_MISMATCH;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.USER_NOT_FOUND;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.USER_STATUS_DELETE;
@@ -24,6 +25,7 @@ import net.chamman.moonnight.auth.crypto.dto.PasswordTokenDto;
 import net.chamman.moonnight.auth.crypto.dto.VerificationEmailTokenDto;
 import net.chamman.moonnight.auth.crypto.dto.VerificationPhoneTokenDto;
 import net.chamman.moonnight.auth.sign.SignService;
+import net.chamman.moonnight.auth.sign.log.SignLog.SignResult;
 import net.chamman.moonnight.auth.sign.log.SignLogService;
 import net.chamman.moonnight.auth.verification.VerificationService;
 import net.chamman.moonnight.domain.user.User.UserProvider;
@@ -53,7 +55,6 @@ public class UserService {
 	private final UserRepository userRepository;
     private final VerificationService verificationService;
     private final SignLogService signLogService;
-    private final SignService signService;
 	private final TokenProvider tokenProvider;
 	private final PasswordEncoder passwordEncoder;
 
@@ -270,7 +271,7 @@ public class UserService {
 	public String confirmPasswordAndCreatePasswordToken(int userId, String password, String clientIp) {
 		
 		User user = getUserByUserId(userId);     
-		signService.validatePassword(user, password, clientIp);
+		validatePassword(user, password, clientIp);
 
 		return tokenProvider.createToken(new PasswordTokenDto(userId+"", user.getEmail()), PasswordTokenDto.TOKENTYPE);
 	}
@@ -398,6 +399,30 @@ public class UserService {
 		if (user.isPresent()) {
 			throw new DuplicationException(PHONE_ALREADY_EXISTS);
 		}
+	}
+	
+	/** 비밀번호 검증 및 결과 `LoginLog` 기록
+	 * @param user
+	 * @param reqPassword
+	 * @param ip
+	 * @throws TooManySignFailException {@link SignLogService#validSignFailCount} 비밀번호 실패 횟수 초과
+	 * @throws MismatchPasswordException {@link #validatePassword} 비밀번호 불일치
+	 */
+	public void validatePassword(User user, String reqPassword, String ip) {
+		if (!passwordEncoder.matches(reqPassword, user.getPassword())) {
+			signLogService.registerSignLog(UserProvider.LOCAL, user.getEmail(), ip, SignResult.INVALID_PASSWORD);
+			int signFailCount;
+			try {
+				signFailCount = signLogService.validSignFailCount(UserProvider.LOCAL, user.getEmail());
+			} catch (TooManySignFailException e) {
+				user.setUserStatus(UserStatus.STAY);
+				userRepository.save(user);
+				log.info("로그인 실패 횟수 초과로 계정 일시정지: email={}, ip={}", user.getEmail(), ip);
+				throw e;
+			}
+			throw new MismatchPasswordException(SIGNIN_FAILED,"비밀번호 불일치. 실패 횟수: "+signFailCount);
+		}
+		signLogService.registerSignLog(UserProvider.LOCAL, user.getEmail(), ip, SignResult.LOCAL_SUCCESS);
 	}
 	
 	/** 유저 상태 검사

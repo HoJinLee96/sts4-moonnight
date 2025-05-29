@@ -25,7 +25,6 @@ import net.chamman.moonnight.domain.address.Address;
 import net.chamman.moonnight.domain.address.AddressRepository;
 import net.chamman.moonnight.domain.user.User;
 import net.chamman.moonnight.domain.user.User.UserProvider;
-import net.chamman.moonnight.domain.user.User.UserStatus;
 import net.chamman.moonnight.domain.user.UserCreateRequestDto;
 import net.chamman.moonnight.domain.user.UserRepository;
 import net.chamman.moonnight.domain.user.UserService;
@@ -175,7 +174,7 @@ public class SignService {
 		try {
 			User user = userService.getUserByUserProviderAndEmail(UserProvider.LOCAL, email);
 			
-			validatePassword(user, password, ip);
+			userService.validatePassword(user, password, ip);
 			
 			return handleJwt(user);
 		} catch (NoSuchDataException e) {
@@ -335,22 +334,22 @@ public class SignService {
 	 * @throws TooManySignFailException {@link SignLogService#validSignFailCount} 비밀번호 실패 횟수 초과
 	 * @throws MismatchPasswordException {@link #validatePassword} 비밀번호 불일치
 	 */
-	public void validatePassword(User user, String reqPassword, String ip) {
-		if (!passwordEncoder.matches(reqPassword, user.getPassword())) {
-			signLogService.registerSignLog(UserProvider.LOCAL, user.getEmail(), ip, SignResult.INVALID_PASSWORD);
-			int signFailCount;
-			try {
-				signFailCount = signLogService.validSignFailCount(UserProvider.LOCAL, user.getEmail());
-			} catch (TooManySignFailException e) {
-				user.setUserStatus(UserStatus.STAY);
-				userRepository.save(user);
-				log.info("로그인 실패 횟수 초과로 계정 일시정지: email={}, ip={}", user.getEmail(), ip);
-				throw e;
-			}
-			throw new MismatchPasswordException(SIGNIN_FAILED,"비밀번호 불일치. 실패 횟수: "+signFailCount);
-		}
-		signLogService.registerSignLog(UserProvider.LOCAL, user.getEmail(), ip, SignResult.LOCAL_SUCCESS);
-	}
+//	public void validatePassword(User user, String reqPassword, String ip) {
+//		if (!passwordEncoder.matches(reqPassword, user.getPassword())) {
+//			signLogService.registerSignLog(UserProvider.LOCAL, user.getEmail(), ip, SignResult.INVALID_PASSWORD);
+//			int signFailCount;
+//			try {
+//				signFailCount = signLogService.validSignFailCount(UserProvider.LOCAL, user.getEmail());
+//			} catch (TooManySignFailException e) {
+//				user.setUserStatus(UserStatus.STAY);
+//				userRepository.save(user);
+//				log.info("로그인 실패 횟수 초과로 계정 일시정지: email={}, ip={}", user.getEmail(), ip);
+//				throw e;
+//			}
+//			throw new MismatchPasswordException(SIGNIN_FAILED,"비밀번호 불일치. 실패 횟수: "+signFailCount);
+//		}
+//		signLogService.registerSignLog(UserProvider.LOCAL, user.getEmail(), ip, SignResult.LOCAL_SUCCESS);
+//	}
 	
 	/** User 정보 통해 로그인 토큰들 발급 및 RefreshToken은 Redis 저장
 	 * @param user
