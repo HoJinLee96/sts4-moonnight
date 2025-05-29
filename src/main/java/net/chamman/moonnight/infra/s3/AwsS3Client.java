@@ -28,7 +28,7 @@ public class AwsS3Client {
 	
 	@Value("${aws.s3.bucket}")
 	private String bucket;
-	private S3Client s3Client;
+	private final S3Client s3Client;
 
 	/** 파일들 업로드
 	 * @param files
