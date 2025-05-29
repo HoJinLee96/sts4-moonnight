@@ -19,7 +19,7 @@ import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import net.chamman.moonnight.global.exception.infra.DaumStateException;
-import net.chamman.moonnight.global.exception.infra.IllegalAddressValueException;
+import net.chamman.moonnight.global.exception.infra.InvalidMainAddressException;
 
 @Component
 @PropertySource("classpath:application.properties")
@@ -73,10 +73,9 @@ public class DaumMapClient {
 					}
 				}
 			}
-			// 반복문을 다 돌았지만 일치하는 주소가 없는 경우
-			throw new IllegalAddressValueException(ADDRESS_INVALID_VALUE,"일치하는 주소가 없음.");
+			throw new InvalidMainAddressException(ADDRESS_INVALID_VALUE,"일치하는 주소가 없음.");
 		}else {
-			throw new DaumStateException(INTERNAL_SERVER_ERROR,"주소 검증 요청 실패 : 다음 서버에서 응답을 받을 수 없습니다.");
+			throw new DaumStateException(INTERNAL_SERVER_ERROR,"주소 검증 요청 실패 : Daum 서버에서 응답을 받을 수 없습니다.");
 		}
 	}
 	

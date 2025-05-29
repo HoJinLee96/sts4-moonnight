@@ -16,7 +16,6 @@ import org.springframework.web.util.WebUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -28,6 +27,7 @@ import net.chamman.moonnight.auth.crypto.TokenProvider;
 import net.chamman.moonnight.auth.sign.SignService;
 import net.chamman.moonnight.auth.sign.log.SignLog.SignResult;
 import net.chamman.moonnight.auth.sign.log.SignLogService;
+import net.chamman.moonnight.global.exception.jwt.TimeOutJwtException;
 import net.chamman.moonnight.infra.naver.sms.GuidanceService;
 
 @Slf4j
@@ -85,7 +85,7 @@ public abstract class AbstractAccessTokenFilter <T extends UserDetails> extends 
 			filterChain.doFilter(req, res);
 			
 			// 4. Access Token 만료.
-		} catch (ExpiredJwtException e) {
+		} catch (TimeOutJwtException e) {
 			try {
 				// 5. 리프레쉬 토큰 통해 SignIn Tokens 재발급
 				Map<String, String> newTokens = signService.refresh(accessToken, refreshToken, clientIp);

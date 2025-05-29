@@ -9,91 +9,86 @@ public enum HttpStatusCode {
 	
 	// Success
 	SUCCESS(200,"2000","message.success"),
-	SUCCESS_NO_DATA(200,"2001","message.success.no_data"),
-	READ_SUCCESS(200,"2002","message.success.read"),
-	READ_SUCCESS_NO_DATA(200,"2003","message.success.read_no_data"),
+	SUCCESS_NO_DATA(204,"2040","message.success.no_data"),
+	READ_SUCCESS(200,"2001","message.success.read"),
+	READ_SUCCESS_NO_DATA(204,"2041","message.success.read_no_data"),
 	CREATE_SUCCESS(201,"2010","message.success.create"),
-	UPDATE_SUCCESS(201,"2011","message.success.update"),
-	DELETE_SUCCESS(201,"2012","message.success.delete"),
+	UPDATE_SUCCESS(200,"2002","message.success.update"),
+	DELETE_SUCCESS(200,"2003","message.success.delete"),
 	
 	// Common
-	INVALID_VALUE(400, "4000", "message.common.invalid_input_value"),
-	NULL_INPUT_VALUE(400, "4001", "message.common.null_input_value"),
-	REQUEST_BODY_NOT_VALID(400, "4002", "message.common.request_body_not_valid"),
-	METHOD_NOT_ALLOWED(405, "4050", "message.common.method_not_allowed"),
+	ILLEGAL_INPUT_VALUE(400, "4000", "message.common.illegal_input_value"), // 입력 받은 값 이상
+	REQUEST_BODY_NOT_VALID(400, "4002", "message.common.request_body_not_valid"), // body 이상
+	AUTHORIZATION_FAILED(401,"4030","message.common.authorization_failed"), // 권한 이상
+	METHOD_NOT_ALLOWED(405, "4050", "message.common.method_not_allowed"), // 요청 경로 이상
+	TOO_MANY_REQUEST(429,"4290","message.common.too_many_request"), 
 	INTERNAL_SERVER_ERROR(500, "5000", "message.common.internal_server_error"),
-	TOO_MANY_REQUEST(429,"4290","요청 횟수를 초과했습니다.\n잠시 후 시도해 주세요."),
-	AUTHORIZATION_FAILED(403,"4524","message.common.authorization_failed"),
-
-	
-	// Sign 452
-	USER_NOT_FOUND(404,"4520","message.sign.user_not_found"),
-	SIGNIN_FAILED(404,"4521","message.sign.signin_failed"),
-	SIGNIN_FAILED_OUT(404,"4522","message.sign.signin_failed_out"),
-	AUTHENTICATION_FAILED(401,"4523","message.sign.authentication_failed"),
 	
 	// User 453
+	USER_NOT_FOUND(404,"4530","message.user.not_found"),
+	USER_PASSWORD_MISMATCH(404,"4530","message.user.password_mismatch"),
 	EMAIL_NOT_EXISTS(200,"2070","message.user.email_not_exists"),
 	PHONE_NOT_EXISTS(200,"2071","message.user.phone_not_exists"),
-	EMAIL_ALREADY_EXISTS(200,"2072","message.user.email_already_exists"),
-	PHONE_ALREADY_EXISTS(200,"2073","message.user.phone_already_exists"),
-	USER_STATUS_STAY(403,"4530","message.user.status_stay"),
-	USER_STATUS_STOP(401,"4531","message.user.status_stop"),
-	USER_STATUS_DELETE(410,"4532","message.user.status_delete"),
-	
+	EMAIL_ALREADY_EXISTS(409,"4531","message.user.email_already_exists"),
+	PHONE_ALREADY_EXISTS(409,"4532","message.user.phone_already_exists"),
+	USER_STATUS_STAY(403,"4533","message.user.status_stay"),
+	USER_STATUS_STOP(401,"4534","message.user.status_stop"),
+	USER_STATUS_DELETE(410,"4535","message.user.status_delete"),
 	
 	// Address 454
 	ADDRESSS_NOT_FOUND(404,"4540","message.address.not_found"),
-	ADDRESS_INVALID_VALUE(400,"4542","message.address.invalid_value"),
-	
+	ADDRESS_INVALID_VALUE(400, "4541", "message.address.address_invalid_value"), // Daum 조회 결과 없는 주소
+
 	// Comment 455
 	COMMENT_NOT_FOUND(404,"4550","message.comment.not_found"),
-	COMMENT_DELETED(400,"4551","message.comment.deleted"),
-
+	COMMENT_STATUS_DELETE(400,"4551","message.comment.status_delete"),
 	
 	// Estimate 456
 	ESTIMATE_NOT_FOUND(404,"4560","message.estimate.not_found"),
-	ESTIMATE_DELETED(404,"4560","message.estimate.deleted"),
-
+	ESTIMATE_STATUS_DELETE(404,"4561","message.estimate.status_delete"),
+	
+	// Sign 452
+	SIGNIN_FAILED(404,"4520","message.sign.signin_failed"),
+	SIGNIN_FAILED_OUT(404,"4521","message.sign.signin_failed_out"),
+//	AUTHENTICATION_FAILED(401,"4523","message.sign.authentication_failed"),
 	
 	// JWT 457
-	JWT_ILLEGAL(404,"4570","meesage.token.not_found"), // 토큰 없음
-	JWT_EXPIRED(401,"4571","message.token.expired"), // 토큰 만료
-	JWT_CREATE_FIAL(500,"5001","error.message"), // 토큰 생성 실패
+	JWT_ILLEGAL(400,"4570","meesage.jwt.illegal"), // 토큰 값 부적합 또는 내부 claims 부적합
+	JWT_EXPIRED(403,"4571","message.jwt.expired"), // 토큰 만료
+	JWT_VALIDATE_FIAL(401,"4572","message.jwt.validate_fail"), // 토큰 검증 실패
+	JWT_CREATE_FIAL(500,"5001","message.jwt.create_fail"), // 토큰 생성 실패
 	
 	// Token 458
-	TOKEN_NOT_FOUND(404,"4580","meesage.token.not_found"), // 토큰 없음
-	TOKEN_ILLEGAL(400,"4581","message.token.illegal"), // 토큰 이상
-	TOKEN_VALUE_MISMATCH(400,"4582","message.token.illegal"), // 토큰 값 불일치
-	TOKEN_GET_FIAL(500,"5001","error.message"), // 토큰 조회 실패
-	TOKEN_SET_FIAL(500,"5001","error.message"), // 토큰 Redis 저장 실패
-	
+	TOKEN_ILLEGAL(400,"4580","message.token.illegal"), // 토큰 값 null 또는 없음
+	TOKEN_NOT_FOUND(404,"4581","meesage.token.not_found"), // 토큰 없음
+	TOKEN_EXPIRED(403,"4582","message.token.expired"), // 토큰 만료
+	TOKEN_VALUE_MISMATCH(401,"4583","message.token.illegal"), // 토큰 값 불일치
+	TOKEN_GET_FIAL(500,"5002","message.common.internal_server_error"), // Redis 토큰 조회 실패
+	TOKEN_SET_FIAL(500,"5003","message.common.internal_server_error"), // Redis 토큰 저장 실패
+
 	// Verification 459
 	VERIFICATION_NOT_FOUND(404,"4590","message.verification.not_found"),
-	VERIFICATION_EXPIRED(400,"4591","message.verification.expired"),
-	TOO_MANY_VERIFY(429,"4592","message.verification.too_many_verify"),
-	MISMATCH_VERIFICATION_CODE(400,"4593","message.verification.mismatch_code"),
-	MISMATCH_RECIPIENT(400,"4594","message.verification.mismatch_recipient"),
-	NOT_VERIFY(404,"4594","message.verification.not_verify"),
-	
+	MISMATCH_VERIFICATION_CODE(401,"4591","message.verification.mismatch_code"),
+	MISMATCH_RECIPIENT(401,"4592","message.verification.mismatch_recipient"),
+	VERIFICATION_EXPIRED(403,"4593","message.verification.expired"),
+	NOT_VERIFY(403,"4594","message.verification.not_verify"),
+	TOO_MANY_VERIFY(429,"4595","message.verification.too_many_verify"),
 	
 	// Crypto 460
-	ENCRYPT_FAIL(500,"4601","message.common.internal_server_error"),
-	DECRYPT_FAIL(500,"4602","message.common.internal_server_error"),
+	ENCRYPT_FAIL(500,"5004","message.common.internal_server_error"),
+	DECRYPT_FAIL(500,"5005","message.common.internal_server_error"),
 	
 	// S3 461
 	S3_UPLOAD_FAIL(500,"4610","message.s3.upload_fail"),
 	S3_DELETE_FAIL(500,"4611","message.s3.delete_fail"),
 	
 	// Mail 462
-	MAIL_SEND_FAIL(500,"4620","message.mail.send_fail"),
+	MAIL_SEND_FAIL(500,"5006","message.mail.send_fail"),
 	
 	// Sms 463
-	SMS_SEND_FAIL(500,"4630","message.sms.send_fail"),
+	SMS_SEND_FAIL(500,"5007","message.sms.send_fail")
 	
-	// SimpleEstimate 464
-	SIMPLE_ESTIMATE_NOT_FOUND(404,"4640","message.simple_estimate.not_found"),
-	SIMPLE_ESTIMATE_DELETED(404,"4641","message.simple_estimate.deleted"),	
+
 	; 
 	
 	

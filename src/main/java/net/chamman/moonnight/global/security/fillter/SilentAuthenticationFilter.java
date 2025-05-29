@@ -13,7 +13,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 
-import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +23,7 @@ import net.chamman.moonnight.auth.crypto.TokenProvider;
 import net.chamman.moonnight.auth.sign.SignService;
 import net.chamman.moonnight.auth.sign.log.SignLogService;
 import net.chamman.moonnight.global.exception.jwt.IllegalJwtException;
+import net.chamman.moonnight.global.exception.token.TimeOutTokenException;
 import net.chamman.moonnight.global.security.principal.SilentUserDetails;
 import net.chamman.moonnight.infra.naver.sms.GuidanceService;
 
@@ -79,7 +79,7 @@ public class SilentAuthenticationFilter extends AbstractAccessTokenFilter<Silent
 			System.out.println("Slient Auth 정상 처리.");
 			filterChain.doFilter(request, response);
 			
-		} catch (ExpiredJwtException e) {
+		} catch (TimeOutTokenException e) {
 			try {
 				// Creating NewTokens 
 				Map<String, String> newTokens = signService.refresh(accessToken, refreshToken, clientIp);

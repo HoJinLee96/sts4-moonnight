@@ -1,8 +1,8 @@
 package net.chamman.moonnight.domain.estimate.simple;
 
 import static net.chamman.moonnight.global.exception.HttpStatusCode.AUTHORIZATION_FAILED;
-import static net.chamman.moonnight.global.exception.HttpStatusCode.SIMPLE_ESTIMATE_DELETED;
-import static net.chamman.moonnight.global.exception.HttpStatusCode.SIMPLE_ESTIMATE_NOT_FOUND;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.ESTIMATE_NOT_FOUND;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.ESTIMATE_STATUS_DELETE;
 
 import java.util.List;
 import java.util.Objects;
@@ -152,7 +152,7 @@ public class SimpleEstimateService {
 	 */
 	public SimpleEstimate getSpemByEncodedSpemId(int encodedSpemId) {
 		SimpleEstimate simpleEstimate = spemRepository.findById(obfuscator.decode(encodedSpemId))
-				.orElseThrow(() -> new NoSuchDataException(SIMPLE_ESTIMATE_NOT_FOUND,"찾을 수 없는 간편 견적서."));
+				.orElseThrow(() -> new NoSuchDataException(ESTIMATE_NOT_FOUND,"찾을 수 없는 간편 견적서."));
 		
 		isDelete(simpleEstimate);
 		
@@ -204,7 +204,7 @@ public class SimpleEstimateService {
 	 */
 	private void isDelete(SimpleEstimate spem) {
 		if(spem.getEstimateStatus()==EstimateStatus.DELETE) {
-			throw new StatusDeleteException(SIMPLE_ESTIMATE_DELETED,"삭제된 간편 견적서.");
+			throw new StatusDeleteException(ESTIMATE_STATUS_DELETE,"삭제된 간편 견적서.");
 		}
 	}
 	

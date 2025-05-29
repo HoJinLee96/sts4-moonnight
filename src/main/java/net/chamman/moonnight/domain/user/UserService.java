@@ -2,7 +2,6 @@ package net.chamman.moonnight.domain.user;
 
 import static net.chamman.moonnight.global.exception.HttpStatusCode.EMAIL_ALREADY_EXISTS;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.PHONE_ALREADY_EXISTS;
-import static net.chamman.moonnight.global.exception.HttpStatusCode.SIGNIN_FAILED;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.TOKEN_VALUE_MISMATCH;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.USER_NOT_FOUND;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.USER_STATUS_DELETE;
@@ -24,6 +23,7 @@ import net.chamman.moonnight.auth.crypto.dto.FindPwTokenDto;
 import net.chamman.moonnight.auth.crypto.dto.PasswordTokenDto;
 import net.chamman.moonnight.auth.crypto.dto.VerificationEmailTokenDto;
 import net.chamman.moonnight.auth.crypto.dto.VerificationPhoneTokenDto;
+import net.chamman.moonnight.auth.sign.SignService;
 import net.chamman.moonnight.auth.sign.log.SignLogService;
 import net.chamman.moonnight.auth.verification.VerificationService;
 import net.chamman.moonnight.domain.user.User.UserProvider;
@@ -37,10 +37,11 @@ import net.chamman.moonnight.global.exception.crypto.DecryptException;
 import net.chamman.moonnight.global.exception.crypto.EncryptException;
 import net.chamman.moonnight.global.exception.redis.RedisGetException;
 import net.chamman.moonnight.global.exception.redis.RedisSetException;
-import net.chamman.moonnight.global.exception.sign.MismatchPasswordException;
+import net.chamman.moonnight.global.exception.sign.TooManySignFailException;
 import net.chamman.moonnight.global.exception.token.IllegalTokenException;
 import net.chamman.moonnight.global.exception.token.NoSuchTokenException;
 import net.chamman.moonnight.global.exception.token.TokenValueMismatchException;
+import net.chamman.moonnight.global.exception.user.MismatchPasswordException;
 import net.chamman.moonnight.global.exception.verification.NotVerifyException;
 import net.chamman.moonnight.global.exception.verification.VerificationExpiredException;
 
@@ -49,9 +50,10 @@ import net.chamman.moonnight.global.exception.verification.VerificationExpiredEx
 @RequiredArgsConstructor
 public class UserService {
 
-    private final VerificationService verificationService;
 	private final UserRepository userRepository;
-	private final SignLogService signLogService;
+    private final VerificationService verificationService;
+    private final SignLogService signLogService;
+    private final SignService signService;
 	private final TokenProvider tokenProvider;
 	private final PasswordEncoder passwordEncoder;
 
@@ -256,7 +258,8 @@ public class UserService {
 	 * @param userId
 	 * @param password
 	 * 
-	 * @throws MismatchPasswordException {@link #verifyPasswordAndCreatePasswordToken}
+	 * @throws TooManySignFailException {@link SignService#validatePassword} 비밀번호 실패 횟수 초과
+	 * @throws MismatchPasswordException {@link SignService#validatePassword} 비밀번호 불일치
 	 * 
      * @throws EncryptException {@link TokenProvider#createToken} 암호화 실패
      * @throws RedisSetException {@link TokenProvider#createToken} Redis 저장 실패
@@ -264,13 +267,10 @@ public class UserService {
 	 * @return 토큰
 	 */
 	@Transactional
-	public String verifyPasswordAndCreatePasswordToken(int userId, String password) {
+	public String confirmPasswordAndCreatePasswordToken(int userId, String password, String clientIp) {
 		
 		User user = getUserByUserId(userId);     
-		
-		if(!passwordEncoder.matches(password, user.getPassword())) {
-			throw new MismatchPasswordException(SIGNIN_FAILED,"비밀번호 불일치.");
-		}
+		signService.validatePassword(user, password, clientIp);
 
 		return tokenProvider.createToken(new PasswordTokenDto(userId+"", user.getEmail()), PasswordTokenDto.TOKENTYPE);
 	}

@@ -1,8 +1,8 @@
 package net.chamman.moonnight.domain.estimate;
 
 import static net.chamman.moonnight.global.exception.HttpStatusCode.AUTHORIZATION_FAILED;
-import static net.chamman.moonnight.global.exception.HttpStatusCode.ESTIMATE_DELETED;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.ESTIMATE_NOT_FOUND;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.ESTIMATE_STATUS_DELETE;
 
 import java.io.IOException;
 import java.util.List;
@@ -357,7 +357,7 @@ public class EstimateService {
 	 */
 	private void isDelete(Estimate estimate) {
 		if (estimate.getEstimateStatus() == EstimateStatus.DELETE) {
-			throw new StatusDeleteException(ESTIMATE_DELETED,"삭제된 견적서.");
+			throw new StatusDeleteException(ESTIMATE_STATUS_DELETE,"삭제된 견적서.");
 		}
 	}
 	

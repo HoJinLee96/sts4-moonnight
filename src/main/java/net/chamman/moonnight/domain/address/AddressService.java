@@ -20,7 +20,6 @@ import net.chamman.moonnight.global.exception.StatusDeleteException;
 import net.chamman.moonnight.global.exception.StatusStayException;
 import net.chamman.moonnight.global.exception.StatusStopException;
 import net.chamman.moonnight.global.exception.infra.DaumStateException;
-import net.chamman.moonnight.global.exception.infra.IllegalAddressValueException;
 import net.chamman.moonnight.infra.kakao.DaumMapClient;
 
 @Service

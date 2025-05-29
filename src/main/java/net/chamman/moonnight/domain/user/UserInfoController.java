@@ -2,7 +2,7 @@ package net.chamman.moonnight.domain.user;
 
 import static net.chamman.moonnight.global.exception.HttpStatusCode.DELETE_SUCCESS;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.EMAIL_NOT_EXISTS;
-import static net.chamman.moonnight.global.exception.HttpStatusCode.INVALID_VALUE;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.ILLEGAL_INPUT_VALUE;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.PHONE_NOT_EXISTS;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.READ_SUCCESS;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.SUCCESS;
@@ -154,7 +154,7 @@ public class UserInfoController {
 			HttpServletRequest request){
 		
 		if(!Objects.equals(password, confirmPassword)) {
-			throw new IllegalValueException(INVALID_VALUE,"새로운 두 비밀번호가 일치하지 않음. password: "+password+", confirmPassword: "+confirmPassword);
+			throw new IllegalValueException(ILLEGAL_INPUT_VALUE,"새로운 두 비밀번호가 일치하지 않음. password: "+password+", confirmPassword: "+confirmPassword);
 		}
 		
 		String clientIp = (String) request.getAttribute("clientIp");
@@ -171,11 +171,13 @@ public class UserInfoController {
 	public ResponseEntity<ApiResponseDto<Map<String,String>>> validPassword(
 			@AuthenticationPrincipal CustomUserDetails userDetails,
 			@RequestHeader(required = false, value = "X-Client-Type")String userAgent,
-			@ValidPassword @RequestParam String password) {
+			@ValidPassword @RequestParam String password,
+			HttpServletRequest request) {
 		
+		String clientIp = (String) request.getAttribute("clientIp");
 		boolean isMobileApp = userAgent != null && userAgent.contains("mobile");
 		
-		String accessPasswordToken = userService.verifyPasswordAndCreatePasswordToken(userDetails.getUserId(), password);
+		String accessPasswordToken = userService.confirmPasswordAndCreatePasswordToken(userDetails.getUserId(), password, clientIp);
 		
 		if(isMobileApp) {
 			return ResponseEntity.ok(ApiResponseDto.of(READ_SUCCESS,Map.of("X-Access-Password-Token",accessPasswordToken)));
