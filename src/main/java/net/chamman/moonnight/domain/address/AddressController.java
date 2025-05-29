@@ -55,9 +55,9 @@ public class AddressController {
 	@GetMapping("/private/{addressId}")
 	public ResponseEntity<ApiResponseDto<AddressResponseDto>> getAddress(
 			@AuthenticationPrincipal CustomUserDetails userDetails,
-			@PathVariable int addressId) {
+			@PathVariable("addressId") int encodedAddressId) {
 		
-		AddressResponseDto addressResponseDto = addressService.getAddress(userDetails.getUserId(), addressId);
+		AddressResponseDto addressResponseDto = addressService.getAddress(userDetails.getUserId(), encodedAddressId);
 		
 		return ResponseEntity.ok(ApiResponseDto.of(READ_SUCCESS, addressResponseDto));
 	}
@@ -84,10 +84,10 @@ public class AddressController {
 	@PatchMapping("/private/{addressId}")
 	public ResponseEntity<ApiResponseDto<Void>> updateAddress(
 			@AuthenticationPrincipal CustomUserDetails userDetail,
-			@Valid @PathVariable int addressId,
+			@PathVariable("addressId") int encodedAddressId,
 			@Valid @RequestBody AddressRequestDto addressRequestDto) {
 		
-		addressService.updateAddress(userDetail.getUserId(), addressId, addressRequestDto);
+		addressService.updateAddress(userDetail.getUserId(), encodedAddressId, addressRequestDto);
 		
 		return ResponseEntity.ok(ApiResponseDto.of(UPDATE_SUCCESS,null));  
 	}
@@ -98,9 +98,9 @@ public class AddressController {
 	@PatchMapping("/private/primary/{addressId}")
 	public ResponseEntity<ApiResponseDto<Void>> updatePrimary(
 			@AuthenticationPrincipal CustomUserDetails userDetail,
-			@PathVariable int addressId) {
+			@PathVariable("addressId") int encodedAddressId) {
 		
-		addressService.updatePrimary(userDetail.getUserId(), addressId);
+		addressService.updatePrimary(userDetail.getUserId(), encodedAddressId);
 		
 		return ResponseEntity.ok(ApiResponseDto.of(UPDATE_SUCCESS,  null));
 	}
@@ -111,9 +111,9 @@ public class AddressController {
 	@DeleteMapping("/private/{addressId}")
 	public ResponseEntity<ApiResponseDto<AddressRequestDto>> deleteAddress(
 			@AuthenticationPrincipal CustomUserDetails userDetail,
-			@Valid @PathVariable int addressId) {
+			@PathVariable("addressId") int encodedAddressId) {
 		
-		addressService.deleteAddress(userDetail.getUserId(), addressId);
+		addressService.deleteAddress(userDetail.getUserId(), encodedAddressId);
 		
 		return ResponseEntity.ok(ApiResponseDto.of(DELETE_SUCCESS, null));  
 	}

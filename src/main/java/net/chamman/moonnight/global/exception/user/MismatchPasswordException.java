@@ -1,4 +1,4 @@
-package net.chamman.moonnight.global.exception.sign;
+package net.chamman.moonnight.global.exception.user;
 
 import net.chamman.moonnight.global.exception.CustomException;
 import net.chamman.moonnight.global.exception.HttpStatusCode;

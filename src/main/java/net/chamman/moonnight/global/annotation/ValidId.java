@@ -14,7 +14,7 @@ import net.chamman.moonnight.global.validator.IdValidator;
 @Target({ ElementType.FIELD, ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidId {
-  String message() default "error.sequnce.not_found";
-  Class<?>[] groups() default {};
-  Class<? extends Payload>[] payload() default {};
+	String message() default "error.sequnce.not_found";
+	Class<?>[] groups() default {};
+	Class<? extends Payload>[] payload() default {};
 }

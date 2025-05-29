@@ -11,7 +11,7 @@ import net.chamman.moonnight.domain.user.User;
 public record CommentRequestDto(
     
     @NotNull
-    int estimateId,
+    int encodedEstimateId,
     
     @NotBlank(message = "{validation.comment.text.required}")
     @Size(max = 250, message = "{validation.comment.text.length}")

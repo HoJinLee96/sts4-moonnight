@@ -42,23 +42,22 @@ public class GuidanceService {
 				.countryCode("82")
 				.from(senderPhone)
 				.content("달밤청소 견적서")
-//            .content("[ 달밤청소 가입 인증번호 ]\n[" + verificationCode + "]를 입력해주세요")
 				.messages(messages)
 				.build();
 		try {
 			int statusCode = naverSmsClient.sendVerificationCode(naverSmsPayload);
 			if((statusCode/100)!=2) {
-				log.error("안내 문자 발송 실패: statusCode: {}, phone: {}", statusCode, recipientPhone);
+				log.error("안내 문자 발송 실패. statusCode: {}, phone: {}", statusCode, recipientPhone);
 			}
 		} catch (Exception e) {
 			log.error("안내 문자 발송 실패. phone: {}, e: {}", recipientPhone, e);
 		}
 	}
 	
-	/** 보안 문제 문자 알람
+	/** 서버 문제 발생 관리자 문자 알람
 	 * @param message
 	 */
-	public void sendSecurityAlert(String message) {
+	public void sendAdminAlert(String message) {
 		
 		// 수신자 설정
 		SmsRecipientPayload smsRecipientPayload = new SmsRecipientPayload(adminPhone.replaceAll("[^0-9]", ""),message);
@@ -70,18 +69,17 @@ public class GuidanceService {
 				.contentType("COMM")
 				.countryCode("82")
 				.from(senderPhone)
-				.content("달밤청소 견적서")
-//            .content("[ 달밤청소 가입 인증번호 ]\n[" + verificationCode + "]를 입력해주세요")
+				.content("서버 문제 발생.")
 				.messages(messages)
 				.build();
 		
 		try {
 			int statusCode = naverSmsClient.sendVerificationCode(naverSmsPayload);
 			if((statusCode/100)!=2) {
-				log.error("보안 문제 문자 발송 실패.");
+				log.error("서버 문제 발생. 관리자 문자 알람 발송 실패.");
 			}
 		} catch (Exception e) {
-			log.error("보안 문제 문자 발송 실패. e: {}", e);
+			log.error("서버 문제 발생. 관리자 문자 알람 발송 실패. e: {}", e);
 		}
 	}
 	

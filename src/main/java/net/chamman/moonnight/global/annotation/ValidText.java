@@ -15,7 +15,7 @@ import net.chamman.moonnight.global.validator.TextValidator;
 @Target({ ElementType.FIELD, ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidText {
-  String message() default "validation.comment.text.invalid";
-  Class<?>[] groups() default {};
-  Class<? extends Payload>[] payload() default {};
+	String message() default "validation.comment.text.invalid";
+	Class<?>[] groups() default {};
+	Class<? extends Payload>[] payload() default {};
 }

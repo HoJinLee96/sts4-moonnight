@@ -6,7 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface EstimateRepository extends JpaRepository<Estimate, Integer>{
-  List<Estimate> findByUser_UserId(int userId);
-  List<Estimate> findByPhone(String phone);
-
+	List<Estimate> findByUser_UserId(int userId);
+	List<Estimate> findByPhone(String phone);
 }

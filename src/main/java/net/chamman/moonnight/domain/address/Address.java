@@ -23,47 +23,49 @@ import net.chamman.moonnight.domain.user.User;
 
 @Entity
 @Table(name = "address")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Address {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "address_id")
-  private int addressId;
-  
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "FK_user_TO_address_1"))
-  private User user;
-  
-  @Column(name = "name", length = 20)
-  private String name;
-
-  @Column(name = "postcode", length = 10, nullable = false)
-  private String postcode;
-
-  @Column(name = "main_address", length = 250, nullable = false)
-  private String mainAddress;
-
-  @Column(name = "detail_address", length = 250, nullable = false)
-  private String detailAddress;
-
-  @Column(name = "is_primary")
-  @ColumnDefault("false") 
-  private boolean isPrimary;
-  
-  @Generated(event = EventType.INSERT)
-  @Column(name = "created_at", updatable = false)
-  private LocalDateTime createdAt;
-
-  @Generated(event = EventType.UPDATE)
-  @Column(name = "updated_at")
-  private LocalDateTime updatedAt;
-  
-  public void update(AddressRequestDto addressRequestDto) {
-  this.name=addressRequestDto.name();
-  this.postcode=addressRequestDto.postcode();
-  this.mainAddress=addressRequestDto.mainAddress();
-  this.detailAddress=addressRequestDto.detailAddress();
-  }
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "address_id")
+	private int addressId;
+	
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "FK_user_TO_address_1"))
+	private User user;
+	
+	@Column(name = "name", length = 20)
+	private String name;
+	
+	@Column(name = "postcode", length = 10, nullable = false)
+	private String postcode;
+	
+	@Column(name = "main_address", length = 250, nullable = false)
+	private String mainAddress;
+	
+	@Column(name = "detail_address", length = 250, nullable = false)
+	private String detailAddress;
+	
+	@Column(name = "is_primary")
+	@ColumnDefault("false") 
+	private boolean isPrimary;
+	
+	@Generated(event = EventType.INSERT)
+	@Column(name = "created_at", updatable = false)
+	private LocalDateTime createdAt;
+	
+	@Generated(event = EventType.UPDATE)
+	@Column(name = "updated_at")
+	private LocalDateTime updatedAt;
+	
+	public void update(AddressRequestDto addressRequestDto) {
+		this.name=addressRequestDto.name();
+		this.postcode=addressRequestDto.postcode();
+		this.mainAddress=addressRequestDto.mainAddress();
+		this.detailAddress=addressRequestDto.detailAddress();
+	}
 }

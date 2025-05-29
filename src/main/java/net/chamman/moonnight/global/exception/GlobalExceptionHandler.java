@@ -26,7 +26,19 @@ import net.chamman.moonnight.global.util.ApiResponseDto;
 @RequiredArgsConstructor
 public class GlobalExceptionHandler {
 	
-	  private final MessageSource messageSource;
+	private final MessageSource messageSource;
+	
+	@AutoSetMessageResponse
+	@ExceptionHandler(CriticalException.class)
+	public ResponseEntity<ApiResponseDto<Void>> handleCriticalException(CriticalException ex) {
+		HttpStatusCode httpStatusCode = ex.getHttpStatusCode();
+		log.error("{} 발생.\n[httpStatusCode: {}]\n[exception: {}]",
+				ex.getClass().getSimpleName(),
+				httpStatusCode.toString(),
+				ex
+				);
+		return ResponseEntity.status(httpStatusCode.getStatus()).body(ApiResponseDto.of(httpStatusCode, null));
+	}
 	
 	@AutoSetMessageResponse
 	@ExceptionHandler(CustomException.class)
@@ -49,25 +61,25 @@ public class GlobalExceptionHandler {
 		BindingResult bindingResult = ex.getBindingResult(); // 에러 정보가 다 여기 들어있음!
 		
 		String messageKey = bindingResult.getFieldError().getDefaultMessage();
-
-        if (messageKey != null && !messageKey.isEmpty()) {
-            Locale locale = RequestContextUtils.getLocale(((org.springframework.http.server.ServletServerHttpRequest) request).getServletRequest());
-
-            try {
-            	
-                String resolvedMessage = messageSource.getMessage(messageKey, null, locale);
-
-                ApiResponseDto<Void> apiResponseDto = ApiResponseDto.of(REQUEST_BODY_NOT_VALID, null);
-                apiResponseDto.setMessage(resolvedMessage);
-                
-        		return ResponseEntity.status(400).body(apiResponseDto);
-            } catch (Exception e) {
-              log.warn("메시지 번역 실패. [exception: {}]",e);
-              return ResponseEntity.status(400).body(ApiResponseDto.of(REQUEST_BODY_NOT_VALID, null));
-            }
-        } else {
-        	return  ResponseEntity.status(400).body(ApiResponseDto.of(REQUEST_BODY_NOT_VALID, null));
-        }
+		
+		if (messageKey != null && !messageKey.isEmpty()) {
+			Locale locale = RequestContextUtils.getLocale(((org.springframework.http.server.ServletServerHttpRequest) request).getServletRequest());
+			
+			try {
+				
+				String resolvedMessage = messageSource.getMessage(messageKey, null, locale);
+				
+				ApiResponseDto<Void> apiResponseDto = ApiResponseDto.of(REQUEST_BODY_NOT_VALID, null);
+				apiResponseDto.setMessage(resolvedMessage);
+				
+				return ResponseEntity.status(400).body(apiResponseDto);
+			} catch (Exception e) {
+				log.warn("메시지 번역 실패. [exception: {}]",e);
+				return ResponseEntity.status(400).body(ApiResponseDto.of(REQUEST_BODY_NOT_VALID, null));
+			}
+		} else {
+			return  ResponseEntity.status(400).body(ApiResponseDto.of(REQUEST_BODY_NOT_VALID, null));
+		}
 	}
 	
 	@AutoSetMessageResponse

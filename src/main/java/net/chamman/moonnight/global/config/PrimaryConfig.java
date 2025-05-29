@@ -8,11 +8,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @Configuration
 public class PrimaryConfig {
 
-@Bean
-public PasswordEncoder passwordEncoder() {
+	@Bean
+	public PasswordEncoder passwordEncoder() {
 //비밀번호를 해시할 때 몇 번 반복해서 계산할지를 정하는 값
-int strength = 12; 
-return new BCryptPasswordEncoder(strength);
-}
-
+		int strength = 12; 
+		return new BCryptPasswordEncoder(strength);
+	}
 }

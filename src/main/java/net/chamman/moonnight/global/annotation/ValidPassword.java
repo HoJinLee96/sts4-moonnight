@@ -14,7 +14,7 @@ import net.chamman.moonnight.global.validator.PasswordValidator;
 @Target({ ElementType.FIELD, ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidPassword {
-  String message() default "validation.user.password.invalid";
-  Class<?>[] groups() default {};
-  Class<? extends Payload>[] payload() default {};
+	String message() default "validation.user.password.invalid";
+	Class<?>[] groups() default {};
+	Class<? extends Payload>[] payload() default {};
 }

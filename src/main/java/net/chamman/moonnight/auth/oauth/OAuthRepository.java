@@ -7,6 +7,5 @@ import net.chamman.moonnight.auth.oauth.OAuth.OAuthProvider;
 
 @Repository
 public interface OAuthRepository extends JpaRepository<OAuth, Integer>{
-  Optional<OAuth> findByOauthProviderAndOauthProviderId(OAuthProvider oauthProvider, String id);
-
+	Optional<OAuth> findByOauthProviderAndOauthProviderId(OAuthProvider oauthProvider, String id);
 }

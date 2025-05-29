@@ -1,7 +1,7 @@
 package net.chamman.moonnight.auth.sign;
 
 import static net.chamman.moonnight.global.exception.HttpStatusCode.CREATE_SUCCESS;
-import static net.chamman.moonnight.global.exception.HttpStatusCode.INVALID_VALUE;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.ILLEGAL_INPUT_VALUE;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.SUCCESS;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.SUCCESS_NO_DATA;
 
@@ -244,7 +244,7 @@ public class SignController {
 		boolean isMobileApp = userAgent != null && userAgent.contains("MyMobileApp");
 		
 		if(!Objects.equals(password, confirmPassword)) {
-			throw new IllegalValueException(INVALID_VALUE,"두 비밀번호들가 일치하지 않음. password: "+password+", confirmPassword: "+confirmPassword);
+			throw new IllegalValueException(ILLEGAL_INPUT_VALUE,"두 비밀번호들가 일치하지 않음. password: "+password+", confirmPassword: "+confirmPassword);
 		}
 		
 		String accessSignUpToken = signService.createSignUpToken(email, password, verificationEmailToken);
@@ -275,7 +275,7 @@ public class SignController {
 	public ResponseEntity<ApiResponseDto<String>> signup2(
 			@ClientSpecific("X-Access-SignUp-Token") String accessSignUpToken,
 			@ClientSpecific("X-Verification-Phone-Token") String verificationPhoneToken,
-			@RequestBody @Valid UserCreateRequestDto userCreateRequestDto) {
+			@Valid @RequestBody UserCreateRequestDto userCreateRequestDto) {
 		
 		String name = signService.signUpLocalUser(userCreateRequestDto, accessSignUpToken, verificationPhoneToken);
 		

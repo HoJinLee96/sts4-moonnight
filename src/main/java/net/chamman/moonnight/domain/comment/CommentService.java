@@ -1,7 +1,7 @@
 package net.chamman.moonnight.domain.comment;
 
 import static net.chamman.moonnight.global.exception.HttpStatusCode.AUTHORIZATION_FAILED;
-import static net.chamman.moonnight.global.exception.HttpStatusCode.COMMENT_DELETED;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.COMMENT_STATUS_DELETE;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.COMMENT_NOT_FOUND;
 
 import java.util.List;
@@ -51,7 +51,7 @@ public class CommentService {
 		
 		User user = userService.getUserByUserId(userId);
 		
-		Estimate estimate = estimateService.getEstimateById(commentRequestDto.estimateId());
+		Estimate estimate = estimateService.getEstimateById(commentRequestDto.encodedEstimateId());
 		
 		Comment comment = commentRequestDto.toEntity(user, estimate);
 		commentRepository.save(comment);
@@ -132,14 +132,14 @@ public class CommentService {
 		userService.getUserByUserId(userId);
 
 		Comment comment = commentRepository.findById(commentId)
-				.orElseThrow(() -> new NoSuchDataException(COMMENT_NOT_FOUND,"찾을 수 없는 데이터. commentId: " + commentId));
+				.orElseThrow(() -> new NoSuchDataException(COMMENT_NOT_FOUND,"일치하는 데이터 없음. encodedCommentId: " + encodedCommentId));
 		
 		if (comment.getCommentStatus() == Comment.CommentStatus.DELETE) {
-			throw new StatusDeleteException(COMMENT_DELETED,"이미 삭제된 댓글.");
+			throw new StatusDeleteException(COMMENT_STATUS_DELETE,"이미 삭제된 댓글.");
 		}
 		
 		if (comment.getUser().getUserId() != userId) {
-			throw new ForbiddenException(AUTHORIZATION_FAILED,"댓글 권한 없음.");
+			throw new ForbiddenException(AUTHORIZATION_FAILED,"댓글 조회 권한 이상. address.getUser().getUserId(): "+comment.getUser().getUserId()+"!= userId: "+userId);
 		}
 		return comment;
 	}

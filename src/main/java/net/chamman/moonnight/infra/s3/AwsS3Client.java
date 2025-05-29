@@ -28,7 +28,7 @@ public class AwsS3Client {
 	
 	@Value("${aws.s3.bucket}")
 	private String bucket;
-	private final S3Client s3Client;
+	private S3Client s3Client;
 
 	/** 파일들 업로드
 	 * @param files
@@ -97,6 +97,7 @@ public class AwsS3Client {
 			throw new S3DeleteException(S3_DELETE_FAIL, e);
 		}
 	}
+	
 }
 	
 //  public Optional<String> uploadImagesToS3(List<File> images, String keyPrefix) throws IOException {

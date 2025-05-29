@@ -9,21 +9,21 @@ import net.chamman.moonnight.global.exception.HttpStatusCode;
 @Getter
 @AllArgsConstructor
 public class ApiResponseDto<T> {
-
-    @Schema(description = "응답 코드")
-    HttpStatusCode httpStatusCode;
-    @Schema(description = "응답 메시지")
-    String message;
-    @Schema(description = "응답 데이터", nullable = true)
-    private T data;
-    
-    public static <T> ApiResponseDto<T> of(HttpStatusCode httpStatusCode, T data) {
-
-      return new ApiResponseDto<>(httpStatusCode, "", data);
-    }
-
-    public void setMessage(String message) {
-      this.message = message;
-    }
-    
+	
+	@Schema(description = "응답 코드")
+	HttpStatusCode httpStatusCode;
+	@Schema(description = "응답 메시지")
+	String message;
+	@Schema(description = "응답 데이터", nullable = true)
+	private T data;
+	
+	public static <T> ApiResponseDto<T> of(HttpStatusCode httpStatusCode, T data) {
+		
+		return new ApiResponseDto<>(httpStatusCode, "", data);
+	}
+	
+	public void setMessage(String message) {
+		this.message = message;
+	}
+	
 }

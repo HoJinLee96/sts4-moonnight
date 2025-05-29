@@ -1,9 +1,9 @@
 package net.chamman.moonnight.global.exception.infra;
 
-import net.chamman.moonnight.global.exception.CustomException;
+import net.chamman.moonnight.global.exception.CriticalException;
 import net.chamman.moonnight.global.exception.HttpStatusCode;
 
-public class SmsSendException extends CustomException{
+public class SmsSendException extends CriticalException{
 
 	public SmsSendException(HttpStatusCode httpStatusCode, Exception e) {
 		super(httpStatusCode, e);

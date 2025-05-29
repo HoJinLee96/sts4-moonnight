@@ -1,9 +1,9 @@
 package net.chamman.moonnight.global.exception.infra;
 
-import net.chamman.moonnight.global.exception.CustomException;
+import net.chamman.moonnight.global.exception.CriticalException;
 import net.chamman.moonnight.global.exception.HttpStatusCode;
 
-public class DaumStateException extends CustomException{
+public class DaumStateException extends CriticalException{
 
 	public DaumStateException(HttpStatusCode httpStatusCode, Exception e) {
 		super(httpStatusCode, e);

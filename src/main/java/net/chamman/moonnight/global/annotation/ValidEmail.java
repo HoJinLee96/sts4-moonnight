@@ -15,7 +15,7 @@ import net.chamman.moonnight.global.validator.EmailValidator;
 @Target({ ElementType.FIELD, ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidEmail {
-  String message() default "validation.user.email.invalid";
-  Class<?>[] groups() default {};
-  Class<? extends Payload>[] payload() default {};
+	String message() default "validation.user.email.invalid";
+	Class<?>[] groups() default {};
+	Class<? extends Payload>[] payload() default {};
 }

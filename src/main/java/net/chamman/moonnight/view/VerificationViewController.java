@@ -8,17 +8,17 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @Controller
 public class VerificationViewController {
-
-  @GetMapping("/verify/phone/blank")
-  public String showVerifyPhoneBlank(HttpServletRequest req, HttpServletResponse res) {
-    return "verifyPhoneBlank";
-  }
-  
-  @GetMapping("/verify/email/blank")
-  public String showVerifyEmailBlank(HttpServletRequest req, HttpServletResponse res) {
-    return "verifyEmailBlank";
-  }
-  
+	
+	@GetMapping("/verify/phone/blank")
+	public String showVerifyPhoneBlank(HttpServletRequest req, HttpServletResponse res) {
+		return "verifyPhoneBlank";
+	}
+	
+	@GetMapping("/verify/email/blank")
+	public String showVerifyEmailBlank(HttpServletRequest req, HttpServletResponse res) {
+		return "verifyEmailBlank";
+	}
+	
 }
 
 

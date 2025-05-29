@@ -20,8 +20,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import net.chamman.moonnight.global.annotation.ValidId;
 import net.chamman.moonnight.global.security.principal.CustomUserDetails;
 import net.chamman.moonnight.global.util.ApiResponseDto;
 
@@ -37,7 +37,7 @@ public class CommentController {
 	@PostMapping("/private/register")
 	public ResponseEntity<ApiResponseDto<CommentResponseDto>> registerComment(
 			@AuthenticationPrincipal CustomUserDetails userDetails, 
-			@RequestBody CommentRequestDto commentRequestDto) {
+			@Valid @RequestBody CommentRequestDto commentRequestDto) {
 		
 		CommentResponseDto commentResponseDto = commentService.registerComment(userDetails.getUserId(), commentRequestDto);
 		
@@ -49,8 +49,8 @@ public class CommentController {
 	@GetMapping("/private/estimate/{estimateId}")
 	public ResponseEntity<ApiResponseDto<List<CommentResponseDto>>> getCommentList(
 			@AuthenticationPrincipal CustomUserDetails userDetails, 
-			@PathVariable int estimateId) {
-		List<CommentResponseDto> list = commentService.getCommentList(estimateId, userDetails.getUserId());
+			@PathVariable("estimateId") int encodedEstimateId) {
+		List<CommentResponseDto> list = commentService.getCommentList(encodedEstimateId, userDetails.getUserId());
 		if(list==null) {
 			return ResponseEntity.ok(ApiResponseDto.of(READ_SUCCESS_NO_DATA, null));
 		}
@@ -62,10 +62,10 @@ public class CommentController {
 	@PatchMapping("/private/{commentId}")
 	public ResponseEntity<ApiResponseDto<Void>> updateComment(
 			@AuthenticationPrincipal CustomUserDetails userDetails, 
-			@ValidId @PathVariable int commentId, 
-			@RequestBody CommentRequestDto commentRequestDto) {
+			@PathVariable("commentId") int encodedCommentId, 
+			@Valid @RequestBody CommentRequestDto commentRequestDto) {
 		
-		commentService.updateComment(userDetails.getUserId(), commentId,commentRequestDto);
+		commentService.updateComment(userDetails.getUserId(), encodedCommentId, commentRequestDto);
 		return ResponseEntity.ok(ApiResponseDto.of(UPDATE_SUCCESS, null));
 	}
 	
@@ -74,9 +74,9 @@ public class CommentController {
 	@DeleteMapping("/private/{commentId}")
 	public ResponseEntity<ApiResponseDto<Void>> deleteComment(
 			@AuthenticationPrincipal CustomUserDetails userDetails, 
-			@PathVariable int commentId) {
+			@PathVariable("commentId") int encodedCommentId) {
 		
-		commentService.deleteComment(userDetails.getUserId(), commentId);
+		commentService.deleteComment(userDetails.getUserId(), encodedCommentId);
 		return ResponseEntity.ok(ApiResponseDto.of(DELETE_SUCCESS, null));
 	}
 	

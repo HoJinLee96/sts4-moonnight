@@ -20,7 +20,6 @@ import net.chamman.moonnight.global.exception.StatusDeleteException;
 import net.chamman.moonnight.global.exception.StatusStayException;
 import net.chamman.moonnight.global.exception.StatusStopException;
 import net.chamman.moonnight.global.exception.infra.DaumStateException;
-import net.chamman.moonnight.global.exception.infra.IllegalAddressValueException;
 import net.chamman.moonnight.infra.kakao.DaumMapClient;
 
 @Service
@@ -61,7 +60,7 @@ public class AddressService {
 	
 	/** 단일 주소 조회
 	 * @param userId
-	 * @param addressId
+	 * @param encodedAddressId
 	 * 
 	 * @throws NoSuchDataException {@link #getAuthorizedAddress} 찾을 수 없는 유저
 	 * @throws StatusStayException {@link #getAuthorizedAddress} 일시정지 유저
@@ -71,9 +70,9 @@ public class AddressService {
 	 * 
 	 * @return 주소
 	 */
-	public AddressResponseDto getAddress(int userId, int addressId) {
+	public AddressResponseDto getAddress(int userId, int encodedAddressId) {
 		
-		Address address = getAuthorizedAddress(userId, addressId);
+		Address address = getAuthorizedAddress(userId, encodedAddressId);
 		
 		return AddressResponseDto.fromEntity(address, obfuscator);
 	}
@@ -105,7 +104,7 @@ public class AddressService {
 	
 	/** 주소 수정
 	 * @param userId
-	 * @param addressId
+	 * @param encodedAddressId
 	 * @param addressRequestDto
 	 * 
 	 * @throws IllegalAddressValueException {@link DaumMapClient#validateAddress} 일치하는 주소가 없음
@@ -120,18 +119,18 @@ public class AddressService {
 	 * @return
 	 */
 	@Transactional
-	public void updateAddress(int userId, int addressId, AddressRequestDto addressRequestDto) {
+	public void updateAddress(int userId, int encodedAddressId, AddressRequestDto addressRequestDto) {
 		
 		daumMapClient.validateAddress(addressRequestDto.postcode(), addressRequestDto.mainAddress());
 		
-		Address address = getAuthorizedAddress(userId, addressId);
+		Address address = getAuthorizedAddress(userId, encodedAddressId);
 		
 		address.update(addressRequestDto);
 	}
 	
 	/** 대표 주소 선정
 	 * @param userId
-	 * @param addressId
+	 * @param encodedAddressId
 	 * 
 	 * @throws NoSuchDataException {@link #getAuthorizedAddress} 찾을 수 없는 유저
 	 * @throws StatusStayException {@link #getAuthorizedAddress} 일시정지 유저
@@ -140,9 +139,9 @@ public class AddressService {
 	 * @throws ForbiddenException {@link #getAuthorizedAddress} 접근 권한 이상
 	 */
 	@Transactional
-	public void updatePrimary(int userId, int addressId) {
+	public void updatePrimary(int userId, int encodedAddressId) {
 		
-		Address address = getAuthorizedAddress(userId, addressId);
+		Address address = getAuthorizedAddress(userId, encodedAddressId);
 		
 		addressRepository.unsetPrimaryForUser(userId);
 		
@@ -151,7 +150,7 @@ public class AddressService {
 	
 	/** 주소 삭제
 	 * @param userId
-	 * @param addressId
+	 * @param encodedAddressId
 	 * 
 	 * @throws NoSuchDataException {@link #getAuthorizedAddress} 찾을 수 없는 유저
 	 * @throws StatusStayException {@link #getAuthorizedAddress} 일시정지 유저
@@ -160,16 +159,16 @@ public class AddressService {
 	 * @throws ForbiddenException {@link #getAuthorizedAddress} 접근 권한 이상
 	 */
 	@Transactional
-	public void deleteAddress(int userId, int addressId) {
+	public void deleteAddress(int userId, int encodedAddressId) {
 		
-		Address address = getAuthorizedAddress(userId, addressId);
+		Address address = getAuthorizedAddress(userId, encodedAddressId);
 		
 		addressRepository.delete(address);
 	}
 	
 	/** 주소 GET 및 유저 검증
 	 * @param userId
-	 * @param addressId
+	 * @param encodedAddressId
 	 * 
 	 * @throws NoSuchDataException {@link UserService#getUserByUserId} 찾을 수 없는 유저
 	 * @throws StatusStayException {@link UserService#getUserByUserId} 일시정지 유저
@@ -180,12 +179,12 @@ public class AddressService {
 	 * 
 	 * @return Address
 	 */
-	private Address getAuthorizedAddress(int userId, int addressId){
+	private Address getAuthorizedAddress(int userId, int encodedAddressId){
 		
 		userService.getUserByUserId(userId);
 		
-		Address address = addressRepository.findById(obfuscator.decode(addressId))
-				.orElseThrow(() -> new NoSuchDataException(ADDRESSS_NOT_FOUND,"일치하는 데이터 없음. addressId: " + addressId));
+		Address address = addressRepository.findById(obfuscator.decode(encodedAddressId))
+				.orElseThrow(() -> new NoSuchDataException(ADDRESSS_NOT_FOUND,"일치하는 데이터 없음. encodedAddressId: " + encodedAddressId));
 		
 		if(address.getUser().getUserId()!=userId) {
 			throw new ForbiddenException(AUTHORIZATION_FAILED,"주소 조회 권한 이상. address.getUser().getUserId(): "+address.getUser().getUserId()+"!= userId: "+userId);

@@ -11,11 +11,12 @@ import lombok.Setter;
 @NoArgsConstructor @AllArgsConstructor
 @Builder
 public class NaverSmsPayload {
+
 	private String type;
 	private String contentType;
 	private String countryCode;
 	private String from;
 	private String content;
 	private List<SmsRecipientPayload> messages;
-
+	
 }

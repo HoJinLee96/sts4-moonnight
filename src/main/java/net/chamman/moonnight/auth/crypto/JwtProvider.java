@@ -3,6 +3,7 @@ package net.chamman.moonnight.auth.crypto;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.JWT_CREATE_FIAL;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.JWT_EXPIRED;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.JWT_ILLEGAL;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.JWT_VALIDATE_FIAL;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
@@ -26,8 +27,8 @@ import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.global.exception.crypto.DecryptException;
 import net.chamman.moonnight.global.exception.crypto.EncryptException;
 import net.chamman.moonnight.global.exception.jwt.CreateJwtException;
-import net.chamman.moonnight.global.exception.jwt.ParsingJwtException;
 import net.chamman.moonnight.global.exception.jwt.TimeOutJwtException;
+import net.chamman.moonnight.global.exception.jwt.ValidateJwtException;
 
 @Component
 @Slf4j
@@ -149,7 +150,7 @@ public class JwtProvider {
 	 * @param token
 	 * @throws TimeOutJwtException {@link #validateAccessToken} 시간 초과
      * @throws DecryptException {@link #getDecryptedClaims} 복호화 실패
-	 * @throws ParsingJwtException {@link #validateAccessToken} JWT 파싱 실패
+	 * @throws ValidateJwtException {@link #validateAccessToken} JWT 파싱 실패
 	 * @return 복호화된 유저 정보
 	 */
 	public Map<String, Object> validateAccessToken(String token) {
@@ -166,7 +167,7 @@ public class JwtProvider {
 		} catch (DecryptException e) {
 			throw e;
 		} catch (Exception e) {
-			throw new ParsingJwtException(JWT_ILLEGAL, "Access Token 검증 중 익셉션 발생.", e);
+			throw new ValidateJwtException(JWT_VALIDATE_FIAL, "Access Token 검증 중 익셉션 발생.", e);
 		}
 	}
 	
@@ -174,7 +175,7 @@ public class JwtProvider {
 	 * @param token
 	 * @throws TimeOutJwtException {@link #validateRefreshToken} 시간 초과
      * @throws DecryptException {@link AesProvider#decrypt} 복호화 실패
-	 * @throws ParsingJwtException {@link #validateRefreshToken} JWT 파싱 실패
+	 * @throws ValidateJwtException {@link #validateRefreshToken} JWT 파싱 실패
 	 * @return userId
 	 */
 	public String validateRefreshToken(String token) {
@@ -193,14 +194,14 @@ public class JwtProvider {
 		} catch (DecryptException e) {
 			throw e;
 		} catch (Exception e) {
-			throw new ParsingJwtException(JWT_ILLEGAL, "Refresh Token 검증 중 익셉션 발생.", e);
+			throw new ValidateJwtException(JWT_VALIDATE_FIAL, "Refresh Token 검증 중 익셉션 발생.", e);
 		}
 	}
 	
 	/** 토큰 남은 시간 조회
 	 * @param token
 	 * @throws TimeOutJwtException {@link #getSignJwtRemainingTime} 시간 초과
-	 * @throws ParsingJwtException {@link #getSignJwtRemainingTime} JWT 파싱 실패
+	 * @throws ValidateJwtException {@link #getSignJwtRemainingTime} JWT 파싱 실패
 	 * @return 토큰 남은시간 
 	 */
 	public long getSignJwtRemainingTime(String token) {
@@ -216,7 +217,7 @@ public class JwtProvider {
 		} catch (ExpiredJwtException e) {
 			throw new TimeOutJwtException(JWT_EXPIRED,"토큰 만료",e);
 		} catch (Exception e) {
-			throw new ParsingJwtException(JWT_ILLEGAL,"토큰 검증 중 익셉션 발생.",e);
+			throw new ValidateJwtException(JWT_VALIDATE_FIAL,"토큰 검증 중 익셉션 발생.",e);
 		}
 	}
 	

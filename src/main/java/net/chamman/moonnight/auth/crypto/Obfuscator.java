@@ -7,20 +7,20 @@ import org.springframework.stereotype.Component;
 @Component
 @PropertySource("classpath:application.properties")
 public class Obfuscator {
-  
-  @Value("${obfuscator.salt}")
-  private int salt;       // XOR 키
-  private int MULTIPLIER = 8713;   // 난독화용 곱셈 상수
-  private int INVERSE = 336891841; // MULTIPLIER의 모듈러 역원 (MOD 기준)
-  private int MOD = (1 << 31) - 1; // int 최대값에 가까운 소수
-
-  public int encode(int id) {
-      long mixed = ((long) id ^ salt) * MULTIPLIER % MOD;
-      return (int) mixed;
-  }
-
-  public int decode(int obfuscatedId) {
-      long unmixed = ((long) obfuscatedId * INVERSE) % MOD;
-      return (int) (unmixed ^ salt);
-  }
+	
+	@Value("${obfuscator.salt}")
+	private int salt;       // XOR 키
+	private int MULTIPLIER = 8713;   // 난독화용 곱셈 상수
+	private int INVERSE = 336891841; // MULTIPLIER의 모듈러 역원 (MOD 기준)
+	private int MOD = (1 << 31) - 1; // int 최대값에 가까운 소수
+	
+	public int encode(int id) {
+		long mixed = ((long) id ^ salt) * MULTIPLIER % MOD;
+		return (int) mixed;
+	}
+	
+	public int decode(int obfuscatedId) {
+		long unmixed = ((long) obfuscatedId * INVERSE) % MOD;
+		return (int) (unmixed ^ salt);
+	}
 }

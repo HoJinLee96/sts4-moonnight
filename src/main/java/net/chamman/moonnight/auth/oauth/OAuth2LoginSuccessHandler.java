@@ -57,7 +57,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 	@Override
 	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
 		String clientIp = getClientIp(request);
-
+		
 		try {
 			DefaultOAuth2User oAuth2User = (DefaultOAuth2User) authentication.getPrincipal();
 			
@@ -197,5 +197,4 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 		
 		return request.getRemoteAddr(); // fallback
 	}
-	
 }

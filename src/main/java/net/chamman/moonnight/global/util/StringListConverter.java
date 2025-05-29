@@ -9,24 +9,24 @@ import jakarta.persistence.Converter;
 
 @Converter
 public class StringListConverter implements AttributeConverter<List<String>, String> {
-
-    private static final ObjectMapper objectMapper = new ObjectMapper();
-
-    @Override
-    public String convertToDatabaseColumn(List<String> attribute) {
-        try {
-            return objectMapper.writeValueAsString(attribute);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("JSON 변환 오류", e);
-        }
-    }
-
-    @Override
-    public List<String> convertToEntityAttribute(String dbData) {
-        try {
-            return objectMapper.readValue(dbData, new TypeReference<List<String>>() {});
-        } catch (Exception e) {
-            throw new RuntimeException("JSON 파싱 오류", e);
-        }
-    }
+	
+	private static final ObjectMapper objectMapper = new ObjectMapper();
+	
+	@Override
+	public String convertToDatabaseColumn(List<String> attribute) {
+		try {
+			return objectMapper.writeValueAsString(attribute);
+		} catch (JsonProcessingException e) {
+			throw new RuntimeException("JSON 변환 오류", e);
+		}
+	}
+	
+	@Override
+	public List<String> convertToEntityAttribute(String dbData) {
+		try {
+			return objectMapper.readValue(dbData, new TypeReference<List<String>>() {});
+		} catch (Exception e) {
+			throw new RuntimeException("JSON 파싱 오류", e);
+		}
+	}
 }

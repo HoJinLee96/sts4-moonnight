@@ -9,29 +9,29 @@ import jakarta.validation.ConstraintValidatorContext;
 import net.chamman.moonnight.global.annotation.ImageConstraint;
 
 public class ImageValidator implements ConstraintValidator<ImageConstraint, List<MultipartFile>> {
-
-  @Override
-  public boolean isValid(List<MultipartFile> images, ConstraintValidatorContext context) {
-      if (images == null || images.isEmpty()) {
-          return true; // 이미지는 optional이면 true로 통과시켜도 됨
-      }
-
-      if (images.size() > 10) {
-          context.disableDefaultConstraintViolation();
-          context.buildConstraintViolationWithTemplate("validation.image.length")
-                 .addConstraintViolation();
-          return false;
-      }
-
-      for (MultipartFile file : images) {
-          if (file.getSize() > 10 * 1024 * 1024) { // 10MB로 수정
-              context.disableDefaultConstraintViolation();
-              context.buildConstraintViolationWithTemplate("validation.image.size")
-                     .addConstraintViolation();
-              return false;
-          }
-      }
-
-      return true;
-  }
+	
+	@Override
+	public boolean isValid(List<MultipartFile> images, ConstraintValidatorContext context) {
+		if (images == null || images.isEmpty()) {
+			return true; // 이미지는 optional이면 true로 통과시켜도 됨
+		}
+		
+		if (images.size() > 10) {
+			context.disableDefaultConstraintViolation();
+			context.buildConstraintViolationWithTemplate("validation.image.length")
+			.addConstraintViolation();
+			return false;
+		}
+		
+		for (MultipartFile file : images) {
+			if (file.getSize() > 10 * 1024 * 1024) { // 10MB로 수정
+				context.disableDefaultConstraintViolation();
+				context.buildConstraintViolationWithTemplate("validation.image.size")
+				.addConstraintViolation();
+				return false;
+			}
+		}
+		
+		return true;
+	}
 }

@@ -10,9 +10,9 @@ import lombok.Setter;
 @NoArgsConstructor @AllArgsConstructor
 @Builder
 public class MailRecipientPayload {
-  
-  String address;
-  String name;
-  String type;
-
+	
+	String address;
+	String name;
+	String type;
+	
 }

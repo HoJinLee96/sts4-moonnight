@@ -25,7 +25,6 @@ import net.chamman.moonnight.domain.address.Address;
 import net.chamman.moonnight.domain.address.AddressRepository;
 import net.chamman.moonnight.domain.user.User;
 import net.chamman.moonnight.domain.user.User.UserProvider;
-import net.chamman.moonnight.domain.user.User.UserStatus;
 import net.chamman.moonnight.domain.user.UserCreateRequestDto;
 import net.chamman.moonnight.domain.user.UserRepository;
 import net.chamman.moonnight.domain.user.UserService;
@@ -37,15 +36,15 @@ import net.chamman.moonnight.global.exception.crypto.DecryptException;
 import net.chamman.moonnight.global.exception.crypto.EncryptException;
 import net.chamman.moonnight.global.exception.jwt.CreateJwtException;
 import net.chamman.moonnight.global.exception.jwt.IllegalJwtException;
-import net.chamman.moonnight.global.exception.jwt.ParsingJwtException;
 import net.chamman.moonnight.global.exception.jwt.TimeOutJwtException;
+import net.chamman.moonnight.global.exception.jwt.ValidateJwtException;
 import net.chamman.moonnight.global.exception.redis.RedisGetException;
 import net.chamman.moonnight.global.exception.redis.RedisSetException;
-import net.chamman.moonnight.global.exception.sign.MismatchPasswordException;
 import net.chamman.moonnight.global.exception.sign.TooManySignFailException;
 import net.chamman.moonnight.global.exception.token.IllegalTokenException;
 import net.chamman.moonnight.global.exception.token.NoSuchTokenException;
 import net.chamman.moonnight.global.exception.token.TokenValueMismatchException;
+import net.chamman.moonnight.global.exception.user.MismatchPasswordException;
 import net.chamman.moonnight.global.exception.verification.NotVerifyException;
 import net.chamman.moonnight.global.exception.verification.VerificationExpiredException;
 
@@ -151,8 +150,8 @@ public class SignService {
 	/** LOCAL 유저 로그인
 	 * @param loginRequestDto
 	 * @param ip
+	 * @return 로그인 토큰들
 	 * 
-	 * @throws NoSuchDataException {@link UserService#getUserByUserProviderAndEmail}
 	 * @throws StatusStayException {@link UserService#getUserByUserProviderAndEmail}
 	 * @throws StatusStopException {@link UserService#getUserByUserProviderAndEmail}
 	 * @throws StatusDeleteExceptions {@link UserService#getUserByUserProviderAndEmail}
@@ -164,7 +163,7 @@ public class SignService {
 	 * @throws CreateJwtException {@link #handleJwt} 토큰 생성 실패
 	 * @throws RedisSetException {@link #handleJwt} 리프레쉬 토큰 Redis 저장 실패
 	 * 
-	 * @return 로그인 토큰들
+	 * @throws NoSuchDataException {@link #signInLocal} 일치하는 유저 없음
 	 */
 	@Transactional
 	public Map<String,String> signInLocal(SignInRequestDto loginRequestDto, String ip) {
@@ -172,11 +171,15 @@ public class SignService {
 		String email = loginRequestDto.email();
 		String password = loginRequestDto.password();
 		
-		User user = userService.getUserByUserProviderAndEmail(UserProvider.LOCAL, email);
-		
-		validatePassword(user, password, ip);
-		
-		return handleJwt(user);
+		try {
+			User user = userService.getUserByUserProviderAndEmail(UserProvider.LOCAL, email);
+			
+			userService.validatePassword(user, password, ip);
+			
+			return handleJwt(user);
+		} catch (NoSuchDataException e) {
+			throw new NoSuchDataException(SIGNIN_FAILED,"일치하는 계정 없음",e);
+		}
 	}
 	
 	/** 휴대폰 인증 로그인
@@ -244,7 +247,7 @@ public class SignService {
 	 * 
 	 * @throws TimeOutJwtException {@link JwtProvider#validateRefreshToken} 시간 초과
      * @throws DecryptException {@link JwtProvider#validateRefreshToken} 복호화 실패
-	 * @throws ParsingJwtException {@link JwtProvider#validateRefreshToken} JWT 파싱 실패
+	 * @throws ValidateJwtException {@link JwtProvider#validateRefreshToken} JWT 파싱 실패
 	 * 
 	 * @throws NoSuchTokenException {@link TokenProvider#validRefreshToken} Redis에 없는 키
 	 * @throws TokenValueMismatchException {@link TokenProvider#validRefreshToken} Redis 값과 비교 불일치
@@ -296,7 +299,7 @@ public class SignService {
 	 * @param clientIp
 	 * 
 	 * @throws TimeOutJwtException {@link JwtProvider#getSignJwtRemainingTime}, {@link JwtProvider#validateRefreshToken} 시간 초과
-	 * @throws ParsingJwtException {@link JwtProvider#getSignJwtRemainingTime}, {@link JwtProvider#validateRefreshToken} JWT 파싱 실패
+	 * @throws ValidateJwtException {@link JwtProvider#getSignJwtRemainingTime}, {@link JwtProvider#validateRefreshToken} JWT 파싱 실패
 	 * 
 	 * @throws RedisSetException {@link TokenProvider#addAccessJwtBlacklist} Redis 저장 중 오류
 	 * 
@@ -308,9 +311,13 @@ public class SignService {
 	public void signOut(String accessToken ,String refreshToken, String clientIp) {
 		
 //		1. accessToken 블랙리스트 등록
-		long ttl = jwtProvider.getSignJwtRemainingTime(accessToken);
-		tokenProvider.addAccessJwtBlacklist(accessToken, ttl, "logout");
-		log.info("로그아웃 - accessToken 블랙리스트 등록. accessToken: {}, ip: {}", accessToken, clientIp);
+		try {
+			long ttl = jwtProvider.getSignJwtRemainingTime(accessToken);
+			tokenProvider.addAccessJwtBlacklist(accessToken, ttl, "SIGNOUT");
+			log.info("로그아웃 - AT 블랙리스트 등록. accessToken: {}, ip: {}", accessToken, clientIp);
+		} catch (TimeOutJwtException e) {
+			log.info("이미 만료된 AT.");
+		}
 			
 //		2. refreshToken 삭제
 		String userId = jwtProvider.validateRefreshToken(refreshToken);
@@ -327,22 +334,22 @@ public class SignService {
 	 * @throws TooManySignFailException {@link SignLogService#validSignFailCount} 비밀번호 실패 횟수 초과
 	 * @throws MismatchPasswordException {@link #validatePassword} 비밀번호 불일치
 	 */
-	private void validatePassword(User user, String reqPassword, String ip) {
-		if (!passwordEncoder.matches(reqPassword, user.getPassword())) {
-			signLogService.registerSignLog(UserProvider.LOCAL, user.getEmail(), ip, SignResult.INVALID_PASSWORD);
-			int signFailCount;
-			try {
-				signFailCount = signLogService.validSignFailCount(UserProvider.LOCAL, user.getEmail());
-			} catch (TooManySignFailException e) {
-				user.setUserStatus(UserStatus.STAY);
-				userRepository.save(user);
-				log.info("로그인 실패 횟수 초과로 계정 일시정지: email={}, ip={}", user.getEmail(), ip);
-				throw e;
-			}
-			throw new MismatchPasswordException(SIGNIN_FAILED,"비밀번호 불일치. 실패 횟수: "+signFailCount);
-		}
-		signLogService.registerSignLog(UserProvider.LOCAL, user.getEmail(), ip, SignResult.LOCAL_SUCCESS);
-	}
+//	public void validatePassword(User user, String reqPassword, String ip) {
+//		if (!passwordEncoder.matches(reqPassword, user.getPassword())) {
+//			signLogService.registerSignLog(UserProvider.LOCAL, user.getEmail(), ip, SignResult.INVALID_PASSWORD);
+//			int signFailCount;
+//			try {
+//				signFailCount = signLogService.validSignFailCount(UserProvider.LOCAL, user.getEmail());
+//			} catch (TooManySignFailException e) {
+//				user.setUserStatus(UserStatus.STAY);
+//				userRepository.save(user);
+//				log.info("로그인 실패 횟수 초과로 계정 일시정지: email={}, ip={}", user.getEmail(), ip);
+//				throw e;
+//			}
+//			throw new MismatchPasswordException(SIGNIN_FAILED,"비밀번호 불일치. 실패 횟수: "+signFailCount);
+//		}
+//		signLogService.registerSignLog(UserProvider.LOCAL, user.getEmail(), ip, SignResult.LOCAL_SUCCESS);
+//	}
 	
 	/** User 정보 통해 로그인 토큰들 발급 및 RefreshToken은 Redis 저장
 	 * @param user

@@ -1,9 +1,9 @@
 package net.chamman.moonnight.global.exception.crypto;
 
-import net.chamman.moonnight.global.exception.CustomException;
+import net.chamman.moonnight.global.exception.CriticalException;
 import net.chamman.moonnight.global.exception.HttpStatusCode;
 
-public class EncryptException extends CustomException{
+public class EncryptException extends CriticalException{
 
 	public EncryptException(HttpStatusCode httpStatusCode, Exception e) {
 		super(httpStatusCode, e);

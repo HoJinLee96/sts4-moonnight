@@ -26,12 +26,12 @@ public class SignLogService {
 	 */
 	@Transactional
 	public void registerSignLog(UserProvider userProvider, String email, String ip, SignResult result) {
-			signLogRepository.save(SignLog.builder()
-					.userProvider(userProvider)
-					.email(email)
-					.requestIp(ip)
-					.signResult(result)
-					.build());
+		signLogRepository.save(SignLog.builder()
+				.userProvider(userProvider)
+				.email(email)
+				.requestIp(ip)
+				.signResult(result)
+				.build());
 	}
 	
 	/**
@@ -40,10 +40,10 @@ public class SignLogService {
 	 */
 	@Transactional
 	public void registerSignLog(String ip, SignResult result) {
-			signLogRepository.save(SignLog.builder()
-					.requestIp(ip)
-					.signResult(result)
-					.build());
+		signLogRepository.save(SignLog.builder()
+				.requestIp(ip)
+				.signResult(result)
+				.build());
 	}
 	
 	/** 로그인 실패 횟수 검사
@@ -76,5 +76,5 @@ public class SignLogService {
 		signLogRepository.save(signLog);
 		signLogRepository.resolveUnresolvedLogs(userProvider, email, signLog.getSignLogId());
 	}
-  
+	
 }
