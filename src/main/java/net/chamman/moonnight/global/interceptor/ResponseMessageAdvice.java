@@ -21,7 +21,7 @@ import net.chamman.moonnight.global.util.ApiResponseDto;
 @Slf4j
 @RestControllerAdvice
 @RequiredArgsConstructor
-public class CommonResponseAdvice implements ResponseBodyAdvice<ApiResponseDto<?>>{
+public class ResponseMessageAdvice implements ResponseBodyAdvice<ApiResponseDto<?>>{
 	
 	private final MessageSource messageSource;
 	
