@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.crypto.Obfuscator;
 import net.chamman.moonnight.domain.user.User;
+import net.chamman.moonnight.domain.user.UserRepository;
 import net.chamman.moonnight.domain.user.UserService;
 import net.chamman.moonnight.global.exception.ForbiddenException;
 import net.chamman.moonnight.global.exception.NoSuchDataException;
@@ -27,7 +28,7 @@ import net.chamman.moonnight.infra.kakao.DaumMapClient;
 @RequiredArgsConstructor
 public class AddressService {
 	private final AddressRepository addressRepository;
-	private final UserService userService;
+	private final UserRepository userRepository;
 	private final DaumMapClient daumMapClient;
 	private final Obfuscator obfuscator;
 	
@@ -50,7 +51,7 @@ public class AddressService {
 		
 		daumMapClient.validateAddress(addressRequestDto.postcode(), addressRequestDto.mainAddress());
 		
-		User user = userService.getUserByUserId(userId);
+		User user = userRepository.getReferenceById(userId);
 		
 		Address address = addressRequestDto.toEntity(user);
 		addressRepository.save(address);
@@ -62,10 +63,6 @@ public class AddressService {
 	 * @param userId
 	 * @param encodedAddressId
 	 * 
-	 * @throws NoSuchDataException {@link #getAuthorizedAddress} 찾을 수 없는 유저
-	 * @throws StatusStayException {@link #getAuthorizedAddress} 일시정지 유저
-	 * @throws StatusStopException {@link #getAuthorizedAddress} 중지 유저
-	 * @throws StatusDeleteException {@link #getAuthorizedAddress} 탈퇴 유저
 	 * @throws ForbiddenException {@link #getAuthorizedAddress} 접근 권한 이상
 	 * 
 	 * @return 주소
@@ -89,13 +86,7 @@ public class AddressService {
 	 */
 	public List<AddressResponseDto> getAddressList(int userId) {
 		
-		userService.getUserByUserId(userId);
-		
 		List<Address> list = addressRepository.findByUserOrderByPrimaryAndDate(userId);
-		
-		if(list==null || list.isEmpty() || list.size()==0) {
-			return null;
-		}
 		
 		return list.stream()
 				.map(e->AddressResponseDto.fromEntity(e, obfuscator))
@@ -110,10 +101,6 @@ public class AddressService {
 	 * @throws IllegalAddressValueException {@link DaumMapClient#validateAddress} 일치하는 주소가 없음
 	 * @throws DaumStateException {@link DaumMapClient#validateAddress} 다음 서버에서 응답 이상
 	 * 
-	 * @throws NoSuchDataException {@link #getAuthorizedAddress} 찾을 수 없는 유저
-	 * @throws StatusStayException {@link #getAuthorizedAddress} 일시정지 유저
-	 * @throws StatusStopException {@link #getAuthorizedAddress} 중지 유저
-	 * @throws StatusDeleteException {@link #getAuthorizedAddress} 탈퇴 유저
 	 * @throws ForbiddenException {@link #getAuthorizedAddress} 접근 권한 이상
 	 * 
 	 * @return
@@ -132,10 +119,6 @@ public class AddressService {
 	 * @param userId
 	 * @param encodedAddressId
 	 * 
-	 * @throws NoSuchDataException {@link #getAuthorizedAddress} 찾을 수 없는 유저
-	 * @throws StatusStayException {@link #getAuthorizedAddress} 일시정지 유저
-	 * @throws StatusStopException {@link #getAuthorizedAddress} 중지 유저
-	 * @throws StatusDeleteException {@link #getAuthorizedAddress} 탈퇴 유저
 	 * @throws ForbiddenException {@link #getAuthorizedAddress} 접근 권한 이상
 	 */
 	@Transactional
@@ -152,10 +135,6 @@ public class AddressService {
 	 * @param userId
 	 * @param encodedAddressId
 	 * 
-	 * @throws NoSuchDataException {@link #getAuthorizedAddress} 찾을 수 없는 유저
-	 * @throws StatusStayException {@link #getAuthorizedAddress} 일시정지 유저
-	 * @throws StatusStopException {@link #getAuthorizedAddress} 중지 유저
-	 * @throws StatusDeleteException {@link #getAuthorizedAddress} 탈퇴 유저
 	 * @throws ForbiddenException {@link #getAuthorizedAddress} 접근 권한 이상
 	 */
 	@Transactional
@@ -170,18 +149,11 @@ public class AddressService {
 	 * @param userId
 	 * @param encodedAddressId
 	 * 
-	 * @throws NoSuchDataException {@link UserService#getUserByUserId} 찾을 수 없는 유저
-	 * @throws StatusStayException {@link UserService#getUserByUserId} 일시정지 유저
-	 * @throws StatusStopException {@link UserService#getUserByUserId} 중지 유저
-	 * @throws StatusDeleteException {@link UserService#getUserByUserId} 탈퇴 유저
-	 * 
 	 * @throws ForbiddenException {@link #getAuthorizedAddress} 접근 권한 이상
 	 * 
 	 * @return Address
 	 */
 	private Address getAuthorizedAddress(int userId, int encodedAddressId){
-		
-		userService.getUserByUserId(userId);
 		
 		Address address = addressRepository.findById(obfuscator.decode(encodedAddressId))
 				.orElseThrow(() -> new NoSuchDataException(ADDRESSS_NOT_FOUND,"일치하는 데이터 없음. encodedAddressId: " + encodedAddressId));
