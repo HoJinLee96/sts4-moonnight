@@ -1,8 +1,8 @@
 package net.chamman.moonnight.domain.comment;
 
 import static net.chamman.moonnight.global.exception.HttpStatusCode.AUTHORIZATION_FAILED;
-import static net.chamman.moonnight.global.exception.HttpStatusCode.COMMENT_STATUS_DELETE;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.COMMENT_NOT_FOUND;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.COMMENT_STATUS_DELETE;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,12 +17,10 @@ import net.chamman.moonnight.domain.comment.Comment.CommentStatus;
 import net.chamman.moonnight.domain.estimate.Estimate;
 import net.chamman.moonnight.domain.estimate.EstimateService;
 import net.chamman.moonnight.domain.user.User;
-import net.chamman.moonnight.domain.user.UserService;
+import net.chamman.moonnight.domain.user.UserRepository;
 import net.chamman.moonnight.global.exception.ForbiddenException;
 import net.chamman.moonnight.global.exception.NoSuchDataException;
 import net.chamman.moonnight.global.exception.StatusDeleteException;
-import net.chamman.moonnight.global.exception.StatusStayException;
-import net.chamman.moonnight.global.exception.StatusStopException;
 
 @Service
 @Slf4j
@@ -30,7 +28,7 @@ import net.chamman.moonnight.global.exception.StatusStopException;
 public class CommentService {
 	
 	private final CommentRepository commentRepository;
-	private final UserService userService;
+	private final UserRepository userRepository;
 	private final EstimateService estimateService;
 	private final Obfuscator obfuscator;
 	
@@ -39,50 +37,36 @@ public class CommentService {
 	 * @param email
 	 * @param commentRequestDto
 	 * 
-	 * @throws NoSuchDataException {@link UserService#getUserByUserId}, {@link EstimateService#getEstimateById} 찾을 수 없는 데이터
-	 * @throws StatusStayException {@link UserService#getUserByUserId} 일시정지 유저
-	 * @throws StatusStopException {@link UserService#getUserByUserId} 중지 유저
-	 * @throws StatusDeleteException {@link UserService#getUserByUserId} 탈퇴 유저
+	 * @throws NoSuchDataException {@link EstimateService#getEstimateById} 찾을 수 없는 견적서
+	 * @throws StatusDeleteException {@link EstimateService#getEstimateById} 이미 삭제된 견적서
 	 * 
 	 * @return 댓글
 	 */
 	@Transactional
 	public CommentResponseDto registerComment(int userId, CommentRequestDto commentRequestDto) {
 		
-		User user = userService.getUserByUserId(userId);
+		User user = userRepository.getReferenceById(userId);
 		
 		Estimate estimate = estimateService.getEstimateById(commentRequestDto.encodedEstimateId());
 		
 		Comment comment = commentRequestDto.toEntity(user, estimate);
 		commentRepository.save(comment);
 		
-		return CommentResponseDto.fromEntity(comment, user.getUserId(), obfuscator);
+		return CommentResponseDto.fromEntity(comment, userId, obfuscator);
 	}
 	
 	/** 견적서의 댓글 리스트 조회
 	 * @param encodedEstimateId
 	 * @param userId
-	 * 
-	 * @throws NoSuchDataException {@link UserService#getUserByUserId} 찾을 수 없는 데이터
-	 * @throws StatusStayException {@link UserService#getUserByUserId} 일시정지 유저
-	 * @throws StatusStopException {@link UserService#getUserByUserId} 중지 유저
-	 * @throws StatusDeleteException {@link UserService#getUserByUserId} 탈퇴 유저
-	 * 
 	 * @return 댓글 리스트
 	 */
 	public List<CommentResponseDto> getCommentList(int encodedEstimateId, int userId) {
 		
-		User user = userService.getUserByUserId(userId);
-		
 		List<Comment> list = commentRepository.findByEstimate_EstimateId(obfuscator.decode(encodedEstimateId));
-		
-		if(list==null || list.isEmpty() || list.size()==0) {
-			return null;
-		}
 		
 		return list.stream()
 				.filter(e->e.getCommentStatus()!=CommentStatus.DELETE)
-				.map(comment -> CommentResponseDto.fromEntity(comment, user.getUserId(), obfuscator))
+				.map(comment -> CommentResponseDto.fromEntity(comment, userId, obfuscator))
 				.collect(Collectors.toList());
 	}
 	
@@ -92,7 +76,7 @@ public class CommentService {
 	 * @param commentRequestDto
 	 * 
 	 * @throws NoSuchDataException {@link #getAuthorizedComment} 찾을 수 없는 데이터
-	 * @throws StatusDeleteException {@link #getAuthorizedComment} 이미 삭제된 댓글
+	 * @throws StatusDeleteException {@link #getAuthorizedComment} 삭제된 댓글
 	 * @throws ForbiddenException {@link #getAuthorizedComment} 댓글 권한 없음
 	 */
 	@Transactional
@@ -107,7 +91,7 @@ public class CommentService {
 	 * @param encodedCommentId
 	 * 
 	 * @throws NoSuchDataException {@link #getAuthorizedComment} 찾을 수 없는 데이터
-	 * @throws StatusDeleteException {@link #getAuthorizedComment} 이미 삭제된 댓글
+	 * @throws StatusDeleteException {@link #getAuthorizedComment} 삭제된 댓글
 	 * @throws ForbiddenException {@link #getAuthorizedComment} 댓글 권한 없음
 	 */
 	@Transactional
@@ -121,7 +105,7 @@ public class CommentService {
 	 * @param userId
 	 * @param encodedCommentId
 	 * @throws NoSuchDataException {@link #getAuthorizedComment} 찾을 수 없는 데이터
-	 * @throws StatusDeleteException {@link #getAuthorizedComment} 이미 삭제된 댓글
+	 * @throws StatusDeleteException {@link #getAuthorizedComment} 삭제된 댓글
 	 * @throws ForbiddenException {@link #getAuthorizedComment} 댓글 권한 없음
 	 * @return 댓글
 	 */
@@ -129,8 +113,6 @@ public class CommentService {
 		
 		int commentId = obfuscator.decode(encodedCommentId);
 		
-		userService.getUserByUserId(userId);
-
 		Comment comment = commentRepository.findById(commentId)
 				.orElseThrow(() -> new NoSuchDataException(COMMENT_NOT_FOUND,"일치하는 데이터 없음. encodedCommentId: " + encodedCommentId));
 		
