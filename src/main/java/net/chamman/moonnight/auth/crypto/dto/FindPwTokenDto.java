@@ -1,5 +1,7 @@
 package net.chamman.moonnight.auth.crypto.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,6 +28,7 @@ public class FindPwTokenDto implements Encryptable<FindPwTokenDto>{
 		return new FindPwTokenDto(aesProvider.decrypt(userId),aesProvider.decrypt(email));
 	}
 
+	@JsonIgnore
 	public int getIntUserId() {
 		return Integer.parseInt(userId);
 	}
