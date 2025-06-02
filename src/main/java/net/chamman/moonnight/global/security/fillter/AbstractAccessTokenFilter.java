@@ -172,7 +172,7 @@ public abstract class AbstractAccessTokenFilter <T extends UserDetails> extends 
 			res.setHeader("X-Access-Token", accessToken);
 			res.setHeader("X-Refresh-Token", refreshToken);
 		}else {
-			buildCookie(res,"X-Access-Token", accessToken, Duration.ofDays(14));
+			buildCookie(res,"X-Access-Token", accessToken, Duration.ofMinutes(120));
 			buildCookie(res,"X-Refresh-Token", refreshToken, Duration.ofDays(14));
 		}
 	}

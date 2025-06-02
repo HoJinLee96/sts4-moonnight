@@ -72,7 +72,7 @@ public class SignController {
 					.httpOnly(true)
 					.secure(true)
 					.path("/")
-					.maxAge(Duration.ofMinutes(30))
+					.maxAge(Duration.ofMinutes(120))
 					.sameSite("Lax")
 					.build();
 			
@@ -125,65 +125,6 @@ public class SignController {
 					.body(ApiResponseDto.of(SUCCESS_NO_DATA, null));
 		}
 	}
-	
-//	@GetMapping("/public/access")
-//	public ResponseEntity<ApiResponseDto<UserResponseDto>> accessToken(
-//			@ClientSpecific(required = false, value = "X-Access-Token") String accessToken,
-//			HttpServletRequest request) {
-//		if(accessToken==null || accessToken.isBlank()) {
-//			return ResponseEntity.status(HttpStatus.OK).body(ApiResponseDto.of(200, "로그인 조회 성공.",null));
-//		}
-//		String clientIp = (String) request.getAttribute("clientIp");
-//		
-//		UserResponseDto userResponseDto = signService.getUserByAccessToken(accessToken, clientIp);
-//		
-//		return ResponseEntity.status(HttpStatus.OK).body(ApiResponseDto.of(200, "로그인 조회 성공.", userResponseDto));
-//	}
-//	
-//	@PreAuthorize("hasRole('LOCAL') or hasRole('OAUTH')")
-//	@PostMapping("/public/refresh")
-//	public ResponseEntity<?> refresh(
-//			@RequestHeader(required = false, value = "X-Client-Type") String userAgent,
-//			@ClientSpecific(value = "X-Access-Token") String accessToken,
-//			@ClientSpecific(value = "X-Refresh-Token") String refreshToken,
-//			HttpServletRequest request) {
-//		
-//		String clientIp = (String) request.getAttribute("clientIp");
-//		boolean isMobileApp = userAgent != null && userAgent.contains("mobile");
-//		
-//		if (accessToken == null || refreshToken == null) {
-//			throw new CustomJwtException("리프레쉬 요청 - 유효하지 않은 요청 입니다.");
-//		}
-//		
-//		Map<String,String> loginJwt = signService.refresh(accessToken, refreshToken, clientIp);
-//		
-//		if (isMobileApp) {
-//			return ResponseEntity.status(HttpStatus.OK).body(ApiResponseDto.of(200, "리프레쉬 성공.", loginJwt));
-//		} else {
-//			ResponseCookie accessCookie = ResponseCookie.from("X-Access-Token", loginJwt.get("accessToken"))
-//					.httpOnly(true)
-//					.secure(true)
-//					.path("/")
-//					.maxAge(Duration.ofMinutes(30))
-//					.sameSite("Lax")
-//					.build();
-//			
-//			ResponseCookie refreshCookie = ResponseCookie.from("X-Refresh-Token", loginJwt.get("refreshToken"))
-//					.httpOnly(true)
-//					.secure(true)
-//					.path("/")
-//					.maxAge(Duration.ofDays(14))
-//					.sameSite("Lax")
-//					.build();
-//			
-//			return ResponseEntity
-//					.status(HttpStatus.OK)
-//					.header(HttpHeaders.SET_COOKIE, accessCookie.toString())
-//					.header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
-//					.body(ApiResponseDto.of(200, "로그인 성공.",null));
-//		}
-//	}
-	
 	
 	@Operation(summary = "로그아웃", description = "로그아웃")
 	@SecurityRequirement(name = "X-Access-Token")
