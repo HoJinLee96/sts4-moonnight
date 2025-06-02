@@ -62,7 +62,7 @@ public class SignService {
 	private final JwtProvider jwtProvider;
 	private final TokenProvider tokenProvider;
 	private final Map<UserProvider,String> roles = Map.of(UserProvider.LOCAL,"ROLE_LOCAL",UserProvider.KAKAO,"ROLE_OAUTH",UserProvider.NAVER,"ROLE_OAUTH");
-	
+
 
 	/** 회원가입 1차
 	 * @param email
@@ -243,8 +243,6 @@ public class SignService {
 	 * @param refreshToken
 	 * @param clientIp
 	 * 
-	 * @throws IllegalJwtException {@link #refresh} 액세스 토큰 블랙리스트
-	 * 
 	 * @throws TimeOutJwtException {@link JwtProvider#validateRefreshToken} 시간 초과
      * @throws DecryptException {@link JwtProvider#validateRefreshToken} 복호화 실패
 	 * @throws ValidateJwtException {@link JwtProvider#validateRefreshToken} JWT 파싱 실패
@@ -264,12 +262,7 @@ public class SignService {
 	 * @return 로그인 토큰들
 	 */
 	@Transactional
-	public Map<String,String> refresh(String accessToken, String refreshToken, String clientIp){
-		
-		boolean isBlackList = tokenProvider.isBlackList(accessToken);
-		if(isBlackList) {
-			throw new IllegalJwtException(JWT_ILLEGAL,"액세스 토큰 블랙리스트.");
-		}
+	public Map<String,String> refresh(String refreshToken, String clientIp){
 		try {
 //			리프레쉬 토큰 검증
 			String userIdStr = jwtProvider.validateRefreshToken(refreshToken);
@@ -282,9 +275,6 @@ public class SignService {
 			
 //			새로운 토큰 발급
 			Map<String, String> signTokens = handleJwt(user);
-			
-//			기존 리프레쉬 토큰 Redis에서 삭제
-			tokenProvider.removeToken(TokenType.JWT_REFRESH, userIdStr);
 			
 			return signTokens;
 		} catch (Exception e) {
@@ -313,7 +303,7 @@ public class SignService {
 //		1. accessToken 블랙리스트 등록
 		try {
 			long ttl = jwtProvider.getSignJwtRemainingTime(accessToken);
-			tokenProvider.addAccessJwtBlacklist(accessToken, ttl, "SIGNOUT");
+			tokenProvider.addAccessTokenBlacklist(accessToken, ttl, "SIGNOUT");
 			log.info("로그아웃 - AT 블랙리스트 등록. accessToken: {}, ip: {}", accessToken, clientIp);
 		} catch (TimeOutJwtException e) {
 			log.info("이미 만료된 AT.");
@@ -326,30 +316,6 @@ public class SignService {
 			throw new IllegalJwtException(JWT_ILLEGAL,"로그아웃 - refreshToken 삭제 실패. 도용된 RefreshToken.");
 		}
 	}
-	
-	/** 비밀번호 검증 및 결과 `LoginLog` 기록
-	 * @param user
-	 * @param reqPassword
-	 * @param ip
-	 * @throws TooManySignFailException {@link SignLogService#validSignFailCount} 비밀번호 실패 횟수 초과
-	 * @throws MismatchPasswordException {@link #validatePassword} 비밀번호 불일치
-	 */
-//	public void validatePassword(User user, String reqPassword, String ip) {
-//		if (!passwordEncoder.matches(reqPassword, user.getPassword())) {
-//			signLogService.registerSignLog(UserProvider.LOCAL, user.getEmail(), ip, SignResult.INVALID_PASSWORD);
-//			int signFailCount;
-//			try {
-//				signFailCount = signLogService.validSignFailCount(UserProvider.LOCAL, user.getEmail());
-//			} catch (TooManySignFailException e) {
-//				user.setUserStatus(UserStatus.STAY);
-//				userRepository.save(user);
-//				log.info("로그인 실패 횟수 초과로 계정 일시정지: email={}, ip={}", user.getEmail(), ip);
-//				throw e;
-//			}
-//			throw new MismatchPasswordException(SIGNIN_FAILED,"비밀번호 불일치. 실패 횟수: "+signFailCount);
-//		}
-//		signLogService.registerSignLog(UserProvider.LOCAL, user.getEmail(), ip, SignResult.LOCAL_SUCCESS);
-//	}
 	
 	/** User 정보 통해 로그인 토큰들 발급 및 RefreshToken은 Redis 저장
 	 * @param user
