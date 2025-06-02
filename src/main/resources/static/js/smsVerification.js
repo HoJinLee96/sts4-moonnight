@@ -10,7 +10,7 @@ export async function validatePhone(phone, successHandler, errorHandler) {
     return;
   }
 
-    const response = await fetch("/api/local/public/user/exist/phone", {
+    const response = await fetch("/api/local/user/public/exist/phone", {
       method: "POST",
 	  headers: { "Content-Type": "application/x-www-form-urlencoded" },
 	  body: new URLSearchParams({ phone })

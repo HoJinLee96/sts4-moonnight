@@ -11,7 +11,7 @@ export async function validateEmail(successHandler, errorHandler) {
     return;
   }
 
-    const response = await fetch("/api/local/public/user/exist/email", {
+    const response = await fetch("/api/local/user/public/exist/email", {
       method: "POST",
 	  headers: { "Content-Type": "application/x-www-form-urlencoded" },
 	  body: new URLSearchParams({ email })
