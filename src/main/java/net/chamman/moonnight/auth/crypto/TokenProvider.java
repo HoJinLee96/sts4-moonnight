@@ -46,7 +46,8 @@ public class TokenProvider {
 		ACCESS_FINDPW("access:findpw:", Duration.ofMinutes(5), FindPwTokenDto.class),
 		ACCESS_PASSWORD("access:password:", Duration.ofMinutes(5), PasswordTokenDto.class),
 		ACCESS_SIGNUP("access:signup:", Duration.ofMinutes(10), SignUpTokenDto.class),
-		JWT_REFRESH("jwt:refresh:",Duration.ofDays(14), null);
+		JWT_REFRESH("jwt:refresh:",Duration.ofDays(14), null),
+		JWT_BLACKLIST("jwt:blacklist:",null, null);
 		
 		private final String prefix;
 		private final Duration ttl;
@@ -161,16 +162,16 @@ public class TokenProvider {
 	 * @param result
 	 * @throws RedisSetException {@link #addAccessJwtBlacklist} Redis 저장 중 오류
 	 */
-	public void addAccessJwtBlacklist(String accessToken, long ttl, String result) {
+	public void addAccessTokenBlacklist(String accessToken, long ttl, String result) {
 		try {
-			redisTemplate.opsForValue().set("jwt:blacklist:"+ accessToken, result, Duration.ofMillis(ttl));
+			redisTemplate.opsForValue().set(TokenType.JWT_BLACKLIST.getPrefix()+ accessToken, result, Duration.ofMillis(ttl));
 		} catch (Exception e) {
 			throw new RedisSetException(TOKEN_SET_FIAL,"Access Token BlackList Redis 저장 중 오류",e);
 		}
 	}
 	
-	public boolean isBlackList(String accessToken) {
-		return Boolean.TRUE.equals(redisTemplate.hasKey("jwt:blacklist:" + accessToken));
+	public String getBlackListValue(String accessToken) {
+		return redisTemplate.opsForValue().get(TokenType.JWT_BLACKLIST.getPrefix()+ accessToken);
 	}
 	
 	public boolean isValid(TokenType type, String key) {
@@ -181,7 +182,7 @@ public class TokenProvider {
 		return redisTemplate.delete(type.getPrefix() + key);
 	}
 	
-	/** 리프레쉬 토큰 Get, value 비교
+	/** 입력받은 RefreshToken과 Redis의 저장되어있는 RefreshToken이 일치한지 검사.
 	 * @param reqUserId
 	 * @param token
 	 * @throws NoSuchTokenException {@link #getTokenData} Redis에 없는 키

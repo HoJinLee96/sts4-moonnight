@@ -2,7 +2,6 @@ package net.chamman.moonnight.auth.crypto;
 
 import static net.chamman.moonnight.global.exception.HttpStatusCode.JWT_CREATE_FIAL;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.JWT_EXPIRED;
-import static net.chamman.moonnight.global.exception.HttpStatusCode.JWT_ILLEGAL;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.JWT_VALIDATE_FIAL;
 
 import java.nio.charset.StandardCharsets;
