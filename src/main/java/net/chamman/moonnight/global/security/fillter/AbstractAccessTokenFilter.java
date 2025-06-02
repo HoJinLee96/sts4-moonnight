@@ -3,6 +3,7 @@ package net.chamman.moonnight.global.security.fillter;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -24,30 +25,26 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.crypto.JwtProvider;
 import net.chamman.moonnight.auth.crypto.TokenProvider;
+import net.chamman.moonnight.auth.crypto.TokenProvider.TokenType;
 import net.chamman.moonnight.auth.sign.SignService;
-import net.chamman.moonnight.auth.sign.log.SignLog.SignResult;
 import net.chamman.moonnight.auth.sign.log.SignLogService;
 import net.chamman.moonnight.global.exception.jwt.TimeOutJwtException;
-import net.chamman.moonnight.infra.naver.sms.GuidanceService;
 
 @Slf4j
 public abstract class AbstractAccessTokenFilter <T extends UserDetails> extends OncePerRequestFilter{
 	protected abstract T buildUserDetails(Map<String, Object> claims);
 	
 	@Autowired
-	protected JwtProvider jwtTokenProvider;
+	protected JwtProvider jwtProvider;
 	@Autowired
-	protected TokenProvider tokenStore;
+	protected TokenProvider tokenProvider;
 	@Autowired
 	protected SignLogService signLogService;
-	@Autowired
-	protected GuidanceService guidanceService;
 	@Autowired
 	protected SignService signService; 
 	
 	@Override
-	protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res,
-			FilterChain filterChain) throws ServletException, IOException {
+	protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain filterChain) throws ServletException, IOException {
 		
 		System.out.println("==========AbstractAccessTokenFilter===========");
 		
@@ -58,11 +55,10 @@ public abstract class AbstractAccessTokenFilter <T extends UserDetails> extends 
 		String clientType = req.getHeader("X-Client-Type");
 		boolean isMobileApp = clientType != null && clientType.contains("mobile");
 		
-		// AccessToken
 		String accessToken = getAccessToken(isMobileApp, req);
 		String refreshToken = getRefreshToken(isMobileApp, req);
 		
-		// 1. 토큰 null 체크
+//		 1. 토큰 null 체크
 		if(!validateTokens(new String[] {accessToken,refreshToken})) {
 			initTokenToCookie(res);
 			setErrorResponse(res, 4011, "유효하지 않은 요청 입니다.");
@@ -70,32 +66,21 @@ public abstract class AbstractAccessTokenFilter <T extends UserDetails> extends 
 			return;
 		}
 		
-		// 2. 블랙리스트 확인
-		if(!isBlackList(accessToken, clientIp)) {
+//		 2. 블랙리스트 확인
+		String value = tokenProvider.getBlackListValue(accessToken);
+//		 2-1. 로그아웃한 토큰
+		if(Objects.equals(value, "SIGNOUT")) {
 			initTokenToCookie(res);
 			setErrorResponse(res, 4012, "유효하지 않은 요청 입니다.");
 			filterChain.doFilter(req, res);
 			return;
-		}
-		
-		try {
-			// 3. 토큰 확인
-			setAuthentication(accessToken);
-			
-			filterChain.doFilter(req, res);
-			
-			// 4. Access Token 만료.
-		} catch (TimeOutJwtException e) {
+//		2-2. 유저 정보 업데이트된 토큰
+		} else if(Objects.equals(value, "UPDATE")) {
 			try {
-				// 5. 리프레쉬 토큰 통해 SignIn Tokens 재발급
-				Map<String, String> newTokens = signService.refresh(accessToken, refreshToken, clientIp);
-				
-				// 6. 새로운 토큰 Set
-				setTokenToResponse(newTokens, res, isMobileApp);
-				
-				setAuthentication(newTokens.get(newTokens.get("accessToken")));
-				
+				refresh(refreshToken, clientIp, res, isMobileApp);
+				tokenProvider.removeToken(TokenType.JWT_BLACKLIST, accessToken);
 				filterChain.doFilter(req, res);
+				return;
 			} catch (Exception refreshEx) {
 				// 리프레쉬 토큰 통해 SignIn Tokens 재발급 실패
 				initTokenToCookie(res);
@@ -103,7 +88,33 @@ public abstract class AbstractAccessTokenFilter <T extends UserDetails> extends 
 				filterChain.doFilter(req, res);
 				return;
 			}
+		}
+		
+		// 3. 토큰 확인 및 Set
+		try {
+			setAuthentication(accessToken);
+			
+			filterChain.doFilter(req, res);
+			return;
+			
+		// 4. Access Token 만료.
+		} catch (TimeOutJwtException e) {
+			try {
+//				리프레쉬 
+				refresh(refreshToken, clientIp, res, isMobileApp);
+				filterChain.doFilter(req, res);
+				return;
+
+			} catch (Exception refreshEx) {
+				// 리프레쉬 토큰 통해 SignIn Tokens 재발급 실패
+				initTokenToCookie(res);
+				setErrorResponse(res, 4010, "유효하지 않은 요청 입니다.");
+				filterChain.doFilter(req, res);
+				return;
+			}
+		// 그 외 에러
 		} catch (Exception e) {
+			log.info("AT validate 실패 또는 UserDetails 생성 중 실패.",e);
 			initTokenToCookie(res);
 			setErrorResponse(res, 4010, "유효하지 않은 요청 입니다.");
 			filterChain.doFilter(req, res);
@@ -121,74 +132,6 @@ public abstract class AbstractAccessTokenFilter <T extends UserDetails> extends 
 		return true;
 	}
 	
-	// 블랙 리스트 확인
-	protected boolean isBlackList(String accessToken, String clientIp) throws IOException {
-		if (tokenStore.isBlackList(accessToken)) {
-			log.warn("[블랙리스트 토큰 접근] IP: {}, token: {}", clientIp, accessToken);
-			
-			// 로그인 로그 남기기
-			signLogService.registerSignLog(clientIp, SignResult.BLACKLIST_TOKEN);
-			
-			// 관리자 알림 전송
-			try {
-				guidanceService.sendAdminAlert("블랙리스트 토큰 접근 시도\nIP: " + clientIp + "\naccessToken: " + accessToken);
-			} catch (Exception e) {
-				log.warn("블랙리스트 접근 보안 알림 전송 실패: {}", e);
-			}
-			return false;
-		}
-		return true;
-	}
-	
-	
-	protected void setTokenToResponse(Map<String, String> tokens, HttpServletResponse res, boolean isMobileApp) {
-		String accessToken = tokens.get("accessToken");
-		String refreshToken = tokens.get("refreshToken");
-		
-		if(isMobileApp) {
-			res.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
-			res.setHeader("X-Refresh-Token", refreshToken);
-		}else {
-			ResponseCookie accessCookie = ResponseCookie.from("X-Access-Token", accessToken)
-					.httpOnly(true)
-					.secure(true)
-					.path("/")
-					.maxAge(Duration.ofMinutes(30))
-					.sameSite("Lax")
-					.build();
-			ResponseCookie refreshCookie = ResponseCookie.from("X-Refresh-Token", refreshToken)
-					.httpOnly(true)
-					.secure(true)
-					.path("/")
-					.maxAge(Duration.ofDays(14))
-					.sameSite("Lax")
-					.build();
-			
-			res.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
-			res.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
-		}
-	}
-	
-	protected void initTokenToCookie(HttpServletResponse res) {
-		ResponseCookie accessCookie = ResponseCookie.from("X-Access-Token", "")
-				.httpOnly(true)
-				.secure(true)
-				.path("/")
-				.maxAge(0)
-				.sameSite("Lax")
-				.build();
-		ResponseCookie refreshCookie = ResponseCookie.from("X-Refresh-Token", "")
-				.httpOnly(true)
-				.secure(true)
-				.path("/")
-				.maxAge(0)
-				.sameSite("Lax")
-				.build();
-		
-		res.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
-		res.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
-	}
-	
 	protected String getAccessToken(boolean isMobileApp, HttpServletRequest req) {
 		if(isMobileApp) {
 			return req.getHeader("X-Access-Token");
@@ -200,7 +143,7 @@ public abstract class AbstractAccessTokenFilter <T extends UserDetails> extends 
 		}
 		return null;
 	}
-	
+
 	protected String getRefreshToken(boolean isMobileApp, HttpServletRequest req) {
 		if(isMobileApp) {
 			return req.getHeader("X-Refresh-Token");
@@ -211,6 +154,44 @@ public abstract class AbstractAccessTokenFilter <T extends UserDetails> extends 
 			}
 		}
 		return null;
+	}
+	
+	protected void refresh(String refreshToken, String clientIp, HttpServletResponse res, boolean isMobileApp) {
+		Map<String,String> newTokens = signService.refresh(refreshToken, clientIp);
+		// 새로운 토큰 Set Response
+		setTokenToResponse(newTokens, res, isMobileApp);
+		// 새로운 토큰 통해 SetAuthentication
+		setAuthentication(newTokens.get("accessToken"));
+	}
+	
+	protected void setTokenToResponse(Map<String, String> tokens, HttpServletResponse res, boolean isMobileApp) {
+		String accessToken = tokens.get("accessToken");
+		String refreshToken = tokens.get("refreshToken");
+		
+		if(isMobileApp) {
+			res.setHeader("X-Access-Token", accessToken);
+			res.setHeader("X-Refresh-Token", refreshToken);
+		}else {
+			buildCookie(res,"X-Access-Token", accessToken, Duration.ofMinutes(120));
+			buildCookie(res,"X-Refresh-Token", refreshToken, Duration.ofDays(14));
+		}
+	}
+	
+	protected void initTokenToCookie(HttpServletResponse res) {
+		buildCookie(res,"X-Access-Token", "", Duration.ZERO);
+		buildCookie(res,"X-Refresh-Token", "", Duration.ZERO);
+	}
+	
+	protected void buildCookie(HttpServletResponse res, String name, String value, Duration duration) {
+		ResponseCookie cookie = ResponseCookie.from(name, value)
+				.httpOnly(true)
+				.secure(true)
+				.path("/")
+				.maxAge(duration)
+				.sameSite("Lax")
+				.build();
+		
+		res.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 	}
 	
 	protected void setErrorResponse(HttpServletResponse res, int code, String message) throws IOException {
@@ -226,7 +207,7 @@ public abstract class AbstractAccessTokenFilter <T extends UserDetails> extends 
 	}  
 	
 	protected void setAuthentication(String accessToken) {
-		Map<String,Object> claims = jwtTokenProvider.validateAccessToken(accessToken);
+		Map<String,Object> claims = jwtProvider.validateAccessToken(accessToken);
 		T userDetails = buildUserDetails(claims);
 		UsernamePasswordAuthenticationToken authentication =
 				new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());

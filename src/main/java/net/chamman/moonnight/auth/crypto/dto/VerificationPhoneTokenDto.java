@@ -1,5 +1,7 @@
 package net.chamman.moonnight.auth.crypto.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,6 +28,7 @@ public class VerificationPhoneTokenDto implements Encryptable<VerificationPhoneT
 		return new VerificationPhoneTokenDto(aesProvider.decrypt(this.verificationId),aesProvider.decrypt(this.phone));
 	}
 	
+	@JsonIgnore
 	public int getIntVerificationId() {
 		return Integer.parseInt(verificationId);
 	}

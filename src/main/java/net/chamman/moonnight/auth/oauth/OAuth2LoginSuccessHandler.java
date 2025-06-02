@@ -150,7 +150,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 						.httpOnly(true)
 						.secure(true)
 						.path("/")
-						.maxAge(Duration.ofMinutes(30))
+						.maxAge(Duration.ofMinutes(120))
 						.sameSite("Lax")
 						.build();
 				

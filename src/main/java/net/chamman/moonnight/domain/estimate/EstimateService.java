@@ -18,12 +18,10 @@ import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.crypto.Obfuscator;
 import net.chamman.moonnight.domain.estimate.Estimate.EstimateStatus;
 import net.chamman.moonnight.domain.user.User;
-import net.chamman.moonnight.domain.user.UserService;
+import net.chamman.moonnight.domain.user.UserRepository;
 import net.chamman.moonnight.global.exception.ForbiddenException;
 import net.chamman.moonnight.global.exception.NoSuchDataException;
 import net.chamman.moonnight.global.exception.StatusDeleteException;
-import net.chamman.moonnight.global.exception.StatusStayException;
-import net.chamman.moonnight.global.exception.StatusStopException;
 import net.chamman.moonnight.global.exception.infra.s3.S3UploadException;
 import net.chamman.moonnight.infra.naver.sms.GuidanceService;
 import net.chamman.moonnight.infra.s3.AwsS3Service;
@@ -34,7 +32,7 @@ import net.chamman.moonnight.infra.s3.AwsS3Service;
 public class EstimateService {
 	
 	private final EstimateRepository estimateRepository;
-	private final UserService userService;
+	private final UserRepository userRepository;
 	private final AwsS3Service awsS3Service;
 	private final GuidanceService guidanceService;
 	private final Obfuscator obfuscator;
@@ -50,11 +48,6 @@ public class EstimateService {
 	 * 
 	 * @throws S3UploadException {@link AwsS3Service#uploadEstimateImages}
 	 * 
-	 * @throws NoSuchDataException {@link UserService#getUserByUserId} 찾을 수 없는 유저
-	 * @throws StatusStayException {@link UserService#getUserByUserId} 일시정지 유저
-	 * @throws StatusStopException {@link UserService#getUserByUserId} 중지 유저
-	 * @throws StatusDeleteException {@link UserService#getUserByUserId} 탈퇴 유저
-	 * 
 	 * @return 등록된 견적서
 	 */
 	@Transactional
@@ -69,7 +62,7 @@ public class EstimateService {
 		
 //		2. 견적서 DB 등록
 		try {
-			User user = userService.getUserByUserId(userId);
+			User user = userRepository.getReferenceById(userId);
 			
 			Estimate estimate = estimateRequestDto.toEntity(user, imagesPath);
 			estimateRepository.save(estimate);
@@ -137,8 +130,6 @@ public class EstimateService {
 	 * @return 견적서 리스트
 	 */
 	public List<EstimateResponseDto> getAllEstimateByAuthPhone(String phone) {
-//		휴대폰 인증 jwt자체를 신뢰하는 방식통해 아래 코드 주석 처리 진행
-//		verificationService.validateVerify(phone);
 		return estimateRepository.findByPhone(phone)
 				.stream()
 				.filter(e->e.getEstimateStatus()!=EstimateStatus.DELETE)
@@ -157,8 +148,6 @@ public class EstimateService {
 	 * @return 견적서
 	 */
 	public EstimateResponseDto getEstimateByEstimateIdAndAuthPhone(int encodedEstimateId, String phone) {
-//		휴대폰 인증 jwt자체를 신뢰하는 방식통해 아래 코드 주석 처리 진행
-//		verificationService.validateVerify(phone);
 		
 		Estimate estimate = getAuthorizedEstimate(encodedEstimateId, phone);
 		
@@ -213,8 +202,6 @@ public class EstimateService {
 	 * @throws S3UploadException {@link #setNewEstimateAndSave} AWS S3에 파일 업로드 중 오류 발생 시.
 	 */
 	public EstimateResponseDto updateEstimateByAuthPhone(int encodedEstimateId, EstimateRequestDto estimateRequestDto, List<MultipartFile> images, String phone) {
-//		휴대폰 인증 jwt자체를 신뢰하는 방식통해 아래 코드 주석 처리 진행
-//		verificationService.validateVerify(phone);
 
 		Estimate estimate = getAuthorizedEstimate(encodedEstimateId, phone);
 
@@ -245,8 +232,6 @@ public class EstimateService {
 	 */
 	@Transactional
 	public void deleteEstimateByAuth(int encodedEstimateId, String phone) {
-//		휴대폰 인증 jwt자체를 신뢰하는 방식통해 아래 코드 주석 처리 진행
-//		verificationService.validateVerify(phone);
 		Estimate estimate = getAuthorizedEstimate(encodedEstimateId, phone);
 		estimate.setEstimateStatus(EstimateStatus.DELETE);
 	}
@@ -320,8 +305,7 @@ public class EstimateService {
 	 * @throws ForbiddenException {@link #getAuthorizedEstimate} 견적서 조회 권한 이상
 	 */
 	private Estimate getAuthorizedEstimate(int encodedEstimateId, int userId) {
-//		jwt자체를 신뢰하는 방식통해 아래 코드 주석 처리 진행
-//		userService.getUserByUserId(userId);
+		
 		Estimate estimate = getEstimateById(encodedEstimateId);
 		
 		if (estimate.getUser().getUserId() != userId) {
@@ -338,9 +322,10 @@ public class EstimateService {
 	 * 
 	 * @throws NoSuchDataException {@link #getEstimateById} 찾을 수 없는 견적서
 	 * @throws StatusDeleteException {@link #getEstimateById} 삭제된 견적서
-	 * @throws ForbiddenException {@link #getAuthorizedEstimate} 견적서 조회 권한 이상
+	 * @throws ForbiddenException {@link #getAuthorizedEstimate(int, String)} 견적서 조회 권한 이상
 	 */
 	private Estimate getAuthorizedEstimate(int encodedEstimateId, String phone) {
+		
 		Estimate estimate = getEstimateById(encodedEstimateId);
 		
 		if (!Objects.equals(estimate.getPhone(), phone)) {

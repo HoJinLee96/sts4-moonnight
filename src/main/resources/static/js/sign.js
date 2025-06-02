@@ -38,7 +38,7 @@ import { formatEmail,formatPasswords,validateConfirmPasswords,formatName,formatB
  }
 
 export async function signOut(successHandler, errorHandler) {
-    const response = await fetch("/api/sign/public/out", {
+    const response = await fetch("/api/sign/public/out/local", {
         method: "POST"
     });
     if (response.ok) {

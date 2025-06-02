@@ -7,15 +7,13 @@ import static net.chamman.moonnight.global.exception.HttpStatusCode.SMS_SEND_FAI
 import static net.chamman.moonnight.global.exception.HttpStatusCode.VERIFICATION_EXPIRED;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.VERIFICATION_NOT_FOUND;
 
-import java.sql.Timestamp;
 import java.util.List;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +22,7 @@ import net.chamman.moonnight.auth.crypto.TokenProvider;
 import net.chamman.moonnight.auth.crypto.dto.VerificationEmailTokenDto;
 import net.chamman.moonnight.auth.crypto.dto.VerificationPhoneTokenDto;
 import net.chamman.moonnight.auth.verification.Verification.VerificationBuilder;
+import net.chamman.moonnight.auth.verification.VerificationRepository.VerificationProjection;
 import net.chamman.moonnight.global.exception.NoSuchDataException;
 import net.chamman.moonnight.global.exception.crypto.EncryptException;
 import net.chamman.moonnight.global.exception.infra.MailSendException;
@@ -43,7 +42,6 @@ import net.chamman.moonnight.infra.naver.sms.SmsRecipientPayload;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-@EnableAsync
 public class VerificationService {
 	
 	private final VerificationRepository verificationRepository;
@@ -64,7 +62,6 @@ public class VerificationService {
 	 * 
 	 * @throws SmsSendException {@link NaverSmsClient#sendVerificationCode}
 	 */
-	@Async
 	public int sendSmsVerificationCode(String recipientPhone, String requestIp) {
 		
 		String verificationCode = generateVerificationCode();
@@ -117,7 +114,6 @@ public class VerificationService {
 	 * @throws MailSendException {@link NaverMailClient#sendMail}
 	 * @return
 	 */
-	@Async
 	public int sendEmailVerificationCode(String recipientEmail, String requestIp) {
 		String verificationCode = generateVerificationCode();
 		String body = "인증번호 [" + verificationCode + "]를 입력해주세요.";
@@ -181,14 +177,14 @@ public class VerificationService {
 	 * 
 	 * @return 휴대폰 인증 완료 토큰
 	 */
+	@Transactional
 	public String compareSms(String encodedVerificationId, String phone, String reqCode, String requestIp) {
 		
 		int verificationId = obfuscator.decode(Integer.parseInt(encodedVerificationId));
-		Verification ver = getVerificationAndValidate(verificationId);
 		
-		compareCode(ver, phone, reqCode, requestIp);
+		compareCode(verificationId, phone, reqCode, requestIp);
 		
-		return tokenProvider.createToken(new VerificationPhoneTokenDto(ver.getVerificationId()+"", phone), VerificationPhoneTokenDto.TOKENTYPE);
+		return tokenProvider.createToken(new VerificationPhoneTokenDto(verificationId+"", phone), VerificationPhoneTokenDto.TOKENTYPE);
 	}
 	
 	/** 이메일 인증번호 검증
@@ -208,14 +204,13 @@ public class VerificationService {
 	 * 
 	 * @return 이메일 인증 완료 토큰
 	 */
+	@Transactional
 	public String compareEmail(String encodedVerificationId, String email, String reqCode, String requestIp) {
 		
 		int verificationId = obfuscator.decode(Integer.parseInt(encodedVerificationId));
-		Verification ver = getVerificationAndValidate(verificationId);
+		compareCode(verificationId, email, reqCode, requestIp);
 		
-		compareCode(ver, email, reqCode, requestIp);
-		
-		return tokenProvider.createToken(new VerificationEmailTokenDto(ver.getVerificationId()+"", email), VerificationEmailTokenDto.TOKENTYPE);
+		return tokenProvider.createToken(new VerificationEmailTokenDto(verificationId+"", email), VerificationEmailTokenDto.TOKENTYPE);
 	}
 	
 	//  (to 기준, 10분 이내 요청한, 제일 최근에 요청한, 인증 여부)
@@ -237,24 +232,18 @@ public class VerificationService {
 	 * @throws NotVerifyException {@link #isVerify} DB 미인증된 인증 요청.
 	 * @return
 	 */
-	public Verification isVerify(int verificationId) {
+	public void isVerify(int verificationId) {
 		
-		Object[] result = verificationRepository.findVerificationWithValidity(verificationId)
+		VerificationProjection verificationProjection = verificationRepository.findVerificationWithValidity(verificationId)
 				.orElseThrow(() -> new NoSuchDataException(VERIFICATION_NOT_FOUND, "인증 요청 없음"));
 		
-		Verification verification = convertToVerification(result); 
-		boolean isValid = ((Number) result[result.length - 1]).intValue() == 1;
-		
-		if(!verification.isVerify()) {
-			if (!isValid) {
-				verification.setVerify(false);
-				verificationRepository.save(verification);
+		if(!verificationProjection.getVerify()) {
+			if (!verificationProjection.isValid()) {
 				throw new VerificationExpiredException(VERIFICATION_EXPIRED, "미인증된 인증 요청(시관 초과된 인증)");
 			}
 			throw new NotVerifyException(NOT_VERIFY,"미인증된 인증 요청");
 		}
 		
-		return verification;
 	}
 	
 	/** 인증전, 인증 요청 찾기 및 시간초과 검증
@@ -264,22 +253,19 @@ public class VerificationService {
 	 * @throws VerificationExpiredException {@link #findVerification} 인증 시간 초과
 	 * @return Verification
 	 */
-	private Verification getVerificationAndValidate(int verificationId) {
-		
-		Object[] result = verificationRepository.findVerificationWithValidity(verificationId)
-				.orElseThrow(() -> new NoSuchDataException(VERIFICATION_NOT_FOUND, "인증 요청 없음"));
-		
-		Verification verification = convertToVerification(result); 
-		boolean isValid = ((Number) result[result.length - 1]).intValue() == 1;
-		
-		if (!isValid) {
-			verification.setVerify(false);
-			verificationRepository.save(verification);
-			throw new VerificationExpiredException(VERIFICATION_EXPIRED, "시간 초과된 인증 요청");
-		}
-		
-		return verification;
-	}
+//	private Verification getVerificationAndValidate(int verificationId) {
+//		
+//		VerificationProjection verificationProjection = verificationRepository.findVerificationWithValidity(verificationId)
+//				.orElseThrow(() -> new NoSuchDataException(VERIFICATION_NOT_FOUND, "인증 요청 없음"));
+//		
+//		Verification verification = convertToVerification(result); 
+//		boolean isValid = ((Number) result[result.length - 1]).intValue() == 1;
+//		
+//		if (!verificationProjection.getIsValid()) {
+//			throw new VerificationExpiredException(VERIFICATION_EXPIRED, "시간 초과된 인증 요청");
+//		}
+//		
+//	}
 	
 	/** 인증번호 검증
 	 * @param verification
@@ -288,21 +274,27 @@ public class VerificationService {
 	 * @throws IllegalVerificationException {@link #compareCode} 수신자 불일치
 	 * @throws MismatchCodeException {@link #compareCode} 인증 번호 불일치
 	 */
-	private void compareCode(Verification verification, String recipient, String reqCode, String requestIp) {
+	private void compareCode(int verificationId, String recipient, String reqCode, String requestIp) {
+		
+		VerificationProjection verificationProjection = verificationRepository.findVerificationWithValidity(verificationId)
+				.orElseThrow(() -> new NoSuchDataException(VERIFICATION_NOT_FOUND, "인증 요청 없음"));
+		
+		if (!verificationProjection.isValid()) {
+			throw new VerificationExpiredException(VERIFICATION_EXPIRED, "시간 초과된 인증 요청");
+		}
 		
 //		 수신자 검사
-		if(!verification.getRecipient().equals(recipient)) {
+		if(!verificationProjection.getRecipient().equals(recipient)) {
 			throw new IllegalVerificationException(MISMATCH_RECIPIENT,"수신자 불일치. reqRecipient: "+recipient);
 		}
 		
 //		 인증번호 일치 결과
-		if(!verification.getVerificationCode().equals(reqCode)) {
+		if(!verificationProjection.getVerificationCode().equals(reqCode)) {
 			throw new MismatchCodeException(MISMATCH_VERIFICATION_CODE,"인증 번호 불일치. reqCode: "+reqCode);
 		}
 		
 //		 DB `Verifivation` 인증 성공 기록
-		verificationRepository.markAsVerified(verification.getVerificationId());
-		verificationRepository.save(verification);
+		verificationRepository.markAsVerified(verificationId);
 	}
 	
 	/** 랜덤 인증번호 생성
@@ -316,18 +308,18 @@ public class VerificationService {
 	 * @param result
 	 * @return 인증 요청 객체
 	 */
-	private Verification convertToVerification(Object[] result) {
-		Verification v = new Verification();
-		v.setVerificationId(((Number) result[0]).intValue());
-		v.setRequestIp((String) result[1]);
-		v.setRecipient((String) result[2]);
-		v.setVerificationCode((String) result[3]);
-		v.setSendStatus(((Number) result[4]).intValue());
-		v.setCreatedAt(((Timestamp) result[5]).toLocalDateTime());
-		v.setVerify(result[6] != null ? ((Boolean) result[6]) : null);
-		v.setVerifyAt(result[7] != null ? ((Timestamp) result[7]).toLocalDateTime() : null);
-		return v;
-	}
+//	private Verification convertToVerification(Object[] result) {
+//		Verification v = new Verification();
+//		v.setVerificationId(((Number) result[0]).intValue());
+//		v.setRequestIp((String) result[1]);
+//		v.setRecipient((String) result[2]);
+//		v.setVerificationCode((String) result[3]);
+//		v.setSendStatus(((Number) result[4]).intValue());
+//		v.setCreatedAt(((Timestamp) result[5]).toLocalDateTime());
+//		v.setVerify(result[6] != null ? ((Boolean) result[6]) : null);
+//		v.setVerifyAt(result[7] != null ? ((Timestamp) result[7]).toLocalDateTime() : null);
+//		return v;
+//	}
 	
 	
 }

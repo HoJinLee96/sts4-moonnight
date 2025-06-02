@@ -1,6 +1,7 @@
 package net.chamman.moonnight.auth.verification;
 
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -32,7 +33,6 @@ public interface VerificationRepository extends JpaRepository<Verification, Inte
 	@Query(value = "UPDATE verification SET verify = TRUE, verify_at = NOW() WHERE verification_id = :verId", nativeQuery = true)
 	void markAsVerified(@Param("verId") int verId);
 	
-	
 	//  (recipient 기준, 10분 이내 요청한, 제일 최근에 요청한)
 	@Query(
 			value = "SELECT * FROM verification " +
@@ -51,15 +51,52 @@ public interface VerificationRepository extends JpaRepository<Verification, Inte
 			)
 	Long isWithinVerificationTime(@Param("verId") int verId);
 	
+//	@Query(value = """
+//		    SELECT v.*, 
+//		           CASE 
+//		             WHEN TIMESTAMPDIFF(SECOND, v.created_at, NOW()) <= 180 THEN TRUE 
+//		             ELSE FALSE 
+//		           END AS is_valid 
+//		    FROM verification v 
+//		    WHERE v.verification_id = :verificationId 
+//		""", nativeQuery = true)
+//	Optional<Object[]> findVerificationWithValidity(@Param("verificationId") int verificationId);
+	
 	@Query(value = """
-		    SELECT v.*, 
-		           CASE 
-		             WHEN TIMESTAMPDIFF(SECOND, v.created_at, NOW()) <= 180 THEN TRUE 
-		             ELSE FALSE 
-		           END AS is_valid 
-		    FROM verification v 
-		    WHERE v.verification_id = :verificationId 
-		""", nativeQuery = true)
-	Optional<Object[]> findVerificationWithValidity(@Param("verificationId") int verificationId);
+		    SELECT 
+		        v.verification_id as verificationId,
+		        v.request_ip as requestIp,
+		        v.recipient as recipient,
+		        v.verification_code as verificationCode,
+		        v.send_status as sendStatus,
+		        v.created_at as createdAt,
+		        v.verify as verify,
+		        v.verify_at as verifyAt,
+		        CASE 
+		            WHEN TIMESTAMPDIFF(SECOND, v.created_at, NOW()) <= 180 THEN 1 
+		            ELSE 0 
+		        END AS isValid
+		    FROM verification v
+		    WHERE v.verification_id = :verificationId
+		    """, nativeQuery = true)
+		Optional<VerificationProjection> findVerificationWithValidity(@Param("verificationId") int verificationId);
+
+	
+	public interface VerificationProjection {
+	    Integer getVerificationId();
+	    String getRequestIp();
+	    String getRecipient();
+	    String getVerificationCode();
+	    Integer getSendStatus();
+	    LocalDateTime getCreatedAt();
+	    Boolean getVerify();
+	    LocalDateTime getVerifyAt();
+	    Integer getIsValid(); // alias 명 그대로!
+	    default boolean isValid() {
+	        return getIsValid() != null && getIsValid() == 1;
+	    }
+	}
 	
 }
+
+
