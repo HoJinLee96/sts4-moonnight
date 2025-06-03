@@ -14,7 +14,6 @@ public class AuthUserDetails implements UserDetails{
 	
 	private final int verificationId;
 	private final String phone;
-	private final String name;
 	private final List<GrantedAuthority> authorities;
 	
 	@Override
@@ -29,7 +28,7 @@ public class AuthUserDetails implements UserDetails{
 	
 	@Override
 	public String getUsername() {
-		return phone;
+		return verificationId+"";
 	}
 	
 	@Override

@@ -46,12 +46,7 @@ public class JwtAuthPhoneFilter extends AbstractAccessTokenFilter<AuthUserDetail
 			throw new IllegalJwtException(JWT_ILLEGAL,"JWT AuthUserDetails 생성중 오류 발생. - phone");
 		}
 		
-		String name = (String) claims.get("name");
-		if (name == null || name.isEmpty()) {
-			throw new IllegalJwtException(JWT_ILLEGAL,"JWT AuthUserDetails 생성중 오류 발생. - name");
-		}
-		
-		return new AuthUserDetails(verificationId, phone, name, authorities);
+		return new AuthUserDetails(verificationId, phone, authorities);
 	}
 	
 	@Override
