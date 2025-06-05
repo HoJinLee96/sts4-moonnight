@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +31,8 @@ import net.chamman.moonnight.global.exception.verification.IllegalVerificationEx
 import net.chamman.moonnight.global.exception.verification.MismatchCodeException;
 import net.chamman.moonnight.global.exception.verification.NotVerifyException;
 import net.chamman.moonnight.global.exception.verification.VerificationExpiredException;
+import net.chamman.moonnight.global.util.LogMaskingUtil;
+import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 import net.chamman.moonnight.infra.naver.mail.MailRecipientPayload;
 import net.chamman.moonnight.infra.naver.mail.NaverMailClient;
 import net.chamman.moonnight.infra.naver.mail.NaverMailPayload;
@@ -63,6 +64,10 @@ public class VerificationService {
 	 * @throws SmsSendException {@link NaverSmsClient#sendVerificationCode}
 	 */
 	public int sendSmsVerificationCode(String recipientPhone, String requestIp) {
+		log.debug("인증번호 문자 발송. RecipientPhone: [{}], RequestIp: [{}]",
+				LogMaskingUtil.maskPhone(recipientPhone, MaskLevel.MEDIUM),
+				requestIp
+				);
 		
 		String verificationCode = generateVerificationCode();
 		String body = "인증번호 [" + verificationCode + "]를 입력해주세요.";
@@ -88,15 +93,15 @@ public class VerificationService {
 				.verificationCode(verificationCode);
 		
 		try {
-			int sendStatus = naverSmsClient.sendVerificationCode(naverSmsPayload);
+			int sendStatus = naverSmsClient.sendSms(naverSmsPayload);
 			verificationBuilder.sendStatus(sendStatus);
 			if((sendStatus/100)!=2) {
-				log.error("인증번호 발송 실패: sendStatus: {}, phone: {} , ip: {}", sendStatus, recipientPhone, requestIp);
+				log.error("인증번호 발송 요청 응답코드 실패: SendStatus: [{}], RecipientPhone: [{}] , RequestIp: [{}]", sendStatus, recipientPhone, requestIp);
 				verificationRepository.save(verificationBuilder.build());
 				throw new SmsSendException(SMS_SEND_FAIL, "인증번호 발송 실패: sendStatus: "+sendStatus);
 			}
 		} catch (Exception e) {
-			log.error("인증번호 발송 실패: phone: {} , ip: {}", recipientPhone, requestIp);
+			log.error("인증번호 발송 요청 실패: RecipientPhone: [{}] , RequestIp: [{}]", recipientPhone, requestIp, e);
 			verificationBuilder.sendStatus(500);
 			verificationRepository.save(verificationBuilder.build());
 			throw e;
@@ -115,6 +120,11 @@ public class VerificationService {
 	 * @return
 	 */
 	public int sendEmailVerificationCode(String recipientEmail, String requestIp) {
+		log.debug("인증번호 이메일 발송. RecipientEmail: [{}], RequestIp: [{}]",
+				LogMaskingUtil.maskEmail(recipientEmail, MaskLevel.MEDIUM),
+				requestIp
+				);
+		
 		String verificationCode = generateVerificationCode();
 		String body = "인증번호 [" + verificationCode + "]를 입력해주세요.";
 		
@@ -141,14 +151,13 @@ public class VerificationService {
 			int sendStatus = naverMailClient.sendMail(naverMailPayload);
 			verificationBuilder.sendStatus(sendStatus);
 			if((sendStatus/100)!=2) {
-				System.out.println("인증번호 발송 실패 (sendStatus/100)!=2: "+(sendStatus/100));
-				log.info("인증번호 발송 실패: sendStatus: {}, phone: {} , ip: {}", sendStatus, recipientEmail, requestIp);
+				log.error("인증번호 발송 요청 응답코드 실패: SendStatus: [{}], RecipientEmail: [{}] , RequestIp: [{}]", sendStatus, recipientEmail, requestIp);
 				Verification verification = verificationBuilder.build();
 				verificationRepository.save(verification);
 			}
 		} catch (Exception e) {
+			log.error("인증번호 발송 요청 실패: RecipientEmail: [{}] , RequestIp: [{}]", recipientEmail, requestIp, e);
 			verificationBuilder.sendStatus(500);
-			log.error("인증번호 발송 실패: phone: {} , ip: {}", recipientEmail, requestIp);
 			Verification verification = verificationBuilder.build();
 			verificationRepository.save(verification);
 			throw e;
@@ -182,6 +191,11 @@ public class VerificationService {
 		
 		int verificationId = obfuscator.decode(Integer.parseInt(encodedVerificationId));
 		
+		log.debug("문자 인증번호 검증. VerificationId: [{}], RequestIp: [{}]",
+				LogMaskingUtil.maskId(verificationId, MaskLevel.MEDIUM),
+				requestIp
+				);
+		
 		compareCode(verificationId, phone, reqCode, requestIp);
 		
 		return tokenProvider.createToken(new VerificationPhoneTokenDto(verificationId+"", phone), VerificationPhoneTokenDto.TOKENTYPE);
@@ -208,21 +222,15 @@ public class VerificationService {
 	public String compareEmail(String encodedVerificationId, String email, String reqCode, String requestIp) {
 		
 		int verificationId = obfuscator.decode(Integer.parseInt(encodedVerificationId));
+		
+		log.debug("이메일 인증번호 검증. VerificationId: [{}], RequestIp: [{}]",
+				LogMaskingUtil.maskId(verificationId, MaskLevel.MEDIUM),
+				requestIp
+				);
+		
 		compareCode(verificationId, email, reqCode, requestIp);
 		
 		return tokenProvider.createToken(new VerificationEmailTokenDto(verificationId+"", email), VerificationEmailTokenDto.TOKENTYPE);
-	}
-	
-	//  (to 기준, 10분 이내 요청한, 제일 최근에 요청한, 인증 여부)
-	//  인증 요청이후 5분이내에 성공했지만, 인증 성공 uuid의 유효시간이 5분이기에 최대 10분으로 조회
-	/**
-	 * @param to
-	 * @return
-	 */
-	public boolean validateVerify(String to) {
-		return verificationRepository.findRecentVerificationWithin10Min(to)
-				.map(verification -> Boolean.TRUE.equals(verification.isVerify()))
-				.orElseThrow(()->new BadCredentialsException("인증 되지 않았습니다."));
 	}
 	
 	/** 인증후, 인증 요청 찾기 및 검증 
@@ -245,27 +253,6 @@ public class VerificationService {
 		}
 		
 	}
-	
-	/** 인증전, 인증 요청 찾기 및 시간초과 검증
-	 * @param recipient
-	 * @param requestIp
-	 * @throws NoSuchDataException {@link #findVerification} 최근 인증 요청 없음
-	 * @throws VerificationExpiredException {@link #findVerification} 인증 시간 초과
-	 * @return Verification
-	 */
-//	private Verification getVerificationAndValidate(int verificationId) {
-//		
-//		VerificationProjection verificationProjection = verificationRepository.findVerificationWithValidity(verificationId)
-//				.orElseThrow(() -> new NoSuchDataException(VERIFICATION_NOT_FOUND, "인증 요청 없음"));
-//		
-//		Verification verification = convertToVerification(result); 
-//		boolean isValid = ((Number) result[result.length - 1]).intValue() == 1;
-//		
-//		if (!verificationProjection.getIsValid()) {
-//			throw new VerificationExpiredException(VERIFICATION_EXPIRED, "시간 초과된 인증 요청");
-//		}
-//		
-//	}
 	
 	/** 인증번호 검증
 	 * @param verification
@@ -303,23 +290,6 @@ public class VerificationService {
 	private String generateVerificationCode() {
 		return String.format("%06d", new Random().nextInt(1000000)); // 6자리 인증번호 생성
 	}
-	
-	/** Object 배열 -> Verification 매핑
-	 * @param result
-	 * @return 인증 요청 객체
-	 */
-//	private Verification convertToVerification(Object[] result) {
-//		Verification v = new Verification();
-//		v.setVerificationId(((Number) result[0]).intValue());
-//		v.setRequestIp((String) result[1]);
-//		v.setRecipient((String) result[2]);
-//		v.setVerificationCode((String) result[3]);
-//		v.setSendStatus(((Number) result[4]).intValue());
-//		v.setCreatedAt(((Timestamp) result[5]).toLocalDateTime());
-//		v.setVerify(result[6] != null ? ((Boolean) result[6]) : null);
-//		v.setVerifyAt(result[7] != null ? ((Timestamp) result[7]).toLocalDateTime() : null);
-//		return v;
-//	}
 	
 	
 }

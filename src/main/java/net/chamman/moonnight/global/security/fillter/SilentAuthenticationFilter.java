@@ -47,7 +47,7 @@ public class SilentAuthenticationFilter extends AbstractAccessTokenFilter<Silent
 	@Override
 	protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res,
 			FilterChain filterChain) throws ServletException, IOException {
-		System.out.println("==========SilentAuthenticationFilter===========");
+		log.debug("SilentAuthenticationFilter.doFilterInternal 실행.");
 		
 		// ClientIp
 		String clientIp = (String) req.getAttribute("clientIp");
@@ -111,7 +111,7 @@ public class SilentAuthenticationFilter extends AbstractAccessTokenFilter<Silent
 				return;
 			}
 		} catch (Exception e) {
-			log.info("AT validate 실패 또는 UserDetails 생성 중 실패.",e);
+			log.error("AT validate 실패 또는 UserDetails 생성 중 실패.",e);
 			initTokenToCookie(res);
 			filterChain.doFilter(req, res);
 			return;
@@ -120,7 +120,8 @@ public class SilentAuthenticationFilter extends AbstractAccessTokenFilter<Silent
 	
 	@Override
 	protected SilentUserDetails buildUserDetails(Map<String, Object> claims) {
-		
+		log.debug("SilentAuthenticationFilter.buildUserDetails 실행.");
+
 		Object subjectRaw = claims.get("subject");
 		if (subjectRaw == null) {
 			throw new IllegalJwtException(JWT_ILLEGAL,"JWT SilentUserDetails 생성중 오류 발생. subject");

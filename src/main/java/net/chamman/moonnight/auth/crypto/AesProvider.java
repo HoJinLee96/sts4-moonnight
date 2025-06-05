@@ -15,10 +15,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 
+import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.global.exception.crypto.DecryptException;
 import net.chamman.moonnight.global.exception.crypto.EncryptException;
+import net.chamman.moonnight.global.util.LogMaskingUtil;
+import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 
 @Component
+@Slf4j
 @PropertySource("classpath:application.properties")
 public class AesProvider {
 	
@@ -38,6 +42,8 @@ public class AesProvider {
 	 * @return
 	 */
 	public String encrypt(String plainText) {
+		log.debug("암호화. 대상: [{}]", LogMaskingUtil.maskText(plainText, MaskLevel.MEDIUM));
+		
 		try {
 			Cipher cipher = Cipher.getInstance(ALGORITHM);
 			byte[] iv = new byte[KEY_LENGTH];
@@ -53,7 +59,7 @@ public class AesProvider {
 			
 			return Base64.getEncoder().encodeToString(combined);
 		} catch (Exception e) {
-			throw new EncryptException(ENCRYPT_FAIL,"AES 암호화 실패", e);
+			throw new EncryptException(ENCRYPT_FAIL,"AES 암호화 실패. " + e.getMessage(), e);
 		}
 	}
 	
@@ -63,6 +69,8 @@ public class AesProvider {
 	 * @return
 	 */
 	public String decrypt(String encryptedText) {
+		log.debug("복호화. 대상: [{}]", LogMaskingUtil.maskText(encryptedText, MaskLevel.MEDIUM));
+
 		try {
 			byte[] decoded = Base64.getDecoder().decode(encryptedText);
 			
@@ -77,7 +85,7 @@ public class AesProvider {
 			byte[] decrypted = cipher.doFinal(encrypted);
 			return new String(decrypted, StandardCharsets.UTF_8);
 		} catch (Exception e) {
-			throw new DecryptException(DECRYPT_FAIL,"AES 복호화 실패", e);
+			throw new DecryptException(DECRYPT_FAIL,"AES 복호화 실패. " + e.getMessage(), e);
 		}
 	}
 }

@@ -45,8 +45,7 @@ public abstract class AbstractAccessTokenFilter <T extends UserDetails> extends 
 	
 	@Override
 	protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain filterChain) throws ServletException, IOException {
-		
-		System.out.println("==========AbstractAccessTokenFilter===========");
+		log.debug("AbstractAccessTokenFilter.doFilterInternal 실행.");
 		
 		// ClientIp
 		String clientIp = (String) req.getAttribute("clientIp");
@@ -114,7 +113,7 @@ public abstract class AbstractAccessTokenFilter <T extends UserDetails> extends 
 			}
 		// 그 외 에러
 		} catch (Exception e) {
-			log.info("AT validate 실패 또는 UserDetails 생성 중 실패.",e);
+			log.error("AT validate 실패 또는 UserDetails 생성 중 실패.",e);
 			initTokenToCookie(res);
 			setErrorResponse(res, 4010, "유효하지 않은 요청 입니다.");
 			filterChain.doFilter(req, res);

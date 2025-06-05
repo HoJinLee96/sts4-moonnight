@@ -18,10 +18,14 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.global.exception.infra.DaumStateException;
 import net.chamman.moonnight.global.exception.infra.InvalidMainAddressException;
+import net.chamman.moonnight.global.util.LogMaskingUtil;
+import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 
 @Component
+@Slf4j
 @PropertySource("classpath:application.properties")
 public class DaumMapClient {
 	
@@ -41,6 +45,8 @@ public class DaumMapClient {
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public boolean validateAddress(String postcode, String mainAddress) {
+		log.debug("Daum 주소 검색. mainAddress: [{}]", LogMaskingUtil.maskAddress(mainAddress, MaskLevel.MEDIUM));
+		
 		HttpHeaders headers = new HttpHeaders();
 		headers.add("Authorization", "KakaoAK "+kakaoApiRestApiKey);
 		

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.global.exception.infra.s3.S3DeleteException;
 import net.chamman.moonnight.global.exception.infra.s3.S3UploadException;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -23,6 +24,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 @PropertySource("classpath:application.properties")
 public class AwsS3Client {
 	
@@ -49,8 +51,10 @@ public class AwsS3Client {
 	 * @return
 	 */
 	private String uploadFile(MultipartFile file, String keyPrefix) {
+		String key = keyPrefix + UUID.randomUUID() + "_" + file.getOriginalFilename(); // 고유한 파일명 생성
+		log.debug("S3 파일 업로드 요청. Bucket: [{}], Key: [{}]", bucket, key);
+
 		try {
-			String key = keyPrefix + UUID.randomUUID() + "_" + file.getOriginalFilename(); // 고유한 파일명 생성
 			
 			// S3 업로드 요청 생성
 			PutObjectRequest putObjectRequest = PutObjectRequest.builder()
@@ -76,10 +80,14 @@ public class AwsS3Client {
 	 * @throws S3DeleteException {@link #deleteFiles}
 	 */
 	public void deleteFiles(String[] paths) {
+
 		if (paths == null || paths.length == 0) {
 			return;
 		}
-		
+		for(String s : paths) {
+			log.debug("S3 파일 삭제 요청. Bucket: [{}], Key: [{}]", bucket, s);
+		}
+
 		try {
 			// S3 Object Key 리스트 변환
 			List<ObjectIdentifier> objectIdentifiers = List.of(paths).stream()
@@ -99,55 +107,3 @@ public class AwsS3Client {
 	}
 	
 }
-	
-//  public Optional<String> uploadImagesToS3(List<File> images, String keyPrefix) throws IOException {
-//  
-//  StringBuilder imagePaths = new StringBuilder();
-//  
-//  for (File image : images) {
-//    String key = keyPrefix + image.getName();
-//    try (InputStream inputStream = new FileInputStream(image)) {
-//      PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-//          .bucket(bucket)
-//          .key(key)
-//          .acl("public-read")
-//          .build();
-//      
-//      s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(inputStream, image.length()));
-//      imagePaths.append(key).append(",");
-//    }
-//  }
-//  
-//  // 콤마 삭제
-//  if (imagePaths.length() > 0) {
-//    imagePaths.setLength(imagePaths.length() - 1);
-//  }
-//  return Optional.of(imagePaths.toString());
-//}
-	
-//private final String S3_BUCKET_URL = "s3://chamman/estimateImages/";
-	
-//public List<File> getFiles(String[] paths) throws IOException {
-//  List<File> imagesFile = new ArrayList<>();
-//
-//  for (String path : paths) {
-//    try (ResponseInputStream<GetObjectResponse> inputStream =
-//        s3Client.getObject(GetObjectRequest.builder()
-//            .bucket(bucket)
-//            .key(path)
-//            .build())) {
-//      
-//      File tempFile = File.createTempFile("s3image-", ".tmp");
-//
-//      try (OutputStream outputStream = new FileOutputStream(tempFile)) {
-//        byte[] buffer = new byte[1024];
-//        int bytesRead;
-//        while ((bytesRead = inputStream.read(buffer)) != -1) {
-//          outputStream.write(buffer, 0, bytesRead);
-//        }
-//      }
-//      imagesFile.add(tempFile);
-//    }
-//  }
-//  return imagesFile;
-//}

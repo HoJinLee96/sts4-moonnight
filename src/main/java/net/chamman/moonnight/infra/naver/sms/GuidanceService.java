@@ -45,7 +45,7 @@ public class GuidanceService {
 				.messages(messages)
 				.build();
 		try {
-			int statusCode = naverSmsClient.sendVerificationCode(naverSmsPayload);
+			int statusCode = naverSmsClient.sendSms(naverSmsPayload);
 			if((statusCode/100)!=2) {
 				log.error("안내 문자 발송 실패. statusCode: {}, phone: {}", statusCode, recipientPhone);
 			}
@@ -74,7 +74,7 @@ public class GuidanceService {
 				.build();
 		
 		try {
-			int statusCode = naverSmsClient.sendVerificationCode(naverSmsPayload);
+			int statusCode = naverSmsClient.sendSms(naverSmsPayload);
 			if((statusCode/100)!=2) {
 				log.error("서버 문제 발생. 관리자 문자 알람 발송 실패.");
 			}

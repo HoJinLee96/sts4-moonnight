@@ -6,6 +6,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,20 +34,23 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.oauth.OAuth2LoginSuccessHandler;
 import net.chamman.moonnight.global.security.fillter.JwtAuthPhoneFilter;
-import net.chamman.moonnight.global.security.fillter.JwtLoginFilter;
+import net.chamman.moonnight.global.security.fillter.JwtFilter;
 import net.chamman.moonnight.global.security.fillter.SilentAuthenticationFilter;
 
 @Configuration
 @RequiredArgsConstructor
+@Slf4j
 @PropertySource("classpath:application.properties")
 public class SecurityConfig {
 	
-	private final JwtLoginFilter jwtLoginFilter;
+	private final JwtFilter jwtFilter;
 	private final JwtAuthPhoneFilter jwtAuthPhoneFilter;
 	private final SilentAuthenticationFilter silentAuthenticationFilter;
 	private final OAuth2LoginSuccessHandler oauth2LoginSuccessHandler;
@@ -122,7 +126,7 @@ public class SecurityConfig {
 		.authorizeHttpRequests(auth -> auth
 				.anyRequest().authenticated()
 				)
-		.addFilterBefore(jwtLoginFilter, UsernamePasswordAuthenticationFilter.class);
+		.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 		
 		return http.build();
 	}
@@ -257,11 +261,11 @@ public class SecurityConfig {
 			response.sendRedirect(request.getContextPath() + "/home"); // 홈으로 보내버리기!
 		};
 		
-		/* 다른 옵션: 특정 에러 페이지 보여주기
-        AccessDeniedHandlerImpl accessDeniedHandler = new AccessDeniedHandlerImpl();
-        accessDeniedHandler.setErrorPage("/access-denied"); // 보여줄 에러 페이지 경로
-        return accessDeniedHandler;
-		 */
+		// 다른 옵션: 특정 에러 페이지 보여주기
+//        AccessDeniedHandlerImpl accessDeniedHandler = new AccessDeniedHandlerImpl();
+//        accessDeniedHandler.setErrorPage("/access-denied"); // 보여줄 에러 페이지 경로
+//        return accessDeniedHandler;
+		 
 	}
 	
 	
@@ -269,6 +273,7 @@ public class SecurityConfig {
 		@Override
 		public void commence(HttpServletRequest request, HttpServletResponse response,
 				AuthenticationException authException) throws IOException {
+			
 			String requestUri = request.getRequestURI();
 			String queryString = request.getQueryString();
 			String fullUrl = requestUri + (queryString != null ? "?" + queryString : "");

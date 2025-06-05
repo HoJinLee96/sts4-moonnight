@@ -74,11 +74,11 @@ public class EstimateService {
 //			3. 견적서 DB 등록 실패시 등록했던 이미지 S3 삭제 
 	        if (imagesPath != null && !imagesPath.isEmpty()) {
 	            try {
-	                log.info("견적서 등록 중. DB 작업 실패로 인한 S3 이미지 롤백 시작. 삭제 대상 경로: {}", imagesPath);
+	                log.debug("견적서 등록 중. DB 작업 실패로 인한 S3 이미지 롤백 시작. 삭제 대상 경로: [{}]", imagesPath);
 	                awsS3Service.deleteEstimateImages(imagesPath);
-	                log.info("S3 이미지 롤백 완료.");
+	                log.debug("S3 이미지 롤백 완료.");
 	            } catch (Exception s3DeleteEx) {
-	                log.error("S3 이미지 롤백 중 심각한 오류 발생! 삭제 대상 경로: {}. 에러: {}", imagesPath, s3DeleteEx.getMessage(), s3DeleteEx);
+	                log.error("S3 이미지 롤백 중 심각한 오류 발생! 삭제 대상 경로: [{}]. 에러: [{}]", imagesPath, s3DeleteEx.getMessage(), s3DeleteEx);
 	                guidanceService.sendAdminAlert("S3 이미지 롤백 중 심각한 오류 발생!");
 	            }
 	        }
@@ -272,11 +272,11 @@ public class EstimateService {
 //			3. 견적서 DB 업데이트 실패시 S3 등록했던 새로운 이미지 삭제
 	        if (newImagesPath != null && !newImagesPath.isEmpty()) {
 	            try {
-	                log.info("견적서 업데이트 중. DB 작업 실패로 인한 S3 이미지 롤백 시작. 삭제 대상 경로: {}", newImagesPath);
+	                log.debug("견적서 업데이트 중. DB 작업 실패로 인한 S3 이미지 롤백 시작. 삭제 대상 경로: [{}]", newImagesPath);
 	                awsS3Service.deleteEstimateImages(newImagesPath);
-	                log.info("S3 이미지 롤백 완료.");
+	                log.debug("S3 이미지 롤백 완료.");
 	            } catch (Exception s3DeleteEx) {
-	                log.error("견적서 업데이트 중. S3 이미지 롤백 중 심각한 오류 발생! 삭제 대상 경로: {}. 에러: {}", newImagesPath, s3DeleteEx.getMessage(), s3DeleteEx);
+	                log.error("견적서 업데이트 중. S3 이미지 롤백 중 심각한 오류 발생! 삭제 대상 경로: [{}]. 에러: [{}]", newImagesPath, s3DeleteEx.getMessage(), s3DeleteEx);
 	                guidanceService.sendAdminAlert("S3 이미지 롤백 중 심각한 오류 발생!");
 	            }
 	        }
