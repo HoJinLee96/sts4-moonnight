@@ -30,6 +30,8 @@ import net.chamman.moonnight.global.exception.redis.RedisSetException;
 import net.chamman.moonnight.global.exception.token.IllegalTokenException;
 import net.chamman.moonnight.global.exception.token.NoSuchTokenException;
 import net.chamman.moonnight.global.exception.token.TokenValueMismatchException;
+import net.chamman.moonnight.global.util.LogMaskingUtil;
+import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 
 @Component
 @Slf4j
@@ -83,6 +85,7 @@ public class TokenProvider {
 	 * @return
 	 */
 	public <T extends Encryptable<T>> String createToken(T dto, TokenType tokenType) {
+		log.debug("{} 타입 토큰 발행.",tokenType);
 		
 	    if (dto.getClass() != tokenType.getDtoType()) {
 	        throw new RedisSetException(TOKEN_SET_FIAL,
@@ -125,7 +128,8 @@ public class TokenProvider {
 	 * @return
 	 */
 	public <T extends Encryptable<T>> T getDecryptedTokenDto(TokenType tokenType, String token) {
-		
+		log.debug("{} 타입 토큰 검증. Token: [{}]",tokenType, LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
+
 	    String json = getToken(tokenType, token);
 	    
 	    try {
@@ -149,6 +153,8 @@ public class TokenProvider {
 	 * @throws RedisSetException {@link #addRefreshJwt} 리프레쉬 토큰 Redis 저장 실패
 	 */
 	public void addRefreshJwt(int userId, String refreshToken) {
+		log.debug("RefreshToken Redis에 저장. RefreshToken: [{}]",LogMaskingUtil.maskToken(refreshToken, MaskLevel.MEDIUM));
+
 		try {
 			redisTemplate.opsForValue().set(TokenType.JWT_REFRESH.getPrefix() + userId, refreshToken, TokenType.JWT_REFRESH.getTtl());
 		} catch (Exception e) {
@@ -163,6 +169,12 @@ public class TokenProvider {
 	 * @throws RedisSetException {@link #addAccessJwtBlacklist} Redis 저장 중 오류
 	 */
 	public void addAccessTokenBlacklist(String accessToken, long ttl, String result) {
+		log.debug("AccessToken 블랙리스트에 저장. AccessToken: [{}], ttl: [{}], Result: [{}]",
+				LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM),
+				ttl,
+				result
+				);
+
 		try {
 			redisTemplate.opsForValue().set(TokenType.JWT_BLACKLIST.getPrefix()+ accessToken, result, Duration.ofMillis(ttl));
 		} catch (Exception e) {
@@ -171,6 +183,8 @@ public class TokenProvider {
 	}
 	
 	public String getBlackListValue(String accessToken) {
+		log.debug("블랙리스트 조회. AccessToken: [{}]",LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM));
+
 		return redisTemplate.opsForValue().get(TokenType.JWT_BLACKLIST.getPrefix()+ accessToken);
 	}
 	
@@ -179,6 +193,8 @@ public class TokenProvider {
 	}
 
 	public boolean removeToken(TokenType type, String key) {
+		log.debug("Redis에서 {} 타입 토큰 삭제 조회. Key: [{}]", type, LogMaskingUtil.maskToken(key, MaskLevel.MEDIUM));
+
 		return redisTemplate.delete(type.getPrefix() + key);
 	}
 	
@@ -190,6 +206,8 @@ public class TokenProvider {
 	 * @return 일치 여부
 	 */
 	public boolean validRefreshToken(String userId, String reqRefreshToken) {
+		log.debug("RefreshToken 검증. RefreshToken: [{}]",LogMaskingUtil.maskToken(reqRefreshToken, MaskLevel.MEDIUM));
+
 		String path = TokenType.JWT_REFRESH.getPrefix()+userId;
 		String refreshToken = redisTemplate.opsForValue().get(path);
 		if (refreshToken == null) {
@@ -210,6 +228,8 @@ public class TokenProvider {
 	 * @return json형식 String
 	 */
 	private String getToken(TokenType tokenType, String token) {
+		log.debug("Redis에 {} 토큰 조회 검증. Token: [{}]", tokenType, LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
+
 		if(token == null || token.isBlank()) {
 			throw new IllegalTokenException(TOKEN_ILLEGAL,tokenType.name()+" Token null 또는 비어있음.");
 		}

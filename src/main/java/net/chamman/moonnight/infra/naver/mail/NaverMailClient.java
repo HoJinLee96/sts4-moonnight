@@ -15,12 +15,16 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.global.exception.infra.MailSendException;
+import net.chamman.moonnight.global.util.LogMaskingUtil;
+import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 import net.chamman.moonnight.infra.naver.NaverSignatureGenerator;
 
 @Component
-@PropertySource("classpath:application.properties")
 @RequiredArgsConstructor
+@Slf4j
+@PropertySource("classpath:application.properties")
 public class NaverMailClient {
 	
 	private final NaverSignatureGenerator naverSignatureGenerator;
@@ -38,6 +42,10 @@ public class NaverMailClient {
 	 * @return 메일 발송 요청 Response Status Code
 	 */
 	public int sendMail(NaverMailPayload naverMailPayload) {
+		String recipientEmail = naverMailPayload.getRecipients().isEmpty() ? "N/A" : naverMailPayload.getRecipients().get(0).getAddress();
+		log.debug("Naver Mail 발송 요청. Recipient: [{}], Title: [{}]",
+				LogMaskingUtil.maskEmail(recipientEmail, MaskLevel.MEDIUM),
+				naverMailPayload.getTitle());
 		
 		try {
 			

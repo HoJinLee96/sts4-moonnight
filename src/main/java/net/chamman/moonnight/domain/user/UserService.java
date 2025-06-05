@@ -46,6 +46,8 @@ import net.chamman.moonnight.global.exception.token.TokenValueMismatchException;
 import net.chamman.moonnight.global.exception.user.MismatchPasswordException;
 import net.chamman.moonnight.global.exception.verification.NotVerifyException;
 import net.chamman.moonnight.global.exception.verification.VerificationExpiredException;
+import net.chamman.moonnight.global.util.LogMaskingUtil;
+import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 
 @Service
 @Slf4j
@@ -58,7 +60,7 @@ public class UserService {
 	private final TokenProvider tokenProvider;
 	private final PasswordEncoder passwordEncoder;
 
-	/** 
+	/** 유저 엔티티 조회
 	 * @param userId
 	 * @throws NoSuchDataException {@link #getUserByUserId} 찾을 수 없는 유저
 	 * @throws StatusStayException {@link #validateStatus} 일시정지 유저
@@ -75,7 +77,7 @@ public class UserService {
 		return user;
 	}
 	
-	/**
+	/** 유저 엔티티 조회
 	 * @param userProvider
 	 * @param email
 	 * @throws NoSuchDataException {@link #getUserByUserProviderAndEmail} 찾을 수 없는 유저
@@ -93,7 +95,7 @@ public class UserService {
 		return user;
 	}
 	
-	/**
+	/** 유저 엔티티 조회
 	 * @param userProvider
 	 * @param phone
 	 * @throws NoSuchDataException {@link #getUserByUserProviderAndPhone} 찾을 수 없는 유저
@@ -111,7 +113,7 @@ public class UserService {
 		return user;
 	}
 	
-	/**
+	/** 유저 엔티티 조회
 	 * @param userProvider
 	 * @param email
 	 * @param phone
@@ -130,10 +132,10 @@ public class UserService {
 		return user;
 	}
 	
-	/** 휴대폰 인증 토큰 검증 및 User 반환
+	/** 유저 엔티티 조회
 	 * @param userProvider
 	 * @param phone
-	 * @param token 휴대폰 인증 토큰
+	 * @param verificationPhoneToken
 	 * 
 	 * @throws IllegalTokenException {@link TokenProvider#getDecryptedTokenDto} 토큰 문자열 null 또는 비어있음
 	 * @throws NoSuchTokenException {@link TokenProvider#getDecryptedTokenDto} Redis 일치하는 토큰 없음
@@ -149,40 +151,24 @@ public class UserService {
 	 * @throws StatusStopException {@link #getUserByUserProviderAndPhone} 중지 유저
 	 * @throws StatusDeleteException {@link #getUserByUserProviderAndPhone} 탈퇴 유저
 	 * 
-	 * @return 휴대폰 번호와 일치하는 User
+	 * @return 휴대폰 번호와 일치하는 User 엔티티
 	 */
-	public User getUserByVerifyPhone(UserProvider userProvider, String phone, String token) {
+	public User getUserByVerifyPhone(UserProvider userProvider, String phone, String verificationPhoneToken) {
 		
-		VerificationPhoneTokenDto verificationPhoneTokenDto = tokenProvider.getDecryptedTokenDto(VerificationPhoneTokenDto.TOKENTYPE, token);
+		VerificationPhoneTokenDto verificationPhoneTokenDto = tokenProvider.getDecryptedTokenDto(VerificationPhoneTokenDto.TOKENTYPE, verificationPhoneToken);
 		verificationService.isVerify(verificationPhoneTokenDto.getIntVerificationId());
 		
 		User user = getUserByUserProviderAndPhone(userProvider, phone);
 		
-		tokenProvider.removeToken(TokenType.VERIFICATION_PHONE, token);
+		tokenProvider.removeToken(TokenType.VERIFICATION_PHONE, verificationPhoneToken);
 		return user;
 	}
-	
-	/**
-	 * @param userProvider
-	 * @param email
-	 * @throws StatusStayException {@link #getUserByUserProviderAndPhone}
-	 * @throws StatusStopException {@link #getUserByUserProviderAndPhone}
-	 * @throws StatusDeleteExceptions {@link #getUserByUserProviderAndPhone}
-	 * @return userProvider, email 일치하는 유저 
-	 */
-//	public boolean isActiveByUserProviderAndEmail(UserProvider userProvider, String email) {
-//		UserStatus userStatus = userRepository.findUserStatusByUserProviderAndEmail(userProvider, email)
-//				.orElseThrow(() -> new NoSuchDataException(USER_NOT_FOUND,"찾을 수 없는 유저."));
-//		validateStatus(userStatus);
-//		
-//		return true;
-//	}
 	
 	/** 비밀번호 찾기 자격 검증
 	 * @param userProvider
 	 * @param email
 	 * @param phone
-	 * @param token 휴대폰 인증 토큰
+	 * @param verificationPhoneToken
 	 * 
 	 * @throws IllegalTokenException {@link TokenProvider#getDecryptedTokenDto} 토큰 문자열 null 또는 비어있음
 	 * @throws NoSuchTokenException {@link TokenProvider#getDecryptedTokenDto} Redis 일치하는 토큰 없음
@@ -201,18 +187,18 @@ public class UserService {
      * @throws EncryptException {@link TokenProvider#createToken} 암호화 실패
      * @throws RedisSetException {@link TokenProvider#createToken} Redis 저장 실패
      * 
-	 * @return 토큰
+	 * @return 비밀번호 변경 자격 토큰
 	 */
-	public String createFindPwTokenByVerifyPhone(UserProvider userProvider, String email, String phone, String token) {
+	public String createFindPwTokenByVerifyPhone(UserProvider userProvider, String email, String phone, String verificationPhoneToken) {
 		
-		VerificationPhoneTokenDto verificationPhoneTokenDto = tokenProvider.getDecryptedTokenDto(VerificationPhoneTokenDto.TOKENTYPE, token);
+		VerificationPhoneTokenDto verificationPhoneTokenDto = tokenProvider.getDecryptedTokenDto(VerificationPhoneTokenDto.TOKENTYPE, verificationPhoneToken);
 		verificationService.isVerify(verificationPhoneTokenDto.getIntVerificationId());
 		
 		User user = getUserByUserProviderAndEmailAndPhone(userProvider, email, phone);
 		
 		String findPwToken = tokenProvider.createToken(new FindPwTokenDto(user.getUserId()+"", email), FindPwTokenDto.TOKENTYPE); 
 		
-		tokenProvider.removeToken(TokenType.VERIFICATION_PHONE, token);
+		tokenProvider.removeToken(TokenType.VERIFICATION_PHONE, verificationPhoneToken);
 		
 		return findPwToken ;
 	}
@@ -220,7 +206,7 @@ public class UserService {
 	/** 비밀번호 찾기 자격 검증
 	 * @param userProvider
 	 * @param email
-	 * @param token
+	 * @param verificationEmailToken
 	 * 
 	 * @throws IllegalTokenException {@link TokenProvider#getDecryptedTokenDto} 토큰 문자열 null 또는 비어있음
 	 * @throws NoSuchTokenException {@link TokenProvider#getDecryptedTokenDto} Redis 일치하는 토큰 없음
@@ -239,41 +225,20 @@ public class UserService {
      * @throws EncryptException {@link TokenProvider#createToken} 암호화 실패
      * @throws RedisSetException {@link TokenProvider#createToken} Redis 저장 실패
 	 * 
-	 * @return 토큰
+	 * @return 비밀번호 변경 자격 토큰
 	 */
-	public String createFindPwTokenByVerifyEmail(UserProvider userProvider, String email, String token) {
+	public String createFindPwTokenByVerifyEmail(UserProvider userProvider, String email, String verificationEmailToken) {
 
-		VerificationEmailTokenDto verificationEmailTokenDto = tokenProvider.getDecryptedTokenDto(VerificationEmailTokenDto.TOKENTYPE, token);
+		VerificationEmailTokenDto verificationEmailTokenDto = tokenProvider.getDecryptedTokenDto(VerificationEmailTokenDto.TOKENTYPE, verificationEmailToken);
 		verificationService.isVerify(verificationEmailTokenDto.getIntVerificationId());
 
 		User user = getUserByUserProviderAndEmail(userProvider, email);
 
 		String findPwToken = tokenProvider.createToken(new FindPwTokenDto(user.getUserId() + "", email),FindPwTokenDto.TOKENTYPE);
 
-		tokenProvider.removeToken(TokenType.VERIFICATION_EMAIL, token);
+		tokenProvider.removeToken(TokenType.VERIFICATION_EMAIL, verificationEmailToken);
 
 		return findPwToken;
-	}
-	
-	/** 비밀번호 재검증 및 토큰 발행
-	 * @param userId
-	 * @param password
-	 * 
-	 * @throws TooManySignFailException {@link SignService#validatePassword} 비밀번호 실패 횟수 초과
-	 * @throws MismatchPasswordException {@link SignService#validatePassword} 비밀번호 불일치
-	 * 
-     * @throws EncryptException {@link TokenProvider#createToken} 암호화 실패
-     * @throws RedisSetException {@link TokenProvider#createToken} Redis 저장 실패
-     * 
-	 * @return 토큰
-	 */
-	@Transactional
-	public String confirmPasswordAndCreatePasswordToken(int userId, String password, String clientIp) {
-		
-		User user = getUserByUserId(userId);     
-		validatePassword(user, password, clientIp);
-
-		return tokenProvider.createToken(new PasswordTokenDto(userId+"", user.getEmail()), PasswordTokenDto.TOKENTYPE);
 	}
 	
 	/** 비밀번호 변경
@@ -308,6 +273,27 @@ public class UserService {
 		tokenProvider.removeToken(TokenType.ACCESS_FINDPW , token);
 	}
 	
+	/** 비밀번호 검증 및 토큰 발행
+	 * @param userId
+	 * @param password
+	 * 
+	 * @throws TooManySignFailException {@link SignService#validatePassword} 비밀번호 실패 횟수 초과
+	 * @throws MismatchPasswordException {@link SignService#validatePassword} 비밀번호 불일치
+	 * 
+	 * @throws EncryptException {@link TokenProvider#createToken} 암호화 실패
+	 * @throws RedisSetException {@link TokenProvider#createToken} Redis 저장 실패
+	 * 
+	 * @return 비밀번호 검증 완료 토큰
+	 */
+	@Transactional
+	public String confirmPasswordAndCreatePasswordToken(int userId, String password, String clientIp) {
+		
+		User user = getUserByUserId(userId);     
+		validatePassword(user, password, clientIp);
+	
+		return tokenProvider.createToken(new PasswordTokenDto(userId+"", user.getEmail()), PasswordTokenDto.TOKENTYPE);
+	}
+
 	/** 휴대폰 번호 변경
 	 * @param userProvider
 	 * @param email
@@ -345,7 +331,8 @@ public class UserService {
 	/** 회원탈퇴 (유저 상태 DELETE로 변경)
 	 * @param userProvider
 	 * @param email
-	 * @param token
+	 * @param passwordToken
+	 * 
 	 * @throws IllegalTokenException {@link TokenProvider#getDecryptedTokenDto} 토큰 문자열 null 또는 비어있음
 	 * @throws NoSuchTokenException {@link TokenProvider#getDecryptedTokenDto} Redis 일치하는 토큰 없음
      * @throws DecryptException {@link TokenProvider#getDecryptedTokenDto} 복호화 실패
@@ -359,9 +346,13 @@ public class UserService {
 	 * @throws StatusDeleteException {@link #getUserByUserId} 탈퇴 유저
 	 */
 	@Transactional
-	public void deleteUser(int userId, String token) {
+	public void deleteUser(int userId, String passwordToken) {
+		log.debug("회원 탈퇴 서비스. UserId: [{}], PasswordToken: [{}]",
+				LogMaskingUtil.maskId(userId, MaskLevel.MEDIUM),
+				LogMaskingUtil.maskToken(passwordToken, MaskLevel.MEDIUM)
+				);
 		
-		PasswordTokenDto passwordTokenDto = tokenProvider.getDecryptedTokenDto(PasswordTokenDto.TOKENTYPE, token);
+		PasswordTokenDto passwordTokenDto = tokenProvider.getDecryptedTokenDto(PasswordTokenDto.TOKENTYPE, passwordToken);
 		if(!Objects.equals(userId, passwordTokenDto.getIntUserId())) {
 			throw new TokenValueMismatchException(TOKEN_VALUE_MISMATCH,"로그인되어있는 userId와 PasswordToken.userId 불일치"); 
 		}
@@ -371,7 +362,7 @@ public class UserService {
 		user.setUserStatus(UserStatus.DELETE);
 		userRepository.save(user);
 		
-		tokenProvider.removeToken(TokenType.ACCESS_PASSWORD, token);
+		tokenProvider.removeToken(TokenType.ACCESS_PASSWORD, passwordToken);
 	}
 	
 	/** LOCAL 유저 이메일 중복 검사
@@ -417,7 +408,7 @@ public class UserService {
 			} catch (TooManySignFailException e) {
 				user.setUserStatus(UserStatus.STAY);
 				userRepository.save(user);
-				log.info("로그인 실패 횟수 초과로 계정 일시정지: email={}, ip={}", user.getEmail(), ip);
+				log.warn("로그인 실패 횟수 초과로 계정 일시정지: email={}, ip={}", user.getEmail(), ip);
 				throw e;
 			}
 			throw new MismatchPasswordException(SIGNIN_FAILED,"비밀번호 불일치. 실패 횟수: "+signFailCount);

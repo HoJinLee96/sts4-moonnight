@@ -14,11 +14,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.global.exception.infra.SmsSendException;
+import net.chamman.moonnight.global.util.LogMaskingUtil;
+import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 import net.chamman.moonnight.infra.naver.NaverSignatureGenerator;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 @PropertySource("classpath:application.properties")
 public class NaverSmsClient {
 	
@@ -39,7 +43,11 @@ public class NaverSmsClient {
 	 * @throws SmsSendException {@link #sendVerificationCode}
 	 * @return 문자 발송 요청 Response Status Code
 	 */
-	public int sendVerificationCode(NaverSmsPayload naverSmsPayload) {
+	public int sendSms(NaverSmsPayload naverSmsPayload) {
+		String recipientPhone = naverSmsPayload.getMessages().isEmpty() ? "N/A" : naverSmsPayload.getMessages().get(0).getTo();
+		log.debug("Naver SMS 발송 요청. Recipient: [{}], Content: [{}]",
+				LogMaskingUtil.maskPhone(recipientPhone, MaskLevel.MEDIUM),
+				naverSmsPayload.getContent());
 		
 		try {
 			String time = Long.toString(System.currentTimeMillis());

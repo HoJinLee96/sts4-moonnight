@@ -15,6 +15,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.global.annotation.ClientSpecific;
 import net.chamman.moonnight.global.exception.token.IllegalTokenException;
+import net.chamman.moonnight.global.util.LogMaskingUtil;
+import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 
 @Slf4j
 @Component
@@ -45,9 +47,10 @@ public class ClientSpecificArgumentResolver implements HandlerMethodArgumentReso
 		
 		String clientType = request.getHeader("X-Client-Type");
 		boolean isMobileApp = clientType != null && clientType.contains("mobile");
-		
-		String token = null;
 		String clientTypeKr = isMobileApp ? "모바일 앱" : "웹";
+		log.debug("{} 접근. {} 토큰 확인.", clientTypeKr, valueName);
+
+		String token = null;
 		
 		if (isMobileApp) {
 			token = request.getHeader(valueName);
@@ -68,7 +71,7 @@ public class ClientSpecificArgumentResolver implements HandlerMethodArgumentReso
 			}
 		}
 		
-		log.info("[{}] {} 토큰 '{}' 확인 완료", valueName, clientTypeKr, valueName.toLowerCase().contains("token") ? "****" : token); // 로그에는 토큰값 직접 노출 주의
+		log.debug("{} 접근 {} 토큰 확인 완료. Token Value: [{}]", clientTypeKr, valueName, LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
 		return token;
 	}
 

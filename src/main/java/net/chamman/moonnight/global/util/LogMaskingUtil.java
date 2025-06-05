@@ -8,8 +8,27 @@ public class LogMaskingUtil {
 		NONE      // 디버깅용: 마스킹 없음
 	}
 	
+	public static String maskId(int id, MaskLevel level) {
+		String idstr = String.valueOf(id);
+		return maskId(idstr, level);
+	}
+	
+	public static String maskId(String id, MaskLevel level) {
+		
+		if (id == null || id.equals("0")) return "***";
+		
+		return switch (level) {
+		case STRONG -> id.substring(0, Math.min(2, id.length())) + "****";
+		case MEDIUM -> {
+            int prefixLength = Math.min(5, id.length());
+            yield id.substring(0, prefixLength) + "****";
+        }
+		case NONE -> id;
+		};
+	}
+	
 	public static String maskEmail(String email, MaskLevel level) {
-		if (email == null || !email.contains("@")) return "****";
+		if (email == null || !email.contains("@")) return "***";
 		String[] parts = email.split("@");
 		String local = parts[0];
 		String domain = parts[1];
@@ -22,7 +41,7 @@ public class LogMaskingUtil {
 	}
 	
 	public static String maskPhone(String phone, MaskLevel level) {
-		if (phone == null || phone.length() < 7) return "****";
+		if (phone == null || phone.length() < 7) return "***";
 		
 		return switch (level) {
 		case STRONG -> phone.substring(0, 3) + "-****-" + phone.substring(phone.length() - 4);
@@ -32,66 +51,58 @@ public class LogMaskingUtil {
 	}
 	
 	public static String maskName(String name, MaskLevel level) {
-		if (name == null || name.isEmpty()) return "****";
+		if (name == null || name.isEmpty()) return "***";
 		
 		return switch (level) {
-		case STRONG -> name.charAt(0) + "*".repeat(name.length() - 1);
-		case MEDIUM -> name.substring(0, 2) + "*".repeat(name.length() - 2);
+		case STRONG -> name.charAt(0) + "****";
+		case MEDIUM -> name.substring(0, 2) + "*****";
 		case NONE -> name;
 		};
 	}
 	
 	public static String maskBirth(String birth, MaskLevel level) {
-		if (birth == null || birth.length() < 4) return "****";
+		if (birth == null || birth.length() < 4) return "***";
 		
 		return switch (level) {
-		case STRONG -> birth.substring(0, 2) + "**-**";
-		case MEDIUM -> birth.substring(0, 4) + "-**";
+		case STRONG -> birth.substring(0, 2) + "****";
+		case MEDIUM -> birth.substring(0, 4) + "****";
 		case NONE -> birth;
 		};
 	}
 	
-	public static String maskJwt(String jwt, MaskLevel level) {
-		if (jwt == null || jwt.length() < 10) return "****";
+	public static String maskToken(String jwt, MaskLevel level) {
+		if (jwt == null || jwt.length() < 10) return "***";
 		
 		return switch (level) {
-		case STRONG -> jwt.substring(0, 5) + "..." + jwt.substring(jwt.length() - 5);
-		case MEDIUM -> jwt.substring(0, 15) + "...";
+		case STRONG -> jwt.substring(0, 5) + "****";
+		case MEDIUM -> jwt.substring(0, 10) + "****";
 		case NONE -> jwt;
 		};
 	}
 	
 	public static String maskVerificationCode(String code, MaskLevel level) {
-		if (code == null) return "****";
+		if (code == null || code.length() != 6) return "***";
 		
 		return switch (level) {
-		case STRONG, MEDIUM -> "******";
+		case STRONG -> code.substring(0,1)+"*****";
+		case MEDIUM -> code.substring(0, 2) + "****";
 		case NONE -> code;
 		};
 	}
 	
-	public static String maskAddress(String main, String detail, MaskLevel level) {
-		String maskedMain = (main == null || main.length() < 6)
-				? "주소비공개"
-						: switch (level) {
-						case STRONG -> main.substring(0, 6) + "****";
-						case MEDIUM -> main.substring(0, Math.min(15, main.length())) + "...";
-						case NONE -> main;
-						};
-						
-						String maskedDetail = (detail == null || detail.isEmpty())
-								? ""
-										: switch (level) {
-										case STRONG -> " ****";
-										case MEDIUM -> " " + detail.charAt(0) + "****";
-										case NONE -> " " + detail;
-										};
-										
-										return maskedMain + maskedDetail;
+	public static String maskAddress(String main, MaskLevel level) {
+		String maskedMain = (main == null || main.length() < 6) ? "***" : 
+			switch (level) {
+			case STRONG -> main.substring(0, 6) + "****";
+			case MEDIUM -> main.substring(0, Math.min(15, main.length())) + "...";
+			case NONE -> main;
+			};
+
+		return maskedMain;
 	}
 	
 	public static String maskPostcode(String postcode, MaskLevel level) {
-		if (postcode == null || postcode.length() < 3) return "****";
+		if (postcode == null || postcode.length() < 3) return "***";
 		
 		return switch (level) {
 		case STRONG -> postcode.substring(0, 3) + "**";
@@ -101,7 +112,7 @@ public class LogMaskingUtil {
 	}
 	
 	public static String maskIp(String ip, MaskLevel level) {
-		if (ip == null || !ip.contains(".")) return "****";
+		if (ip == null || !ip.contains(".")) return "***";
 		String[] parts = ip.split("\\.");
 		if (parts.length < 4) return "****";
 		
@@ -110,5 +121,19 @@ public class LogMaskingUtil {
 		case MEDIUM -> parts[0] + "." + parts[1] + "." + parts[2] + ".*";
 		case NONE -> ip;
 		};
+	}
+	
+	public static String maskText(String text, MaskLevel level) {
+		
+		if (text == null || text.length() == 0) return "***";
+		
+		return switch (level) {
+		case STRONG -> text.substring(0, Math.min(2, text.length())) + "****";
+		case MEDIUM -> {
+            int prefixLength = Math.min(5, text.length());
+            yield text.substring(0, prefixLength) + "****";
+        }
+		case NONE -> text;
+	};
 	}
 }
