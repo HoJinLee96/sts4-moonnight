@@ -12,16 +12,18 @@ import org.springframework.stereotype.Component;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.domain.user.User.UserProvider;
 import net.chamman.moonnight.global.exception.jwt.IllegalJwtException;
 import net.chamman.moonnight.global.security.principal.CustomUserDetails;
 
 @Component
-public class JwtLoginFilter extends AbstractAccessTokenFilter<CustomUserDetails> {
+@Slf4j
+public class JwtFilter extends AbstractAccessTokenFilter<CustomUserDetails> {
 	
 	@Override
 	protected CustomUserDetails buildUserDetails(Map<String, Object> claims) {
-		System.out.println("==========JwtLoginFilter.buildUserDetails===========");
+		log.debug("JwtFilter.buildUserDetails 실행.");
 		
 		// 복호화 때문에 claims.getSbuject()가 아님.
 		Object subjectRaw = claims.get("subject");

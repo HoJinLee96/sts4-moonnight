@@ -43,8 +43,8 @@ public class SignLog {
 	@Column(name ="user_provider", nullable = false)
 	private UserProvider userProvider;
 	
-	@Column(name ="email", length=100, nullable = false)
-	private String email;
+	@Column(name ="request_id", length=100)
+	private String requestId;
 	
 	@Column(name = "request_ip", length = 50, nullable = false)
 	private String requestIp;
@@ -53,6 +53,9 @@ public class SignLog {
 	@Basic(fetch = FetchType.EAGER)
 	@Column(name = "sign_result", nullable = false)
 	private SignResult signResult;
+	
+	@Column(name ="reason", length=100)
+	private String reason;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "resolve_by", referencedColumnName = "sign_log_id", foreignKey = @ForeignKey(name = "sign_log_resolve_by"))

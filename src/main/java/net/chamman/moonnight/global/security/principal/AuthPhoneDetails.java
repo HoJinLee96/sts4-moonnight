@@ -10,7 +10,7 @@ import lombok.Getter;
 @SuppressWarnings("serial")
 @Getter
 @AllArgsConstructor
-public class AuthUserDetails implements UserDetails{
+public class AuthPhoneDetails implements UserDetails{
 	
 	private final int verificationId;
 	private final String phone;

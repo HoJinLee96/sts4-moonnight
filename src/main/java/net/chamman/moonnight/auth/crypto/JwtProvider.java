@@ -28,6 +28,8 @@ import net.chamman.moonnight.global.exception.crypto.EncryptException;
 import net.chamman.moonnight.global.exception.jwt.CreateJwtException;
 import net.chamman.moonnight.global.exception.jwt.TimeOutJwtException;
 import net.chamman.moonnight.global.exception.jwt.ValidateJwtException;
+import net.chamman.moonnight.global.util.LogMaskingUtil;
+import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 
 @Component
 @Slf4j
@@ -35,7 +37,9 @@ import net.chamman.moonnight.global.exception.jwt.ValidateJwtException;
 public class JwtProvider {
 	
 	private final AesProvider aesProvider;
-	private final Key signHmacShaKey;
+	private final Key signAccessHmacShaKey;
+	private final Key signRefreshHmacShaKey;
+	private final Key authPhoneHmacShaKey;
 	
 	private final long expiration14Days = 1000 * 60 * 60 * 24 * 14; // 14
 	private final long expiration1Hour = 1000 * 60 * 60; // 1시간
@@ -43,10 +47,14 @@ public class JwtProvider {
 	
 	public JwtProvider(
 			@Autowired AesProvider aesProvider,
-			@Value("${jwt.sign.secretKey}") String signSecretKey
+			@Value("${jwt.sign.access.secretKey}") String signAccessSecretKey,
+			@Value("${jwt.sign.refresh.secretKey}") String signRefreshSecretKey,
+			@Value("${jwt.auth.phone.secretKey}") String authPhoneSecretKey
 			) {
 		this.aesProvider = aesProvider;
-		this.signHmacShaKey = Keys.hmacShaKeyFor(signSecretKey.getBytes(StandardCharsets.UTF_8));
+		this.signAccessHmacShaKey = Keys.hmacShaKeyFor(signAccessSecretKey.getBytes(StandardCharsets.UTF_8));
+		this.signRefreshHmacShaKey = Keys.hmacShaKeyFor(signRefreshSecretKey.getBytes(StandardCharsets.UTF_8));
+		this.authPhoneHmacShaKey = Keys.hmacShaKeyFor(authPhoneSecretKey.getBytes(StandardCharsets.UTF_8));
 	}
 	
 	/**
@@ -72,12 +80,14 @@ public class JwtProvider {
 	 * @return 액세스 토큰
 	 */
 	public String createAccessToken(int userId, List<String> roles, Map<String, Object> claims) {
+		log.debug("AccessToken 발행. UserID: [{}], Roles: [{}]", LogMaskingUtil.maskId(userId, MaskLevel.MEDIUM), roles.get(0));
+		
 		try {
 			JwtBuilder builder = Jwts.builder()
-					.setSubject(aesProvider.encrypt(userId + ""))
+					.setSubject(aesProvider.encrypt(String.valueOf(userId)))
 					.setIssuedAt(new Date())
 					.setExpiration(new Date(System.currentTimeMillis() + expiration1Hour))
-					.signWith(signHmacShaKey, SignatureAlgorithm.HS256);
+					.signWith(signAccessHmacShaKey, SignatureAlgorithm.HS256);
 			
 			if (claims != null) {
 				for (Map.Entry<String, Object> entry : claims.entrySet()) {
@@ -91,10 +101,8 @@ public class JwtProvider {
 			}
 			builder.claim("roles",roles);
 			return builder.compact();
-		} catch (EncryptException e) {
-			throw e;
 		} catch (Exception e) {
-			throw new CreateJwtException(JWT_CREATE_FIAL,"AccessToken 생성 실패.",e);
+			throw new CreateJwtException(JWT_CREATE_FIAL,"AccessToken 생성 실패. "+e.getMessage(), e);
 		}
 	}
 	
@@ -105,16 +113,16 @@ public class JwtProvider {
 	 * @return 리프레쉬 토큰
 	 */
 	public String createRefreshToken(int userId) {
+		log.debug("RefreshToken 발행. UserID: [{}]", LogMaskingUtil.maskId(userId, MaskLevel.MEDIUM));
+		
 		try {
 			return Jwts.builder()
 					.setSubject(aesProvider.encrypt(userId + ""))
 					.setExpiration(new Date(System.currentTimeMillis() + expiration14Days))
-					.signWith(signHmacShaKey, SignatureAlgorithm.HS256)
+					.signWith(signRefreshHmacShaKey, SignatureAlgorithm.HS256)
 					.compact();
-		} catch (EncryptException e) {
-			throw e;
 		} catch (Exception e) {
-			throw new CreateJwtException(JWT_CREATE_FIAL,"RefreshToken 생성 실패.",e);
+			throw new CreateJwtException(JWT_CREATE_FIAL,"RefreshToken 생성 실패. "+e.getMessage(),e);
 		}
 	}
 	
@@ -125,22 +133,25 @@ public class JwtProvider {
 	 * @throws CreateJwtException {@link #createVerifyPhoneToken} 토큰 생성 실패
 	 * @return 휴대폰 인증 로그인 토큰
 	 */
-	public String createVerifyPhoneToken(String verificationId, String phone) {
+	public String createAuthPhoneToken(String verificationId, String phone) {
+		log.debug("AuthPhoneToken 발행. VerificationId: [{}], Phone: [{}]", 
+				LogMaskingUtil.maskId(verificationId, MaskLevel.MEDIUM),
+				LogMaskingUtil.maskPhone(phone, MaskLevel.MEDIUM)
+				);
+		
 		try {
 			
 			return Jwts.builder()
 					.setSubject(aesProvider.encrypt(verificationId)) 
 					.setIssuedAt(new Date())
 					.setExpiration(new Date(System.currentTimeMillis() + expiration30Minute))
-					.signWith(signHmacShaKey, SignatureAlgorithm.HS256)
+					.signWith(authPhoneHmacShaKey, SignatureAlgorithm.HS256)
 					.claim("phone", phone)
 					.claim("roles",List.of("RULE_AUTH"))
 					.compact();
 			
-		} catch (EncryptException e) {
-			throw e;
 		} catch (Exception e) {
-			throw new CreateJwtException(JWT_CREATE_FIAL,"VerifyPhoneToken 생성 실패.",e);
+			throw new CreateJwtException(JWT_CREATE_FIAL,"AuthPhoneToken 생성 실패. "+e.getMessage(),e);
 		}
 	}
 	
@@ -153,20 +164,20 @@ public class JwtProvider {
 	 * @return 복호화된 유저 정보
 	 */
 	public Map<String, Object> validateAccessToken(String token) {
+		log.debug("AccessToken 검증. AccessToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
+		
 		try {
 			Claims claims = Jwts.parserBuilder()
-					.setSigningKey(signHmacShaKey)
+					.setSigningKey(signAccessHmacShaKey)
 					.build()
 					.parseClaimsJws(token)
 					.getBody();
 			
 			return getDecryptedClaims(claims);
 		} catch (ExpiredJwtException e) {
-			throw new TimeOutJwtException(JWT_EXPIRED, "Access Token 시간 만료.", e);
-		} catch (DecryptException e) {
-			throw e;
+			throw new TimeOutJwtException(JWT_EXPIRED, "AccessToken 시간 만료.", e);
 		} catch (Exception e) {
-			throw new ValidateJwtException(JWT_VALIDATE_FIAL, "Access Token 검증 중 익셉션 발생.", e);
+			throw new ValidateJwtException(JWT_VALIDATE_FIAL, "AccessToken 검증 중 익셉션 발생. "+e.getMessage(), e);
 		}
 	}
 	
@@ -178,10 +189,11 @@ public class JwtProvider {
 	 * @return userId
 	 */
 	public String validateRefreshToken(String token) {
-		
+		log.debug("RefreshToken 검증. RefreshToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
+
 		try {
 			Claims claims = Jwts.parserBuilder()
-					.setSigningKey(signHmacShaKey)
+					.setSigningKey(signRefreshHmacShaKey)
 					.build()
 					.parseClaimsJws(token)
 					.getBody();
@@ -189,34 +201,59 @@ public class JwtProvider {
 			String encryptedUserId = claims.getSubject(); 
 			return aesProvider.decrypt(encryptedUserId);
 		} catch (ExpiredJwtException e) {
-			throw new TimeOutJwtException(JWT_EXPIRED, "Refresh Token 시간 만료.", e);
-		} catch (DecryptException e) {
-			throw e;
+			throw new TimeOutJwtException(JWT_EXPIRED, "RefreshToken 시간 만료. "+e.getMessage(), e);
 		} catch (Exception e) {
-			throw new ValidateJwtException(JWT_VALIDATE_FIAL, "Refresh Token 검증 중 익셉션 발생.", e);
+			throw new ValidateJwtException(JWT_VALIDATE_FIAL, "RefreshToken 검증 중 익셉션 발생. "+e.getMessage(), e);
 		}
 	}
 	
-	/** 토큰 남은 시간 조회
+	/** 액세스 토큰 검증
+	 * @param token
+	 * @throws TimeOutJwtException {@link #validateAccessToken} 시간 초과
+     * @throws DecryptException {@link #getDecryptedClaims} 복호화 실패
+	 * @throws ValidateJwtException {@link #validateAccessToken} JWT 파싱 실패
+	 * @return 복호화된 유저 정보
+	 */
+	public Map<String, Object> validateAuthPhoneToken(String token) {
+		log.debug("AuthPhoneToken 검증. AuthPhoneToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
+		
+		try {
+			Claims claims = Jwts.parserBuilder()
+					.setSigningKey(authPhoneHmacShaKey)
+					.build()
+					.parseClaimsJws(token)
+					.getBody();
+			
+			return getDecryptedClaims(claims);
+		} catch (ExpiredJwtException e) {
+			throw new TimeOutJwtException(JWT_EXPIRED, "AuthPhoneToken 시간 만료. "+e.getMessage(), e);
+		} catch (Exception e) {
+			throw new ValidateJwtException(JWT_VALIDATE_FIAL, "AuthPhoneToken 검증 중 익셉션 발생. "+e.getMessage(), e);
+		}
+	}
+	
+	/** 액세스 토큰 남은 시간 조회
 	 * @param token
 	 * @throws TimeOutJwtException {@link #getSignJwtRemainingTime} 시간 초과
 	 * @throws ValidateJwtException {@link #getSignJwtRemainingTime} JWT 파싱 실패
 	 * @return 토큰 남은시간 
 	 */
-	public long getSignJwtRemainingTime(String token) {
+	public long getAccessTokenRemainingTime(String accessToken) {
+		log.debug("토큰 유효시간 검증. Token: [{}]", LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM));
+
 		try {
 			Claims claims = Jwts.parserBuilder()
-					.setSigningKey(signHmacShaKey)
+					.setSigningKey(signAccessHmacShaKey)
 					.build()
-					.parseClaimsJws(token)
+					.parseClaimsJws(accessToken)
 					.getBody();
 			
 			Date expiration = claims.getExpiration();
 			return expiration.getTime() - System.currentTimeMillis();
 		} catch (ExpiredJwtException e) {
-			throw new TimeOutJwtException(JWT_EXPIRED,"토큰 만료",e);
+			throw new TimeOutJwtException(JWT_EXPIRED,"토큰 만료. "+e.getMessage(),e);
 		} catch (Exception e) {
-			throw new ValidateJwtException(JWT_VALIDATE_FIAL,"토큰 검증 중 익셉션 발생.",e);
+			throw new ValidateJwtException(JWT_VALIDATE_FIAL,"토큰 검증 중 익셉션 발생. "+e.getMessage(),e);
 		}
 	}
 	

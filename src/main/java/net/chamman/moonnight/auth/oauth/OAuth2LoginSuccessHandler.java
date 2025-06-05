@@ -39,45 +39,53 @@ import net.chamman.moonnight.domain.user.UserRepository;
 import net.chamman.moonnight.global.exception.StatusDeleteException;
 import net.chamman.moonnight.global.exception.StatusStayException;
 import net.chamman.moonnight.global.exception.StatusStopException;
+import net.chamman.moonnight.global.util.LogMaskingUtil;
+import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
-	
+
 	private final UserRepository userRepository;
 	private final OAuthRepository oauthRepository;
 	private final JwtProvider jwtProvider;
 	private final TokenProvider tokenProvider;
 	private final SignLogService signLogService;
-	private final RedirectStrategy redirectStrategy = new DefaultRedirectStrategy(); // 추가
-	
-	
+	private final RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
+
 	@SuppressWarnings("incomplete-switch")
 	@Override
 	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
 		String clientIp = getClientIp(request);
 		
+		DefaultOAuth2User oAuth2User = (DefaultOAuth2User) authentication.getPrincipal();
+		
+		String provider = extractProvider(authentication).toUpperCase(); // registrationId 추출
+		String email = null;
+		String name = null;
+		String oauthId = oAuth2User.getAttribute("id").toString();
+		if(Objects.equals(provider, "NAVER")){
+			email = oAuth2User.getAttribute("email").toString();
+			name = oAuth2User.getAttribute("name").toString();
+		}else if(Objects.equals(provider, "KAKAO")) {
+			Map<String,Object> kakaoAccount = oAuth2User.getAttribute("kakao_account");
+			email = kakaoAccount.get("email").toString();
+			Map<String,Object> properties = oAuth2User.getAttribute("properties");
+			name = properties.get("nickname").toString();
+		}
+		log.debug("OAuth 인증 성공 핸들러 작동. Provider: [{}], OAuthId: [{}], Email: [{}], Name: [{}], ClientIp: [{}]",
+				provider,
+				LogMaskingUtil.maskId(oauthId, MaskLevel.MEDIUM),
+				LogMaskingUtil.maskEmail(email, MaskLevel.MEDIUM),
+				LogMaskingUtil.maskName(name, MaskLevel.MEDIUM),
+				clientIp
+				);
+		UserProvider userProvider = UserProvider.valueOf(provider);
+		OAuthProvider oauthProvider = OAuthProvider.valueOf(provider);
 		try {
-			DefaultOAuth2User oAuth2User = (DefaultOAuth2User) authentication.getPrincipal();
 			
-			String provider = extractProvider(authentication).toUpperCase(); // registrationId 추출
-			String oauthId = oAuth2User.getAttribute("id").toString();
-			String email = null;
-			String name = null;
-			if(Objects.equals(provider, "NAVER")){
-				email = oAuth2User.getAttribute("email").toString();
-				name = oAuth2User.getAttribute("name").toString();
-			}else if(Objects.equals(provider, "KAKAO")) {
-				Map<String,Object> kakaoAccount = oAuth2User.getAttribute("kakao_account");
-				email = kakaoAccount.get("email").toString();
-				Map<String,Object> properties = oAuth2User.getAttribute("properties");
-				name = properties.get("nickname").toString();
-			}
-			
-			
-			UserProvider userProvider = UserProvider.valueOf(provider);
-			OAuthProvider oauthProvider = OAuthProvider.valueOf(provider);
+
 			// 기존 oauth id로 조회
 			Optional<OAuth> existingOauth = oauthRepository.findByOauthProviderAndOauthProviderId(oauthProvider, oauthId);
 			
@@ -164,12 +172,11 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 				response.addHeader("Set-Cookie", accessCookie.toString());
 				response.addHeader("Set-Cookie", refreshCookie.toString());
 				
-				System.out.println("OAuth2LoginSuccessHandler에서 성공적으로 토큰 쿠키에 저장.");
 				redirectStrategy.sendRedirect(request, response, "/home");
 			}
 		}catch(Exception e) {
-			log.info("OAuth 로그인 처리 중 예외 발생: {}", e); 
-			signLogService.registerSignLog(clientIp, SignResult.OAUTH_FAIL);
+			log.error("OAuth 로그인 중 예외 발생.", e); 
+			signLogService.registerSignLog(userProvider, email, clientIp, SignResult.OAUTH_FAIL, e.getClass().getSimpleName() + e.getMessage());
 			throw e;
 		}
 	}

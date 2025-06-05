@@ -47,6 +47,8 @@ import net.chamman.moonnight.global.exception.token.TokenValueMismatchException;
 import net.chamman.moonnight.global.exception.user.MismatchPasswordException;
 import net.chamman.moonnight.global.exception.verification.NotVerifyException;
 import net.chamman.moonnight.global.exception.verification.VerificationExpiredException;
+import net.chamman.moonnight.global.util.LogMaskingUtil;
+import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 
 @Service
 @Slf4j
@@ -87,7 +89,10 @@ public class SignService {
 	 */
 	@Transactional
 	public String createSignUpToken(String email, String password, String valificationEmailToken) {
-		
+		log.debug("회원 가입 1차 요청. email: [{}] with verificationEmailToken: [{}]",
+				LogMaskingUtil.maskEmail(email, MaskLevel.MEDIUM),
+				LogMaskingUtil.maskToken(valificationEmailToken, MaskLevel.MEDIUM));
+
 		VerificationEmailTokenDto verificationEmailTokenDto = tokenProvider.getDecryptedTokenDto(VerificationEmailTokenDto.TOKENTYPE, valificationEmailToken);
 		verificationService.isVerify(verificationEmailTokenDto.getIntVerificationId());
 		
@@ -202,20 +207,20 @@ public class SignService {
 	 * 
 	 * @return 휴대폰 인증 로그인 토큰
 	 */
-	public String signInAuthSms(String token, String reqPhone, String name, String ip) {
+	public String signInAuthSms(String verificationPhoneToken, String reqPhone, String name, String ip) {
 		
-		VerificationPhoneTokenDto verificationPhoneTokenDto = tokenProvider.getDecryptedTokenDto(VerificationPhoneTokenDto.TOKENTYPE, token);
+		VerificationPhoneTokenDto verificationPhoneTokenDto = tokenProvider.getDecryptedTokenDto(VerificationPhoneTokenDto.TOKENTYPE, verificationPhoneToken);
 		verificationService.isVerify(verificationPhoneTokenDto.getIntVerificationId());
 
-		String verifyPhoneToken = jwtProvider.createVerifyPhoneToken(
+		String authPhoneTokenDto = jwtProvider.createAuthPhoneToken(
 				verificationPhoneTokenDto.getVerificationId(),
 				verificationPhoneTokenDto.getPhone());
 		
-		signLogService.registerSignLog(null, verifyPhoneToken, ip, SignResult.AUTH_SUCCESS);
+		signLogService.registerSignLog(null, verificationPhoneTokenDto.getPhone(), ip, SignResult.AUTH_SUCCESS);
 		
-		tokenProvider.removeToken(TokenType.VERIFICATION_PHONE, token);
+		tokenProvider.removeToken(TokenType.VERIFICATION_PHONE, verificationPhoneToken);
 
-		return verifyPhoneToken;
+		return authPhoneTokenDto;
 	}
 	
 //	@Transactional
@@ -302,17 +307,17 @@ public class SignService {
 		
 //		1. accessToken 블랙리스트 등록
 		try {
-			long ttl = jwtProvider.getSignJwtRemainingTime(accessToken);
+			long ttl = jwtProvider.getAccessTokenRemainingTime(accessToken);
 			tokenProvider.addAccessTokenBlacklist(accessToken, ttl, "SIGNOUT");
-			log.info("로그아웃 - AT 블랙리스트 등록. accessToken: {}, ip: {}", accessToken, clientIp);
+			log.debug("로그아웃 요청. 블랙리스트에 AT 등록. AccessToken: [{}], RequestIp: [{}]", accessToken, clientIp);
 		} catch (TimeOutJwtException e) {
-			log.info("이미 만료된 AT.");
+			log.debug("이미 만료된 AT.");
 		}
 			
 //		2. refreshToken 삭제
 		String userId = jwtProvider.validateRefreshToken(refreshToken);
 		if(!(tokenProvider.removeToken(TokenType.JWT_REFRESH, userId))) {
-			log.warn("로그아웃 - refreshToken 삭제 실패. 도용된 RefreshToken. userId: {}, refreshToken: {}, ip: {}", userId, refreshToken, clientIp);
+			log.warn("로그아웃 중 RefreshToken 삭제 실패. 도용된 RefreshToken.userId: [{}], RefreshToken: [{}], RequestIp: [{}]", userId, refreshToken, clientIp);
 			throw new IllegalJwtException(JWT_ILLEGAL,"로그아웃 - refreshToken 삭제 실패. 도용된 RefreshToken.");
 		}
 	}
