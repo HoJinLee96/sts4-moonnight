@@ -121,7 +121,7 @@ public class VerificationService {
 	 */
 	public int sendEmailVerificationCode(String recipientEmail, String requestIp) {
 		log.debug("인증번호 이메일 발송. RecipientEmail: [{}], RequestIp: [{}]",
-				LogMaskingUtil.maskPhone(recipientEmail, MaskLevel.MEDIUM),
+				LogMaskingUtil.maskEmail(recipientEmail, MaskLevel.MEDIUM),
 				requestIp
 				);
 		

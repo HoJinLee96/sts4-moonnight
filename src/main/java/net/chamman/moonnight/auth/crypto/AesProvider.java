@@ -69,7 +69,7 @@ public class AesProvider {
 	 * @return
 	 */
 	public String decrypt(String encryptedText) {
-		log.debug("복호화. 대상: [{}]", encryptedText.substring(0, 2) + "...");
+		log.debug("복호화. 대상: [{}]", LogMaskingUtil.maskText(encryptedText, MaskLevel.MEDIUM));
 
 		try {
 			byte[] decoded = Base64.getDecoder().decode(encryptedText);
