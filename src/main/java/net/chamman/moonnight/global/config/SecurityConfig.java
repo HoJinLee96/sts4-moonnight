@@ -2,6 +2,7 @@ package net.chamman.moonnight.global.config;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Map;
@@ -12,6 +13,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -78,9 +80,15 @@ public class SecurityConfig {
 	};
 	
 	// 로그인 하면 안 되는 접근
-	public static final String[] NON_LOGIN_ONLY_URIS = {
+	public static final String[] NON_SIGNIN_ONLY_URIS = {
 			"/signin", "/signinBlank", "/signup*", "/signup/**",
 			"/find/**", "/update/password/blank" 
+	};
+	
+//			다른 필터에서 적용중
+//			"/api/*/private/**", "/api/spem/private/auth/**", "/api/estimate/private/auth/**"
+	public static final String[] SIGNIN_ONLY_URIS = {
+			"/my/**","/my"
 	};
 	
 	// 모든 접근 허용
@@ -148,30 +156,26 @@ public class SecurityConfig {
 	// 그 외 로그인 여부 확인 및 점검(리프레쉬통한 발급)
 	@Bean
 	@Order(4)
-	public SecurityFilterChain oauthFilterChain(HttpSecurity http) throws Exception {
+	public SecurityFilterChain silentFilterChain(HttpSecurity http) throws Exception {
 		http
 		.securityMatcher("/**")
 		.csrf(AbstractHttpConfigurer::disable)
 		.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 		.exceptionHandling(exceptions -> exceptions
+				// 권한 없는 페이지 접근 시 처리 (예: 로그인 후 /signin 접근 시, 없는 요청 경로 /awghjw 접근시)
+				.accessDeniedHandler(accessDeniedHandler())
 				// 인증되지 않은 사용자가 접근 시 처리 (예: /my/** 접근 시)
 				.authenticationEntryPoint(authenticationEntryPoint())
-				
-				// 인증은 됐으나 권한 없는 페이지 접근 시 처리 (예: 로그인 후 /signin 접근 시)
-				.accessDeniedHandler(accessDeniedHandler())
 				)
 		.authorizeHttpRequests(authorize -> authorize
-				// /sign, /login, /register 같은 경로는 익명 사용자만 접근 가능하도록 설정
-				.requestMatchers(NON_LOGIN_ONLY_URIS).access((authz, context) -> {
+				.requestMatchers(PUBLIC_URIS).permitAll()
+				.requestMatchers(SIGNIN_ONLY_URIS).authenticated()
+				.requestMatchers(NON_SIGNIN_ONLY_URIS).access((authz, context) -> {
 					Authentication auth = authz.get();
 					boolean isAnonymous = auth == null || !auth.isAuthenticated() || (auth instanceof AnonymousAuthenticationToken);
 					return new AuthorizationDecision(isAnonymous);
 				})
-				// /my, /admin 같은 경로는 인증된 사용자만 접근 가능하도록 설정
-				.requestMatchers("/my/**").authenticated()
-				
-				// 나머지 요청은 일단 모두 허용 (필요에 따라 변경)
-				.requestMatchers(PUBLIC_URIS).permitAll()
+				.anyRequest().denyAll()
 				)
 		.addFilterBefore(silentAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 		
@@ -244,45 +248,44 @@ public class SecurityConfig {
 				.build();
 	}
 	
-	
-// AuthenticationEntryPoint 빈 정의: 인증 안된 사용자 리다이렉트
-	@Bean
-	public AuthenticationEntryPoint authenticationEntryPoint() {
-		// 로그인 안한 사용자가 /my/** 같은 곳 접근 시 /signin 페이지로 리다이렉트
-		return new CustomAuthenticationEntryPoint();
-	}
-	
 	// AccessDeniedHandler 빈 정의: 권한 없는 사용자 처리
 	@Bean
 	public AccessDeniedHandler accessDeniedHandler() {
-		// 예시: 로그인 한 사용자가 /signin 같은 NON_LOGIN_ONLY_URIS 접근 시 /home 으로 리다이렉트
-		return (request, response, accessDeniedException) -> {
-			// 필요하면 여기서 로깅 등을 추가할 수 있음
-			response.sendRedirect(request.getContextPath() + "/home"); // 홈으로 보내버리기!
-		};
-		
-		// 다른 옵션: 특정 에러 페이지 보여주기
-//        AccessDeniedHandlerImpl accessDeniedHandler = new AccessDeniedHandlerImpl();
-//        accessDeniedHandler.setErrorPage("/access-denied"); // 보여줄 에러 페이지 경로
-//        return accessDeniedHandler;
-		 
+		return new CustomAccessDeniedHandler();
 	}
 	
+	public class CustomAccessDeniedHandler implements AccessDeniedHandler {
+	    @Override
+	    public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException {
+	    	log.debug("AccessDeniedHandler 실행됨",accessDeniedException);
+
+			response.sendRedirect("/home");
+	    }
+	}
+	
+	// AuthenticationEntryPoint 빈 정의: 인증 안된 사용자 리다이렉트
+	@Bean
+	public AuthenticationEntryPoint authenticationEntryPoint() {
+		return new CustomAuthenticationEntryPoint();
+	}
 	
 	public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
 		@Override
-		public void commence(HttpServletRequest request, HttpServletResponse response,
-				AuthenticationException authException) throws IOException {
-			
+		public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
+	    	log.debug("AuthenticationEntryPoint 실행됨",authException);
+
 			String requestUri = request.getRequestURI();
 			String queryString = request.getQueryString();
 			String fullUrl = requestUri + (queryString != null ? "?" + queryString : "");
-			
 			// Base64 인코딩
 			String encodedUrl = Base64.getEncoder().encodeToString(fullUrl.getBytes(StandardCharsets.UTF_8));
 			
-			// 로그인 페이지로 리다이렉트
-			response.sendRedirect("/signin?redirect=" + encodedUrl);
+			if (Arrays.stream(SIGNIN_ONLY_URIS).anyMatch(requestUri::startsWith)) {
+				response.sendRedirect("/signin?redirect=" + encodedUrl);
+	        } else {
+				response.sendRedirect("/error");
+	        }
+			
 		}
 	}
 
