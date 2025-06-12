@@ -100,7 +100,6 @@ public class SecurityConfig {
 	@Bean
 	@Order(0)
 	public SecurityFilterChain staticFilterChain(HttpSecurity http) throws Exception {
-		log.debug("*staticFilterChain() @Order(0)");
 		http
 		.securityMatcher("/css/**", "/js/**", "/images/**", "/favicon.ico",
 				"/v3/api-docs/**","/swagger-ui/**","/swagger-ui.html","/swagger-resources/**","/webjars/**","/openapi.yaml","/.well-known/**")
@@ -117,7 +116,6 @@ public class SecurityConfig {
 	@Bean
 	@Order(1)
 	public SecurityFilterChain authSecurityFilterChain(HttpSecurity http) throws Exception {
-		log.debug("*authSecurityFilterChain() @Order(1)");
 		http
 		.securityMatcher("/api/spem/private/auth/**", "/api/estimate/private/auth/**")
 		.csrf(AbstractHttpConfigurer::disable)
@@ -151,7 +149,6 @@ public class SecurityConfig {
 	@Bean
 	@Order(3)
 	public SecurityFilterChain oauthSecurityFilterChain(HttpSecurity http) throws Exception {
-		log.debug("*oauthSecurityFilterChain() @Order(3)");
 		return http
 				.securityMatcher("/oauth2/**", "/login/oauth2/**")
 				.csrf(AbstractHttpConfigurer::disable)
@@ -168,7 +165,6 @@ public class SecurityConfig {
 	@Bean
 	@Order(4)
 	public SecurityFilterChain signFilterChain(HttpSecurity http) throws Exception {
-		log.debug("*signFilterChain() @Order(4)");
 		http
 		.securityMatcher(SIGNIN_ONLY_URIS)
 		.csrf(AbstractHttpConfigurer::disable)
@@ -186,7 +182,6 @@ public class SecurityConfig {
 	@Bean
 	@Order(5)
 	public SecurityFilterChain nonSignFilterChain(HttpSecurity http) throws Exception {
-		log.debug("*nonSignFilterChain() @Order(5)");
 		http
 		.securityMatcher(NON_SIGNIN_ONLY_URIS)
 		.csrf(AbstractHttpConfigurer::disable)
@@ -207,7 +202,6 @@ public class SecurityConfig {
 	@Bean
 	@Order(6)
 	public SecurityFilterChain publicFilterChain(HttpSecurity http) throws Exception {
-		log.debug("*publicFilterChain() @Order(6)");
 		http
 		.securityMatcher(PUBLIC_URIS)
 		.csrf(AbstractHttpConfigurer::disable)
@@ -285,7 +279,7 @@ public class SecurityConfig {
 	public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 	    @Override
 	    public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException {
-	    	log.debug("*AccessDeniedHandler 실행됨",accessDeniedException);
+	    	log.debug("* AccessDeniedHandler 실행됨.");
 
 	         String clientType = request.getHeader("X-Client-Type");
 	         boolean isMobileApp = clientType != null && clientType.contains("mobile");
@@ -304,9 +298,10 @@ public class SecurityConfig {
 	// AccessDeniedHandler 빈 정의: 권한 없는 사용자 처리
 	@Bean
 	public AccessDeniedHandler accessDeniedHandler() {
-		return (request, response, accessDeniedException) -> {
-			response.sendRedirect(request.getContextPath() + "/home"); // 홈으로 보내버리기!
-		};
+//		return (request, response, accessDeniedException) -> {
+//			response.sendRedirect(request.getContextPath() + "/home"); // 홈으로 보내버리기!
+//		};
+		return new CustomAccessDeniedHandler();
 	}
 	
 	// AuthenticationEntryPoint 빈 정의: 인증 안된 사용자 리다이렉트
@@ -318,7 +313,7 @@ public class SecurityConfig {
 	public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
 		@Override
 		public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
-	    	log.debug("*AuthenticationEntryPoint 실행됨.");
+	    	log.debug("* AuthenticationEntryPoint 실행됨.");
 			
 	        String clientType = request.getHeader("X-Client-Type");
 	        boolean isMobileApp = clientType != null && clientType.contains("mobile");
@@ -329,12 +324,13 @@ public class SecurityConfig {
 	            Map<String, Object> body = Map.of("statusCode", 401, "message", "로그인이 필요합니다.");
 	            response.getWriter().write(objectMapper.writeValueAsString(body));
 	        } else {
-				String requestUri = request.getRequestURI();
-				String queryString = request.getQueryString();
-				String fullUrl = requestUri + (queryString != null ? "?" + queryString : "");
+	        	String uri = request.getRequestURI();
+	        	String url = request.getRequestURL().toString();
+	        	String queryString = request.getQueryString();
+	        	String fullUrl = url + (queryString != null ? "?" + queryString : "");
 				String encodedUrl = Base64.getEncoder().encodeToString(fullUrl.getBytes(StandardCharsets.UTF_8));
 	            
-	            if (Arrays.stream(SIGNIN_ONLY_URIS).anyMatch(requestUri::startsWith)) {
+	            if (Arrays.stream(SIGNIN_ONLY_URIS).anyMatch(uri::startsWith)) {
 	                response.sendRedirect("/signin?redirect="+encodedUrl);
 	            } else {
 	                response.sendRedirect("/error");

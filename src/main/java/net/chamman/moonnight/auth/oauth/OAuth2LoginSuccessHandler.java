@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
@@ -39,6 +38,7 @@ import net.chamman.moonnight.global.util.CookieUtil;
 import net.chamman.moonnight.global.util.HttpServletUtil;
 import net.chamman.moonnight.global.util.LogMaskingUtil;
 import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
+import net.chamman.moonnight.global.validator.RedirectResolver;
 
 @Component
 @Slf4j
@@ -52,10 +52,9 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 	private final SignLogService signLogService;
     private final ClientIpInterceptor clientIpInterceptor;
     private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
+    private final RedirectResolver redirectResolver;
 	private final RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
 	
-	@Value("${domain}")
-	private String domain;
 
 	@SuppressWarnings("incomplete-switch")
 	@Override
@@ -98,23 +97,23 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 			if (existingOauth.isPresent()) {
 				OAuth oauth = existingOauth.get();
 				user = existingOauth.get().getUser();
-				log.debug("*oauth.getOauthStatus(): {}",oauth.getOauthStatus());
-				log.debug("*user.getUserStatus(): {}",user.getUserStatus());
+				log.debug("* oauth.getOauthStatus(): {}",oauth.getOauthStatus());
+				log.debug("* user.getUserStatus(): {}",user.getUserStatus());
 				switch (user.getUserStatus()) {
 					case STAY -> {
-						log.debug("*일시정지된 계정.");
+						log.debug("* 일시정지된 계정.");
 						signLogService.registerSignLog (userProvider, email, clientIp, SignResult.ACCOUNT_STAY);
 						redirectStrategy.sendRedirect(req, res, "/sign/stay");
 						return;
 					}
 					case STOP -> {
-						log.debug("*중지된 계정.");
+						log.debug("* 중지된 계정.");
 						signLogService.registerSignLog(userProvider, email, clientIp, SignResult.ACCOUNT_STOP);
 						redirectStrategy.sendRedirect(req, res, "/sign/stop");
 						return;
 					}
 					case DELETE -> {
-						log.debug("*탈퇴한 계정.");
+						log.debug("* 탈퇴한 계정.");
 						signLogService.registerSignLog(userProvider, email, clientIp, SignResult.ACCOUNT_DELETE);
 						redirectStrategy.sendRedirect(req, res, "/sign/delete");
 						return;
@@ -193,33 +192,23 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 	    Optional<String> redirectUri = CookieUtil.getCookie(req, HttpCookieOAuth2AuthorizationRequestRepository.REDIRECT_URI_PARAM_COOKIE_NAME)
 	            .map(Cookie::getValue);
 
-        // 2. (아주 중요!) 사용한 쿠키는 반드시 삭제
+        // 2. 사용한 쿠키 삭제
         httpCookieOAuth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(req, res);
+        
         if (redirectUri.isPresent() && !redirectUri.get().isBlank()) {
         	String decodedUrl = new String(Base64.getUrlDecoder().decode(redirectUri.get()));
-        	log.debug("*OAUTH로그인 성공 이후 Redirect 값: [{}]", decodedUrl);
-        	return decodedUrl;
+        	// 3. 리다이렉트 URL가 내 도메인인지 검증
+            if (redirectResolver.isAuthorizedRedirectUri(decodedUrl)) {
+                log.debug("* OAUTH로그인 성공 이후 Redirect 값: [{}]", decodedUrl);
+                return decodedUrl;
+            } else {
+                log.info("* 허용되지 않은 Redirect URI 감지: [{}]", decodedUrl);
+                return "/"; 
+            }
         }
         return "/";
 	}
+	
 
 
-//		try {
-//	        OAuth2AuthorizationRequest authorizationRequest = authorizationRequestRepository.loadAuthorizationRequest(req);
-//        	log.debug("*authorizationRequestRepository.loadAuthorizationRequest(req): [{}]",authorizationRequest);
-//	        if (authorizationRequest != null) {
-//	            Object redirectParamObj = authorizationRequest.getAdditionalParameters().get("redirect");
-//	            if (redirectParamObj != null) {
-//	            	String decodedUrl = redirectResolver.decodingAndValidateDomain((String) redirectParamObj);
-//	            	log.debug("*authorizationRequest.getAdditionalParameters().get('redirect'): [{}]",decodedUrl);
-//	            	return decodedUrl.replace(domain, "");
-//	            }
-//	        } 
-//	        return "/home";
-//	    } catch (Exception e) {
-//	        log.error("소셜 로그인 성공 후 리다이렉트 Redirect URL 처리 중 예외 발생", e);
-//	        return "/home";
-//	    } finally {
-//	        authorizationRequestRepository.removeAuthorizationRequest(req, res);
-//	    }
 }

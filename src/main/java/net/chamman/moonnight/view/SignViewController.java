@@ -1,7 +1,5 @@
 package net.chamman.moonnight.view;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
@@ -11,22 +9,26 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.global.annotation.ClientSpecific;
+import net.chamman.moonnight.global.validator.RedirectResolver;
 
 @Controller
 @Slf4j
+@RequiredArgsConstructor
 public class SignViewController {
+	
+    private final RedirectResolver redirectResolver;
 	
 	@GetMapping("/signin")
 	public String showLogin(HttpServletRequest req, HttpServletResponse res, Model model) {
 		
 		String redirect = req.getParameter("redirect");
-		log.debug("*req.getParameter(\"redirect\"): {}", redirect);
 		if(redirect==null) {
 			String referer = req.getHeader("Referer");
 			if(referer != null) {
-				if (isSameDomain(referer, req)) {
+				if (redirectResolver.isAuthorizedRedirectUri(referer)) {
 					redirect = Base64.getEncoder().encodeToString(referer.getBytes(StandardCharsets.UTF_8));
 				}
 			}
@@ -74,16 +76,5 @@ public class SignViewController {
 		System.out.println("----------WebMainController.showJoinSnsConfirm() 실행----------");
 		return "sign/signDelete";
 	}
-	
-    private boolean isSameDomain(String referer, HttpServletRequest request) {
-        try {
-            URI refererUri = new URI(referer);
-            String refererDomain = refererUri.getHost();
-            String serverDomain = request.getServerName();
-            return refererDomain != null && refererDomain.equalsIgnoreCase(serverDomain);
-        } catch (URISyntaxException e) {
-            return false;
-        }
-    }
 	
 }
