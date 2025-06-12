@@ -29,6 +29,7 @@ import net.chamman.moonnight.auth.crypto.TokenProvider.TokenType;
 import net.chamman.moonnight.auth.sign.SignService;
 import net.chamman.moonnight.auth.sign.log.SignLogService;
 import net.chamman.moonnight.global.exception.jwt.TimeOutJwtException;
+import net.chamman.moonnight.global.util.HttpServletUtil;
 
 @Slf4j
 public abstract class AbstractAccessTokenFilter <T extends UserDetails> extends OncePerRequestFilter{
@@ -45,7 +46,7 @@ public abstract class AbstractAccessTokenFilter <T extends UserDetails> extends 
 	
 	@Override
 	protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain filterChain) throws ServletException, IOException {
-		log.debug("AbstractAccessTokenFilter.doFilterInternal 실행.");
+		log.debug("*AbstractAccessTokenFilter.doFilterInternal 실행.");
 		
 		// ClientIp
 		String clientIp = (String) req.getAttribute("clientIp");
@@ -171,26 +172,14 @@ public abstract class AbstractAccessTokenFilter <T extends UserDetails> extends 
 			res.setHeader("X-Access-Token", accessToken);
 			res.setHeader("X-Refresh-Token", refreshToken);
 		}else {
-			buildCookie(res,"X-Access-Token", accessToken, Duration.ofMinutes(120));
-			buildCookie(res,"X-Refresh-Token", refreshToken, Duration.ofDays(14));
+			HttpServletUtil.resSetCookie(res,"X-Access-Token", accessToken, Duration.ofMinutes(120));
+			HttpServletUtil.resSetCookie(res,"X-Refresh-Token", refreshToken, Duration.ofDays(14));
 		}
 	}
 	
 	protected void initTokenToCookie(HttpServletResponse res) {
-		buildCookie(res,"X-Access-Token", "", Duration.ZERO);
-		buildCookie(res,"X-Refresh-Token", "", Duration.ZERO);
-	}
-	
-	protected void buildCookie(HttpServletResponse res, String name, String value, Duration duration) {
-		ResponseCookie cookie = ResponseCookie.from(name, value)
-				.httpOnly(true)
-				.secure(true)
-				.path("/")
-				.maxAge(duration)
-				.sameSite("Lax")
-				.build();
-		
-		res.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+		HttpServletUtil.resSetCookie(res,"X-Access-Token", "", Duration.ZERO);
+		HttpServletUtil.resSetCookie(res,"X-Refresh-Token", "", Duration.ZERO);
 	}
 	
 	protected void setErrorResponse(HttpServletResponse res, int code, String message) throws IOException {

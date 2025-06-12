@@ -17,10 +17,11 @@ public enum HttpStatusCode {
 	DELETE_SUCCESS(200,"2003","message.success.delete"),
 	
 	// Common
-	ILLEGAL_INPUT_VALUE(400, "4000", "message.common.illegal_input_value"), // 입력 받은 값 이상
+	ILLEGAL_REQUEST(400, "4000", "message.common.illegal_request"), // 입력 받은 값 이상
+	ILLEGAL_INPUT_VALUE(400, "4001", "message.common.illegal_input_value"), // 입력 받은 값 이상
 	REQUEST_BODY_NOT_VALID(400, "4002", "message.common.request_body_not_valid"), // body 이상
 	AUTHORIZATION_FAILED(401,"4030","message.common.authorization_failed"), // 권한 이상
-	METHOD_NOT_ALLOWED(405, "4050", "message.common.method_not_allowed"), // 요청 경로 이상
+	METHOD_NOT_ALLOWED(405, "4050", "message.common.method_not_allowed"), // 요청 url 이상
 	TOO_MANY_REQUEST(429,"4290","message.common.too_many_request"), 
 	INTERNAL_SERVER_ERROR(500, "5000", "message.common.internal_server_error"),
 	
@@ -86,9 +87,12 @@ public enum HttpStatusCode {
 	MAIL_SEND_FAIL(500,"5006","message.mail.send_fail"),
 	
 	// Sms 463
-	SMS_SEND_FAIL(500,"5007","message.sms.send_fail")
+	SMS_SEND_FAIL(500,"5007","message.sms.send_fail"),
 	
-
+	// Transaction 464
+	ENCODING_FAIL(400, "4000", "message.common.illegal_input_value"),
+	DECODING_FAIL(400, "4000", "message.common.illegal_input_value")
+	
 	; 
 	
 	

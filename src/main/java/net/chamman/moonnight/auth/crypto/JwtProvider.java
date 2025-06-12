@@ -24,7 +24,6 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.global.exception.crypto.DecryptException;
-import net.chamman.moonnight.global.exception.crypto.EncryptException;
 import net.chamman.moonnight.global.exception.jwt.CreateJwtException;
 import net.chamman.moonnight.global.exception.jwt.TimeOutJwtException;
 import net.chamman.moonnight.global.exception.jwt.ValidateJwtException;
@@ -61,7 +60,6 @@ public class JwtProvider {
 	 * @param userId
 	 * @param roles
 	 * @param claims
-     * @throws EncryptException {@link #createAccessToken}, {@link #createRefreshToken} 암호화 실패
 	 * @throws CreateJwtException {@link #createAccessToken}, {@link #createRefreshToken} 토큰 생성 실패
 	 * @return 액세스토큰, 리프레쉬토큰
 	 */
@@ -75,12 +73,12 @@ public class JwtProvider {
 	 * @param userId
 	 * @param roles
 	 * @param claims
-     * @throws EncryptException {@link AesProvider#encrypt} 암호화 실패
-	 * @throws CreateJwtException {@link #createAccessToken} 토큰 생성 실패
 	 * @return 액세스 토큰
+	 * 
+	 * @throws CreateJwtException {@link #createAccessToken} 토큰 생성 실패
 	 */
 	public String createAccessToken(int userId, List<String> roles, Map<String, Object> claims) {
-		log.debug("AccessToken 발행. UserID: [{}], Roles: [{}]", LogMaskingUtil.maskId(userId, MaskLevel.MEDIUM), roles.get(0));
+		log.debug("*AccessToken 발행. UserID: [{}], Roles: [{}]", LogMaskingUtil.maskId(userId, MaskLevel.MEDIUM), roles.get(0));
 		
 		try {
 			JwtBuilder builder = Jwts.builder()
@@ -108,12 +106,12 @@ public class JwtProvider {
 	
 	/** 리프레쉬 토큰 생성
 	 * @param userId
-     * @throws EncryptException {@link AesProvider#encrypt} 암호화 실패
-	 * @throws CreateJwtException {@link #createRefreshToken} 토큰 생성 실패
 	 * @return 리프레쉬 토큰
+	 * 
+	 * @throws CreateJwtException {@link #createRefreshToken} 토큰 생성 실패
 	 */
 	public String createRefreshToken(int userId) {
-		log.debug("RefreshToken 발행. UserID: [{}]", LogMaskingUtil.maskId(userId, MaskLevel.MEDIUM));
+		log.debug("*RefreshToken 발행. UserID: [{}]", LogMaskingUtil.maskId(userId, MaskLevel.MEDIUM));
 		
 		try {
 			return Jwts.builder()
@@ -129,12 +127,12 @@ public class JwtProvider {
 	/** 휴대폰 인증 로그인 토큰 생성
 	 * @param verificationId
 	 * @param claims
-     * @throws EncryptException {@link AesProvider#encrypt} 암호화 실패
-	 * @throws CreateJwtException {@link #createVerifyPhoneToken} 토큰 생성 실패
 	 * @return 휴대폰 인증 로그인 토큰
+	 * 
+	 * @throws CreateJwtException {@link #createVerifyPhoneToken} 토큰 생성 실패
 	 */
 	public String createAuthPhoneToken(String verificationId, String phone) {
-		log.debug("AuthPhoneToken 발행. VerificationId: [{}], Phone: [{}]", 
+		log.debug("*AuthPhoneToken 발행. VerificationId: [{}], Phone: [{}]", 
 				LogMaskingUtil.maskId(verificationId, MaskLevel.MEDIUM),
 				LogMaskingUtil.maskPhone(phone, MaskLevel.MEDIUM)
 				);
@@ -158,13 +156,13 @@ public class JwtProvider {
 	
 	/** 액세스 토큰 검증
 	 * @param token
+	 * @return 복호화된 유저 정보 Claims
+	 * 
 	 * @throws TimeOutJwtException {@link #validateAccessToken} 시간 초과
-     * @throws DecryptException {@link #getDecryptedClaims} 복호화 실패
 	 * @throws ValidateJwtException {@link #validateAccessToken} JWT 파싱 실패
-	 * @return 복호화된 유저 정보
 	 */
 	public Map<String, Object> validateAccessToken(String token) {
-		log.debug("AccessToken 검증. AccessToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
+		log.debug("*AccessToken 검증. AccessToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
 		
 		try {
 			Claims claims = Jwts.parserBuilder()
@@ -183,13 +181,13 @@ public class JwtProvider {
 	
 	/** 리프레쉬 토큰 검증
 	 * @param token
-	 * @throws TimeOutJwtException {@link #validateRefreshToken} 시간 초과
-     * @throws DecryptException {@link AesProvider#decrypt} 복호화 실패
-	 * @throws ValidateJwtException {@link #validateRefreshToken} JWT 파싱 실패
 	 * @return userId
+	 * 
+	 * @throws TimeOutJwtException {@link #validateRefreshToken} 시간 초과
+	 * @throws ValidateJwtException {@link #validateRefreshToken} JWT 파싱 실패
 	 */
 	public String validateRefreshToken(String token) {
-		log.debug("RefreshToken 검증. RefreshToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
+		log.debug("*RefreshToken 검증. RefreshToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
 
 		try {
 			Claims claims = Jwts.parserBuilder()
@@ -209,13 +207,13 @@ public class JwtProvider {
 	
 	/** 액세스 토큰 검증
 	 * @param token
-	 * @throws TimeOutJwtException {@link #validateAccessToken} 시간 초과
-     * @throws DecryptException {@link #getDecryptedClaims} 복호화 실패
-	 * @throws ValidateJwtException {@link #validateAccessToken} JWT 파싱 실패
 	 * @return 복호화된 유저 정보
+	 * 
+	 * @throws TimeOutJwtException {@link #validateAccessToken} 시간 초과
+	 * @throws ValidateJwtException {@link #validateAccessToken} JWT 파싱 실패
 	 */
 	public Map<String, Object> validateAuthPhoneToken(String token) {
-		log.debug("AuthPhoneToken 검증. AuthPhoneToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
+		log.debug("*AuthPhoneToken 검증. AuthPhoneToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
 		
 		try {
 			Claims claims = Jwts.parserBuilder()
@@ -234,12 +232,13 @@ public class JwtProvider {
 	
 	/** 액세스 토큰 남은 시간 조회
 	 * @param token
+	 * @return 토큰 남은시간
+	 *  
 	 * @throws TimeOutJwtException {@link #getSignJwtRemainingTime} 시간 초과
 	 * @throws ValidateJwtException {@link #getSignJwtRemainingTime} JWT 파싱 실패
-	 * @return 토큰 남은시간 
 	 */
 	public long getAccessTokenRemainingTime(String accessToken) {
-		log.debug("토큰 유효시간 검증. Token: [{}]", LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM));
+		log.debug("*토큰 유효시간 검증. Token: [{}]", LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM));
 
 		try {
 			Claims claims = Jwts.parserBuilder()
@@ -260,8 +259,9 @@ public class JwtProvider {
 	
 	/** Claims 복호화
 	 * @param claims
-     * @throws DecryptException {@link AesProvider#decrypt} 복호화 실패
 	 * @return Claims
+	 * 
+     * @throws DecryptException {@link AesProvider#decrypt} 복호화 실패
 	 */
 	@SuppressWarnings("unused")
 	private Map<String,Object> getDecryptedClaims(Claims claims) {

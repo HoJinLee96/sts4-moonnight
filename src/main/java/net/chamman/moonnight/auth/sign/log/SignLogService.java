@@ -8,12 +8,14 @@ import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.sign.log.SignLog.SignResult;
 import net.chamman.moonnight.domain.user.User.UserProvider;
 import net.chamman.moonnight.global.exception.sign.TooManySignFailException;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SignLogService {
 	
 	private final SignLogRepository signLogRepository;
@@ -24,14 +26,17 @@ public class SignLogService {
 	 * @param ip
 	 * @param result
 	 */
-	@Transactional
 	public void registerSignLog(UserProvider userProvider, String requestId, String requestIp, SignResult result) {
-		signLogRepository.save(SignLog.builder()
-				.userProvider(userProvider)
-				.requestId(requestId)
-				.requestIp(requestIp)
-				.signResult(result)
-				.build());
+		try {
+			signLogRepository.save(SignLog.builder()
+					.userProvider(userProvider)
+					.requestId(requestId)
+					.requestIp(requestIp)
+					.signResult(result)
+					.build());
+		} catch (Exception e) {
+			log.error("로그인 로그 기록중 익셉션 발생.",e);
+		}
 	}
 	
 	/**
@@ -40,27 +45,34 @@ public class SignLogService {
 	 * @param ip
 	 * @param result
 	 */
-	@Transactional
 	public void registerSignLog(UserProvider userProvider, String requestId, String requestIp, SignResult result, String reason) {
-		signLogRepository.save(SignLog.builder()
-				.userProvider(userProvider)
-				.requestId(requestId)
-				.requestIp(requestIp)
-				.signResult(result)
-				.reason(reason)
-				.build());
+		try {
+			signLogRepository.save(SignLog.builder()
+					.userProvider(userProvider)
+					.requestId(requestId)
+					.requestIp(requestIp)
+					.signResult(result)
+					.reason(reason)
+					.build());
+		} catch (Exception e) {
+			log.error("로그인 로그 기록중 익셉션 발생.",e);
+		}
+
 	}
 	
 	/**
 	 * @param ip
 	 * @param result
 	 */
-	@Transactional
 	public void registerSignLog(String requestIp, SignResult result) {
-		signLogRepository.save(SignLog.builder()
-				.requestIp(requestIp)
-				.signResult(result)
-				.build());
+		try {
+			signLogRepository.save(SignLog.builder()
+					.requestIp(requestIp)
+					.signResult(result)
+					.build());
+		} catch (Exception e) {
+			log.error("로그인 로그 기록중 익셉션 발생.",e);
+		}
 	}
 	
 	/** 로그인 실패 횟수 검사

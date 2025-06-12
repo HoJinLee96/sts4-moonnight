@@ -45,7 +45,7 @@ public class NaverSmsClient {
 	 */
 	public int sendSms(NaverSmsPayload naverSmsPayload) {
 		String recipientPhone = naverSmsPayload.getMessages().isEmpty() ? "N/A" : naverSmsPayload.getMessages().get(0).getTo();
-		log.debug("Naver SMS 발송 요청. Recipient: [{}], Content: [{}]",
+		log.debug("*Naver SMS 발송 요청. Recipient: [{}], Content: [{}]",
 				LogMaskingUtil.maskPhone(recipientPhone, MaskLevel.MEDIUM),
 				naverSmsPayload.getContent());
 		

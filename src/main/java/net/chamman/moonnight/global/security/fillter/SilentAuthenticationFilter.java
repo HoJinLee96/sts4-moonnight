@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
@@ -18,6 +17,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.crypto.JwtProvider;
 import net.chamman.moonnight.auth.crypto.TokenProvider;
@@ -31,23 +31,19 @@ import net.chamman.moonnight.infra.naver.sms.GuidanceService;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class SilentAuthenticationFilter extends AbstractAccessTokenFilter<SilentUserDetails>{
 	
-	@Autowired
 	protected JwtProvider jwtTokenProvider;
-	@Autowired
 	protected TokenProvider tokenStore;
-	@Autowired
 	protected SignLogService signLogService;
-	@Autowired
 	protected GuidanceService guidanceService;
-	@Autowired
 	protected SignService signService;
 	
 	@Override
 	protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res,
 			FilterChain filterChain) throws ServletException, IOException {
-		log.debug("SilentAuthenticationFilter.doFilterInternal 실행.");
+		log.debug("*SilentAuthenticationFilter.doFilterInternal 실행.");
 		
 		// ClientIp
 		String clientIp = (String) req.getAttribute("clientIp");
@@ -120,7 +116,7 @@ public class SilentAuthenticationFilter extends AbstractAccessTokenFilter<Silent
 	
 	@Override
 	protected SilentUserDetails buildUserDetails(Map<String, Object> claims) {
-		log.debug("SilentAuthenticationFilter.buildUserDetails 실행.");
+		log.debug("*SilentAuthenticationFilter.buildUserDetails 실행.");
 
 		Object subjectRaw = claims.get("subject");
 		if (subjectRaw == null) {
@@ -164,6 +160,7 @@ public class SilentAuthenticationFilter extends AbstractAccessTokenFilter<Silent
 				|| matcher.match("/api-docs/**", uri)
 				|| matcher.match("/v3/api-docs/**", uri)
 				|| matcher.match("/openapi.yaml", uri)
+				|| matcher.match("/.well-known/**", uri)
 				|| matcher.match("/favicon.ico", uri);
 	}
 	

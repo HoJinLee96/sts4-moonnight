@@ -43,7 +43,7 @@ public class NaverMailClient {
 	 */
 	public int sendMail(NaverMailPayload naverMailPayload) {
 		String recipientEmail = naverMailPayload.getRecipients().isEmpty() ? "N/A" : naverMailPayload.getRecipients().get(0).getAddress();
-		log.debug("Naver Mail 발송 요청. Recipient: [{}], Title: [{}]",
+		log.debug("*Naver Mail 발송 요청. Recipient: [{}], Title: [{}]",
 				LogMaskingUtil.maskEmail(recipientEmail, MaskLevel.MEDIUM),
 				naverMailPayload.getTitle());
 		

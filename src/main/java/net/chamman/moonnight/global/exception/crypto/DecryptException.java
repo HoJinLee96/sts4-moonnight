@@ -1,5 +1,7 @@
 package net.chamman.moonnight.global.exception.crypto;
 
+import java.util.Base64;
+
 import net.chamman.moonnight.global.exception.CriticalException;
 import net.chamman.moonnight.global.exception.HttpStatusCode;
 
@@ -24,9 +26,5 @@ public class DecryptException extends CriticalException{
 		super(httpStatusCode);
 		// TODO Auto-generated constructor stub
 	}
-
-	
-	
-	
 
 }

@@ -45,7 +45,7 @@ public class DaumMapClient {
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public boolean validateAddress(String postcode, String mainAddress) {
-		log.debug("Daum 주소 검색. mainAddress: [{}]", LogMaskingUtil.maskAddress(mainAddress, MaskLevel.MEDIUM));
+		log.debug("*Daum 주소 검색. mainAddress: [{}]", LogMaskingUtil.maskAddress(mainAddress, MaskLevel.MEDIUM));
 		
 		HttpHeaders headers = new HttpHeaders();
 		headers.add("Authorization", "KakaoAK "+kakaoApiRestApiKey);
@@ -68,7 +68,6 @@ public class DaumMapClient {
 		if(response.getStatusCode()==HttpStatus.OK) {
 			Map<String, Object> responseBody = response.getBody();
 			List<Map<String, Object>> documents = (List<Map<String, Object>>) responseBody.get("documents");
-			
 			for (Map<String, Object> document : documents) {
 				Map<String, Object> roadAddress = (Map<String, Object>) document.get("road_address");
 				

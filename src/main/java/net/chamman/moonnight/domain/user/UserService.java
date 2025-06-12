@@ -347,7 +347,7 @@ public class UserService {
 	 */
 	@Transactional
 	public void deleteUser(int userId, String passwordToken) {
-		log.debug("회원 탈퇴 서비스. UserId: [{}], PasswordToken: [{}]",
+		log.debug("*회원 탈퇴 서비스. UserId: [{}], PasswordToken: [{}]",
 				LogMaskingUtil.maskId(userId, MaskLevel.MEDIUM),
 				LogMaskingUtil.maskToken(passwordToken, MaskLevel.MEDIUM)
 				);

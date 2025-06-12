@@ -1,17 +1,14 @@
 package net.chamman.moonnight.auth.oauth;
 
-import static net.chamman.moonnight.global.exception.HttpStatusCode.USER_STATUS_DELETE;
-import static net.chamman.moonnight.global.exception.HttpStatusCode.USER_STATUS_STAY;
-import static net.chamman.moonnight.global.exception.HttpStatusCode.USER_STATUS_STOP;
-
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.springframework.http.ResponseCookie;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
@@ -22,6 +19,7 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -36,9 +34,9 @@ import net.chamman.moonnight.domain.user.User;
 import net.chamman.moonnight.domain.user.User.UserProvider;
 import net.chamman.moonnight.domain.user.User.UserStatus;
 import net.chamman.moonnight.domain.user.UserRepository;
-import net.chamman.moonnight.global.exception.StatusDeleteException;
-import net.chamman.moonnight.global.exception.StatusStayException;
-import net.chamman.moonnight.global.exception.StatusStopException;
+import net.chamman.moonnight.global.interceptor.ClientIpInterceptor;
+import net.chamman.moonnight.global.util.CookieUtil;
+import net.chamman.moonnight.global.util.HttpServletUtil;
 import net.chamman.moonnight.global.util.LogMaskingUtil;
 import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 
@@ -52,19 +50,25 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 	private final JwtProvider jwtProvider;
 	private final TokenProvider tokenProvider;
 	private final SignLogService signLogService;
+    private final ClientIpInterceptor clientIpInterceptor;
+    private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 	private final RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
+	
+	@Value("${domain}")
+	private String domain;
 
 	@SuppressWarnings("incomplete-switch")
 	@Override
-	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
-		String clientIp = getClientIp(request);
-		
+	public void onAuthenticationSuccess(HttpServletRequest req, HttpServletResponse res, Authentication authentication) throws IOException {
+	
+		// 1. 정보 추출
+		String clientIp = clientIpInterceptor.extractClientIp(req);
 		DefaultOAuth2User oAuth2User = (DefaultOAuth2User) authentication.getPrincipal();
 		
 		String provider = extractProvider(authentication).toUpperCase(); // registrationId 추출
 		String email = null;
 		String name = null;
-		String oauthId = oAuth2User.getAttribute("id").toString();
+		String oauthId = oAuth2User.getName();
 		if(Objects.equals(provider, "NAVER")){
 			email = oAuth2User.getAttribute("email").toString();
 			name = oAuth2User.getAttribute("name").toString();
@@ -74,7 +78,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 			Map<String,Object> properties = oAuth2User.getAttribute("properties");
 			name = properties.get("nickname").toString();
 		}
-		log.debug("OAuth 인증 성공 핸들러 작동. Provider: [{}], OAuthId: [{}], Email: [{}], Name: [{}], ClientIp: [{}]",
+		log.debug("*OAuth 인증 성공 핸들러 작동. Provider: [{}], OAuthId: [{}], Email: [{}], Name: [{}], ClientIp: [{}]",
 				provider,
 				LogMaskingUtil.maskId(oauthId, MaskLevel.MEDIUM),
 				LogMaskingUtil.maskEmail(email, MaskLevel.MEDIUM),
@@ -83,30 +87,41 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 				);
 		UserProvider userProvider = UserProvider.valueOf(provider);
 		OAuthProvider oauthProvider = OAuthProvider.valueOf(provider);
+		
 		try {
-			
-
-			// 기존 oauth id로 조회
+			// 2. 유저 조회
+			// oauth 테이블 확인
 			Optional<OAuth> existingOauth = oauthRepository.findByOauthProviderAndOauthProviderId(oauthProvider, oauthId);
 			
 			User user;
+			// 기존 유저
 			if (existingOauth.isPresent()) {
+				OAuth oauth = existingOauth.get();
 				user = existingOauth.get().getUser();
+				log.debug("*oauth.getOauthStatus(): {}",oauth.getOauthStatus());
+				log.debug("*user.getUserStatus(): {}",user.getUserStatus());
 				switch (user.getUserStatus()) {
-				case STAY -> {
-					signLogService.registerSignLog (userProvider, email, clientIp, SignResult.ACCOUNT_STAY);
-					throw new StatusStayException(USER_STATUS_STAY,"인증이 필요한 계정입니다.");
-				}
-				case STOP -> {
-					signLogService.registerSignLog(userProvider, email, clientIp, SignResult.ACCOUNT_STOP);
-					throw new StatusStopException(USER_STATUS_STOP,"정지된 계정입니다. 고객센터에 문의해주세요.");
-				}
-				case DELETE -> {
-					signLogService.registerSignLog(userProvider, email, clientIp, SignResult.ACCOUNT_DELETE);
-					throw new StatusDeleteException(USER_STATUS_DELETE,"탈퇴한 계정입니다.");
-				}
+					case STAY -> {
+						log.debug("*일시정지된 계정.");
+						signLogService.registerSignLog (userProvider, email, clientIp, SignResult.ACCOUNT_STAY);
+						redirectStrategy.sendRedirect(req, res, "/sign/stay");
+						return;
+					}
+					case STOP -> {
+						log.debug("*중지된 계정.");
+						signLogService.registerSignLog(userProvider, email, clientIp, SignResult.ACCOUNT_STOP);
+						redirectStrategy.sendRedirect(req, res, "/sign/stop");
+						return;
+					}
+					case DELETE -> {
+						log.debug("*탈퇴한 계정.");
+						signLogService.registerSignLog(userProvider, email, clientIp, SignResult.ACCOUNT_DELETE);
+						redirectStrategy.sendRedirect(req, res, "/sign/delete");
+						return;
+					}
 				}
 			} else {
+				//신규 유저
 				// user 저장
 				user = User.builder()
 						.email(email)
@@ -142,42 +157,29 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 			
 			signLogService.registerSignLog(userProvider, email, clientIp, SignResult.OAUTH_SUCCESS);
 			
-			// User-Agent 분기
-			String userAgent = request.getHeader("X-Client-Type");
+			// 3. 클라이언트별 반환
+			String userAgent = req.getHeader("X-Client-Type");
 			boolean isMobileApp = userAgent != null && userAgent.contains("mobile");
 			
 			if (isMobileApp) {
 				// 앱용 응답: JSON body로 토큰 전달
-				response.setContentType("application/json");
-				response.getWriter().write(new ObjectMapper().writeValueAsString(Map.of(
+				res.setContentType("application/json");
+				res.getWriter().write(new ObjectMapper().writeValueAsString(Map.of(
 						"accessToken", accessToken,
 						"refreshToken", refreshToken
 						)));
 			} else {
-				ResponseCookie accessCookie = ResponseCookie.from("X-Access-Token", accessToken)
-						.httpOnly(true)
-						.secure(true)
-						.path("/")
-						.maxAge(Duration.ofMinutes(120))
-						.sameSite("Lax")
-						.build();
+				HttpServletUtil.resSetCookie(res, "X-Access-Token", accessToken, Duration.ofMinutes(120));
+				HttpServletUtil.resSetCookie(res, "X-Refresh-Token", refreshToken, Duration.ofDays(14));
 				
-				ResponseCookie refreshCookie = ResponseCookie.from("X-Refresh-Token", refreshToken)
-						.httpOnly(true)
-						.secure(true)
-						.path("/")
-						.maxAge(Duration.ofDays(14))
-						.sameSite("Lax")
-						.build();
-				response.addHeader("Set-Cookie", accessCookie.toString());
-				response.addHeader("Set-Cookie", refreshCookie.toString());
-				
-				redirectStrategy.sendRedirect(request, response, "/home");
+				String redirect = getRedirect(req, res);
+
+				redirectStrategy.sendRedirect(req, res, redirect);
 			}
 		}catch(Exception e) {
 			log.error("OAuth 로그인 중 예외 발생.", e); 
 			signLogService.registerSignLog(userProvider, email, clientIp, SignResult.OAUTH_FAIL, e.getClass().getSimpleName() + e.getMessage());
-			throw e;
+			redirectStrategy.sendRedirect(req, res, "/error");
 		}
 	}
 	
@@ -186,22 +188,38 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 		return token.getAuthorizedClientRegistrationId(); // "naver" or "kakao"
 	}
 	
-	private String getClientIp(HttpServletRequest request) {
-		String ip = request.getHeader("X-Forwarded-For");
-		if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
-			return ip.split(",")[0]; // 여러 개일 경우 첫 번째 IP
-		}
-		
-		ip = request.getHeader("Proxy-Client-IP");
-		if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
-			return ip;
-		}
-		
-		ip = request.getHeader("WL-Proxy-Client-IP");
-		if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
-			return ip;
-		}
-		
-		return request.getRemoteAddr(); // fallback
+	private String getRedirect(HttpServletRequest req, HttpServletResponse res) {
+	       // 1. 쿠키에서 리다이렉트 URL 꺼내기
+	    Optional<String> redirectUri = CookieUtil.getCookie(req, HttpCookieOAuth2AuthorizationRequestRepository.REDIRECT_URI_PARAM_COOKIE_NAME)
+	            .map(Cookie::getValue);
+
+        // 2. (아주 중요!) 사용한 쿠키는 반드시 삭제
+        httpCookieOAuth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(req, res);
+        if (redirectUri.isPresent() && !redirectUri.get().isBlank()) {
+        	String decodedUrl = new String(Base64.getUrlDecoder().decode(redirectUri.get()));
+        	log.debug("*OAUTH로그인 성공 이후 Redirect 값: [{}]", decodedUrl);
+        	return decodedUrl;
+        }
+        return "/";
 	}
+
+
+//		try {
+//	        OAuth2AuthorizationRequest authorizationRequest = authorizationRequestRepository.loadAuthorizationRequest(req);
+//        	log.debug("*authorizationRequestRepository.loadAuthorizationRequest(req): [{}]",authorizationRequest);
+//	        if (authorizationRequest != null) {
+//	            Object redirectParamObj = authorizationRequest.getAdditionalParameters().get("redirect");
+//	            if (redirectParamObj != null) {
+//	            	String decodedUrl = redirectResolver.decodingAndValidateDomain((String) redirectParamObj);
+//	            	log.debug("*authorizationRequest.getAdditionalParameters().get('redirect'): [{}]",decodedUrl);
+//	            	return decodedUrl.replace(domain, "");
+//	            }
+//	        } 
+//	        return "/home";
+//	    } catch (Exception e) {
+//	        log.error("소셜 로그인 성공 후 리다이렉트 Redirect URL 처리 중 예외 발생", e);
+//	        return "/home";
+//	    } finally {
+//	        authorizationRequestRepository.removeAuthorizationRequest(req, res);
+//	    }
 }
