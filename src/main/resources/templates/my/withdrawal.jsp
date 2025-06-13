@@ -67,8 +67,6 @@ publicStopBtn = document.getElementById('stopBtn').addEventListener('click', fun
    var email = $('#email').val();
    var password = $('#password').val();
    
-   console.log(email, password);
-   
    var xhr = new XMLHttpRequest();
    xhr.open('POST', '/user/stop', true);
    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');

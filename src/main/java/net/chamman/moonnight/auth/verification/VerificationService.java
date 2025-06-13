@@ -64,7 +64,7 @@ public class VerificationService {
 	 * @throws SmsSendException {@link NaverSmsClient#sendVerificationCode}
 	 */
 	public int sendSmsVerificationCode(String recipientPhone, String requestIp) {
-		log.debug("인증번호 문자 발송. RecipientPhone: [{}], RequestIp: [{}]",
+		log.debug("*인증번호 문자 발송. RecipientPhone: [{}], RequestIp: [{}]",
 				LogMaskingUtil.maskPhone(recipientPhone, MaskLevel.MEDIUM),
 				requestIp
 				);
@@ -120,7 +120,7 @@ public class VerificationService {
 	 * @return
 	 */
 	public int sendEmailVerificationCode(String recipientEmail, String requestIp) {
-		log.debug("인증번호 이메일 발송. RecipientEmail: [{}], RequestIp: [{}]",
+		log.debug("*인증번호 이메일 발송. RecipientEmail: [{}], RequestIp: [{}]",
 				LogMaskingUtil.maskEmail(recipientEmail, MaskLevel.MEDIUM),
 				requestIp
 				);
@@ -191,7 +191,7 @@ public class VerificationService {
 		
 		int verificationId = obfuscator.decode(Integer.parseInt(encodedVerificationId));
 		
-		log.debug("문자 인증번호 검증. VerificationId: [{}], RequestIp: [{}]",
+		log.debug("*문자 인증번호 검증. VerificationId: [{}], RequestIp: [{}]",
 				LogMaskingUtil.maskId(verificationId, MaskLevel.MEDIUM),
 				requestIp
 				);
@@ -223,7 +223,7 @@ public class VerificationService {
 		
 		int verificationId = obfuscator.decode(Integer.parseInt(encodedVerificationId));
 		
-		log.debug("이메일 인증번호 검증. VerificationId: [{}], RequestIp: [{}]",
+		log.debug("*이메일 인증번호 검증. VerificationId: [{}], RequestIp: [{}]",
 				LogMaskingUtil.maskId(verificationId, MaskLevel.MEDIUM),
 				requestIp
 				);

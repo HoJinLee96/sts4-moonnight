@@ -25,8 +25,4 @@ public class DecryptException extends CriticalException{
 		// TODO Auto-generated constructor stub
 	}
 
-	
-	
-	
-
 }

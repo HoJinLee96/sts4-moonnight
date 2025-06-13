@@ -1,7 +1,7 @@
 import { formatEmail,formatPasswords,validateConfirmPasswords,formatName,formatBirth,formatPhoneNumber }
  from '/js/format.js';
  
- export async function signIn(email, password, rememberEmail, successHandler, errorHandler){
+ export async function signIn(email, password, rememberEmail, encodedRedirect, successHandler, errorHandler){
 
  	if (!formatEmail(email)) {
  	errorHandler({ type: "VALIDATION", message: "이메일 형식이 올바르지 않습니다." });
@@ -15,8 +15,14 @@ import { formatEmail,formatPasswords,validateConfirmPasswords,formatName,formatB
  		email:email,
  		password:password
  	};
- 	
- 	const response = await fetch("/api/sign/public/in/local", {
+	
+	let apiUrl = "/api/sign/public/in/local";
+
+	if (encodedRedirect) {
+		apiUrl += '?redirect='+encodedRedirect;
+	}
+	
+ 	const response = await fetch(apiUrl, {
  	  method: "POST",
  	  headers: {
  	    "Content-Type": "application/json"

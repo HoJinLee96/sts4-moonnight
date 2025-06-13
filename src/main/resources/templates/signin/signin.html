@@ -38,12 +38,12 @@
 	        <button id="joinButton" type="button">회원가입</button>
 	    <div id = "underline-text"></div>
 	    <div id = "OAutoLoginBlcok">
-	        <a href="/oauth2/authorization/kakao" id="kakao-login">
-        <img src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/kakaoLogin.png" alt="Kakao Login Logo">
-    </a>
-	 <a href="/oauth2/authorization/naver" id="naver-login">
-        <img src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/naverLogin.png" alt="Naver Login Logo">
-    </a>
+	        <a onclick="loginWithKakao()" id="kakao-login">
+	        	<img src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/kakaoLogin.png" alt="Kakao Login Logo">
+		    </a>
+			 <a onclick="loginWithNaver()" id="naver-login">
+		        <img src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/naverLogin.png" alt="Naver Login Logo">
+		    </a>
 
     </div>
     </div>
@@ -52,6 +52,9 @@
 </div>
 <th:block layout:fragment="custom-script">
 <script th:src="@{/js/rememberEmail.js}"></script>
+<script th:inline="javascript">
+    const encodedRedirect = /*[[${redirect}]]*/ null;
+</script>
 
 <script>
 	var email = document.getElementById('email');
@@ -129,24 +132,19 @@
 	});
 
 	  function loginWithKakao() {
-	    // 실제 환경에서는 클라이언트 ID와 리다이렉션 URI를 안전하게 관리해야 합니다.
-	    const KAKAO_CLIENT_ID = 'YOUR_KAKAO_CLIENT_ID'; // 실제 값으로 변경
-	    const REDIRECT_URI = 'http://localhost:8080/oauth/callback/kakao'; // 백엔드 콜백 처리 경로와 일치
-
-	    // 카카오 로그인 페이지 URL 생성
-	    const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code`;
-
-	    // 카카오 로그인 페이지로 이동
+	    let kakaoAuthUrl = `/oauth2/authorization/kakao`;
+		if (encodedRedirect) {
+			kakaoAuthUrl += '?redirect='+encodedRedirect;
+		}
 	    window.location.href = kakaoAuthUrl;
 	  }
 
 	  function loginWithNaver() {
-	    const NAVER_CLIENT_ID = 'YOUR_NAVER_CLIENT_ID'; // 실제 값으로 변경
-	    const REDIRECT_URI = 'http://localhost:8080/oauth/callback/naver'; // 백엔드 콜백 처리 경로와 일치
-	    const STATE = 'RANDOM_STATE_STRING'; // CSRF 방어를 위한 상태 토큰 (선택적이지만 권장)
 
-	    const naverAuthUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${NAVER_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&state=${STATE}`;
-
+	    let naverAuthUrl = `/oauth2/authorization/naver`;
+		if (encodedRedirect) {
+			naverAuthUrl += '?redirect='+encodedRedirect;
+		}
 	    window.location.href = naverAuthUrl;
 	  }
 	  </script>
@@ -158,23 +156,10 @@
 		var email = document.getElementById("email").value;
 		var password = document.getElementById("password").value;
 		var rememberEmail = document.getElementById("rememberEmailCheckbox").checked;
-		console.log(email);
-		console.log(password);
-		console.log(rememberEmail);
-		signIn(email,password,rememberEmail,
+
+		signIn(email,password,rememberEmail,encodedRedirect,
 		(json)=>{
-			const encodedUrl = new URLSearchParams(location.search).get("redirect");
-			if (encodedUrl) {
-			  try {
-			    const decodedUrl = atob(encodedUrl); // base64 디코딩
-			    location.href = decodedUrl;
-			  } catch (e) {
-			    console.error("리다이렉트 URL 디코딩 실패", e);
-			    location.href = "/home";
-			  }
-			} else {
-			  location.href = "/home";
-			}
+			window.location.href = json.data.redirect;
 		},
 		(error)=>{
 			if (error.type === "VALIDATION") {

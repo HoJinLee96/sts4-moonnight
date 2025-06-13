@@ -52,7 +52,7 @@ public class AwsS3Client {
 	 */
 	private String uploadFile(MultipartFile file, String keyPrefix) {
 		String key = keyPrefix + UUID.randomUUID() + "_" + file.getOriginalFilename(); // 고유한 파일명 생성
-		log.debug("S3 파일 업로드 요청. Bucket: [{}], Key: [{}]", bucket, key);
+		log.debug("*S3 파일 업로드 요청. Bucket: [{}], Key: [{}]", bucket, key);
 
 		try {
 			
@@ -85,7 +85,7 @@ public class AwsS3Client {
 			return;
 		}
 		for(String s : paths) {
-			log.debug("S3 파일 삭제 요청. Bucket: [{}], Key: [{}]", bucket, s);
+			log.debug("*S3 파일 삭제 요청. Bucket: [{}], Key: [{}]", bucket, s);
 		}
 
 		try {

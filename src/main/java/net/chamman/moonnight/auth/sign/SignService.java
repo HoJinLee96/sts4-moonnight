@@ -89,7 +89,7 @@ public class SignService {
 	 */
 	@Transactional
 	public String createSignUpToken(String email, String password, String valificationEmailToken) {
-		log.debug("회원 가입 1차 요청. email: [{}] with verificationEmailToken: [{}]",
+		log.debug("*회원 가입 1차 요청. email: [{}] with verificationEmailToken: [{}]",
 				LogMaskingUtil.maskEmail(email, MaskLevel.MEDIUM),
 				LogMaskingUtil.maskToken(valificationEmailToken, MaskLevel.MEDIUM));
 
@@ -309,9 +309,9 @@ public class SignService {
 		try {
 			long ttl = jwtProvider.getAccessTokenRemainingTime(accessToken);
 			tokenProvider.addAccessTokenBlacklist(accessToken, ttl, "SIGNOUT");
-			log.debug("로그아웃 요청. 블랙리스트에 AT 등록. AccessToken: [{}], RequestIp: [{}]", accessToken, clientIp);
+			log.debug("*로그아웃 요청. 블랙리스트에 AT 등록. AccessToken: [{}], RequestIp: [{}]", accessToken, clientIp);
 		} catch (TimeOutJwtException e) {
-			log.debug("이미 만료된 AT.");
+			log.debug("*이미 만료된 AT.");
 		}
 			
 //		2. refreshToken 삭제

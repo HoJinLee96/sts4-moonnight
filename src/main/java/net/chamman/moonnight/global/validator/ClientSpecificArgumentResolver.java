@@ -1,5 +1,6 @@
 package net.chamman.moonnight.global.validator;
 
+import static net.chamman.moonnight.global.exception.HttpStatusCode.ILLEGAL_REQUEST;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.TOKEN_NOT_FOUND;
 
 import org.springframework.core.MethodParameter;
@@ -14,6 +15,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.global.annotation.ClientSpecific;
+import net.chamman.moonnight.global.exception.IllegalRequestException;
 import net.chamman.moonnight.global.exception.token.IllegalTokenException;
 import net.chamman.moonnight.global.util.LogMaskingUtil;
 import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
@@ -42,13 +44,13 @@ public class ClientSpecificArgumentResolver implements HandlerMethodArgumentReso
 		// HttpServletRequest 객체 가져오기 (헤더, 쿠키 등에 접근하기 위해)
 		HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
 		if (request == null) {
-			throw new IllegalTokenException(TOKEN_NOT_FOUND,"요청 정보를 가져올 수 없습니다.");
+			throw new IllegalRequestException(ILLEGAL_REQUEST,"요청 정보를 가져올 수 없습니다.");
 		}
 		
 		String clientType = request.getHeader("X-Client-Type");
 		boolean isMobileApp = clientType != null && clientType.contains("mobile");
 		String clientTypeKr = isMobileApp ? "모바일 앱" : "웹";
-		log.debug("{} 접근. {} 토큰 확인.", clientTypeKr, valueName);
+		log.debug("*{} 접근. {} 토큰 확인.", clientTypeKr, valueName);
 
 		String token = null;
 		
@@ -71,7 +73,7 @@ public class ClientSpecificArgumentResolver implements HandlerMethodArgumentReso
 			}
 		}
 		
-		log.debug("{} 접근 {} 토큰 확인 완료. Token Value: [{}]", clientTypeKr, valueName, LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
+		log.debug("*{} 접근 {} 토큰 확인 완료. Token Value: [{}]", clientTypeKr, valueName, LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
 		return token;
 	}
 

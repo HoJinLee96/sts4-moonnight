@@ -1,13 +1,23 @@
 package net.chamman.moonnight.global.interceptor;
 
 import java.util.List;
+
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class ClientIpInterceptor implements HandlerInterceptor {
+	
+	private List<String> headers = List.of(
+			"X-Forwarded-For",
+			"Proxy-Client-IP",
+			"WL-Proxy-Client-IP",
+			"HTTP_CLIENT_IP",
+			"HTTP_X_FORWARDED_FOR"
+			);
 	
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response,
@@ -17,15 +27,7 @@ public class ClientIpInterceptor implements HandlerInterceptor {
 		return true; // 계속 진행
 	}
 	
-	private String extractClientIp(HttpServletRequest request) {
-		List<String> headers = List.of(
-				"X-Forwarded-For",
-				"Proxy-Client-IP",
-				"WL-Proxy-Client-IP",
-				"HTTP_CLIENT_IP",
-				"HTTP_X_FORWARDED_FOR"
-				);
-		
+	public String extractClientIp(HttpServletRequest request) {
 		for (String header : headers) {
 			String ip = request.getHeader(header);
 			if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {

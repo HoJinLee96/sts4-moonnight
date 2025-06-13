@@ -2,6 +2,7 @@ package net.chamman.moonnight.global.config;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Map;
@@ -12,6 +13,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -35,10 +37,13 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.chamman.moonnight.auth.oauth.HttpCookieOAuth2AuthorizationRequestRepository;
 import net.chamman.moonnight.auth.oauth.OAuth2LoginSuccessHandler;
 import net.chamman.moonnight.global.security.fillter.JwtAuthPhoneFilter;
 import net.chamman.moonnight.global.security.fillter.JwtFilter;
@@ -54,6 +59,8 @@ public class SecurityConfig {
 	private final JwtAuthPhoneFilter jwtAuthPhoneFilter;
 	private final SilentAuthenticationFilter silentAuthenticationFilter;
 	private final OAuth2LoginSuccessHandler oauth2LoginSuccessHandler;
+    private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 	
 	@Value("${naver-login.clientId}")
 	private String naverClientId;
@@ -74,14 +81,20 @@ public class SecurityConfig {
 			"/api/*/public/**", 
 			"/", "/home",
 			"/estimate", "/review",
-			"/verify/**"
+			"/verify/**","/sign/*"
 	};
 	
 	// 로그인 하면 안 되는 접근
-	public static final String[] NON_LOGIN_ONLY_URIS = {
+	public static final String[] NON_SIGNIN_ONLY_URIS = {
 			"/signin", "/signinBlank", "/signup*", "/signup/**",
 			"/find/**", "/update/password/blank" 
 	};
+	
+	// 로그인 하면 안 되는 접근
+	public static final String[] SIGNIN_ONLY_URIS = {
+			"/my","/my/**"
+	};
+	
 	
 	// 모든 접근 허용
 	@Bean
@@ -89,7 +102,7 @@ public class SecurityConfig {
 	public SecurityFilterChain staticFilterChain(HttpSecurity http) throws Exception {
 		http
 		.securityMatcher("/css/**", "/js/**", "/images/**", "/favicon.ico",
-				"/v3/api-docs/**","/swagger-ui/**","/swagger-ui.html","/swagger-resources/**","/webjars/**","/openapi.yaml")
+				"/v3/api-docs/**","/swagger-ui/**","/swagger-ui.html","/swagger-resources/**","/webjars/**","/openapi.yaml","/.well-known/**")
 		.csrf(AbstractHttpConfigurer::disable)
 		.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 		.authorizeHttpRequests(authz -> authz
@@ -102,7 +115,7 @@ public class SecurityConfig {
 	// ROLE_AUTH 전용
 	@Bean
 	@Order(1)
-	public SecurityFilterChain phoneAuthSecurityFilterChain(HttpSecurity http) throws Exception {
+	public SecurityFilterChain authSecurityFilterChain(HttpSecurity http) throws Exception {
 		http
 		.securityMatcher("/api/spem/private/auth/**", "/api/estimate/private/auth/**")
 		.csrf(AbstractHttpConfigurer::disable)
@@ -118,7 +131,8 @@ public class SecurityConfig {
 	// ROLE_LOCAL or ROLE_OAUTH
 	@Bean
 	@Order(2)
-	public SecurityFilterChain loginSecurityFilterChain(HttpSecurity http) throws Exception {
+	public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
+		log.debug("*apiSecurityFilterChain() @Order(2)");
 		http
 		.securityMatcher("/api/*/private/**")
 		.csrf(AbstractHttpConfigurer::disable)
@@ -134,51 +148,68 @@ public class SecurityConfig {
 	// OAUTH 로그인
 	@Bean
 	@Order(3)
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+	public SecurityFilterChain oauthSecurityFilterChain(HttpSecurity http) throws Exception {
 		return http
 				.securityMatcher("/oauth2/**", "/login/oauth2/**")
 				.csrf(AbstractHttpConfigurer::disable)
+	            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.oauth2Login(oauth2 -> oauth2
+						.authorizationEndpoint(endpoint ->
+								endpoint.authorizationRequestRepository(httpCookieOAuth2AuthorizationRequestRepository))
 						.clientRegistrationRepository(clientRegistrationRepository())
 						.userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService()))
 						.successHandler(oauth2LoginSuccessHandler))
 				.build();
 	}
 	
-	// 그 외 로그인 여부 확인 및 점검(리프레쉬통한 발급)
 	@Bean
 	@Order(4)
-	public SecurityFilterChain oauthFilterChain(HttpSecurity http) throws Exception {
+	public SecurityFilterChain signFilterChain(HttpSecurity http) throws Exception {
 		http
-		.securityMatcher("/**")
+		.securityMatcher(SIGNIN_ONLY_URIS)
 		.csrf(AbstractHttpConfigurer::disable)
 		.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 		.exceptionHandling(exceptions -> exceptions
-				// 인증되지 않은 사용자가 접근 시 처리 (예: /my/** 접근 시)
-				.authenticationEntryPoint(authenticationEntryPoint())
-				
-				// 인증은 됐으나 권한 없는 페이지 접근 시 처리 (예: 로그인 후 /signin 접근 시)
-				.accessDeniedHandler(accessDeniedHandler())
-				)
-		.authorizeHttpRequests(authorize -> authorize
-				// /sign, /login, /register 같은 경로는 익명 사용자만 접근 가능하도록 설정
-				.requestMatchers(NON_LOGIN_ONLY_URIS).access((authz, context) -> {
-					Authentication auth = authz.get();
-					boolean isAnonymous = auth == null || !auth.isAuthenticated() || (auth instanceof AnonymousAuthenticationToken);
-					return new AuthorizationDecision(isAnonymous);
-				})
-				// /my, /admin 같은 경로는 인증된 사용자만 접근 가능하도록 설정
-				.requestMatchers("/my/**").authenticated()
-				
-				// 나머지 요청은 일단 모두 허용 (필요에 따라 변경)
-				.requestMatchers(PUBLIC_URIS).permitAll()
+		.authenticationEntryPoint(authenticationEntryPoint()))
+		.authorizeHttpRequests(auth -> auth
+				.anyRequest().authenticated()
 				)
 		.addFilterBefore(silentAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 		
 		return http.build();
 	}
 	
+	@Bean
+	@Order(5)
+	public SecurityFilterChain nonSignFilterChain(HttpSecurity http) throws Exception {
+		http
+		.securityMatcher(NON_SIGNIN_ONLY_URIS)
+		.csrf(AbstractHttpConfigurer::disable)
+		.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+		.exceptionHandling(exceptions -> exceptions
+				.accessDeniedHandler(accessDeniedHandler()))
+		.authorizeHttpRequests(authorize -> authorize
+				.anyRequest().access((authz, context) -> {
+					Authentication auth = authz.get();
+					boolean isAnonymous = auth == null || !auth.isAuthenticated() || (auth instanceof AnonymousAuthenticationToken);
+					return new AuthorizationDecision(isAnonymous);
+				})
+				)
+		.addFilterBefore(silentAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+		return http.build();
+	}
 	
+	@Bean
+	@Order(6)
+	public SecurityFilterChain publicFilterChain(HttpSecurity http) throws Exception {
+		http
+		.securityMatcher(PUBLIC_URIS)
+		.csrf(AbstractHttpConfigurer::disable)
+		.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+		.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+		.addFilterBefore(silentAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+		return http.build();
+	}
 	
 	// 사용자 정보를 커스터마이징 처리
 	// OAuth2UserService는 OAuth 로그인 성공 후 AccessToken으로 유저 정보를 불러와 인증 객체를 만드는 커스터마이징 포인트.
@@ -245,45 +276,67 @@ public class SecurityConfig {
 	}
 	
 	
-// AuthenticationEntryPoint 빈 정의: 인증 안된 사용자 리다이렉트
-	@Bean
-	public AuthenticationEntryPoint authenticationEntryPoint() {
-		// 로그인 안한 사용자가 /my/** 같은 곳 접근 시 /signin 페이지로 리다이렉트
-		return new CustomAuthenticationEntryPoint();
+	public class CustomAccessDeniedHandler implements AccessDeniedHandler {
+	    @Override
+	    public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException {
+	    	log.debug("* AccessDeniedHandler 실행됨.");
+
+	         String clientType = request.getHeader("X-Client-Type");
+	         boolean isMobileApp = clientType != null && clientType.contains("mobile");
+
+	         if (isMobileApp) {
+	             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+	             response.setContentType("application/json;charset=UTF-8");
+	             Map<String, Object> body = Map.of("statusCode", 403, "message", "접근 권한이 없습니다.");
+	             response.getWriter().write(objectMapper.writeValueAsString(body));
+	         } else {
+	             response.sendRedirect("/home");
+	         }
+	    }
 	}
 	
 	// AccessDeniedHandler 빈 정의: 권한 없는 사용자 처리
 	@Bean
 	public AccessDeniedHandler accessDeniedHandler() {
-		// 예시: 로그인 한 사용자가 /signin 같은 NON_LOGIN_ONLY_URIS 접근 시 /home 으로 리다이렉트
-		return (request, response, accessDeniedException) -> {
-			// 필요하면 여기서 로깅 등을 추가할 수 있음
-			response.sendRedirect(request.getContextPath() + "/home"); // 홈으로 보내버리기!
-		};
-		
-		// 다른 옵션: 특정 에러 페이지 보여주기
-//        AccessDeniedHandlerImpl accessDeniedHandler = new AccessDeniedHandlerImpl();
-//        accessDeniedHandler.setErrorPage("/access-denied"); // 보여줄 에러 페이지 경로
-//        return accessDeniedHandler;
-		 
+//		return (request, response, accessDeniedException) -> {
+//			response.sendRedirect(request.getContextPath() + "/home"); // 홈으로 보내버리기!
+//		};
+		return new CustomAccessDeniedHandler();
 	}
 	
+	// AuthenticationEntryPoint 빈 정의: 인증 안된 사용자 리다이렉트
+	@Bean
+	public AuthenticationEntryPoint authenticationEntryPoint() {
+		return new CustomAuthenticationEntryPoint();
+	}
 	
 	public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
 		@Override
-		public void commence(HttpServletRequest request, HttpServletResponse response,
-				AuthenticationException authException) throws IOException {
+		public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
+	    	log.debug("* AuthenticationEntryPoint 실행됨.");
 			
-			String requestUri = request.getRequestURI();
-			String queryString = request.getQueryString();
-			String fullUrl = requestUri + (queryString != null ? "?" + queryString : "");
-			
-			// Base64 인코딩
-			String encodedUrl = Base64.getEncoder().encodeToString(fullUrl.getBytes(StandardCharsets.UTF_8));
-			
-			// 로그인 페이지로 리다이렉트
-			response.sendRedirect("/signin?redirect=" + encodedUrl);
+	        String clientType = request.getHeader("X-Client-Type");
+	        boolean isMobileApp = clientType != null && clientType.contains("mobile");
+
+	        if (isMobileApp) {
+	            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+	            response.setContentType("application/json;charset=UTF-8");
+	            Map<String, Object> body = Map.of("statusCode", 401, "message", "로그인이 필요합니다.");
+	            response.getWriter().write(objectMapper.writeValueAsString(body));
+	        } else {
+	        	String uri = request.getRequestURI();
+	        	String url = request.getRequestURL().toString();
+	        	String queryString = request.getQueryString();
+	        	String fullUrl = url + (queryString != null ? "?" + queryString : "");
+				String encodedUrl = Base64.getEncoder().encodeToString(fullUrl.getBytes(StandardCharsets.UTF_8));
+	            
+	            if (Arrays.stream(SIGNIN_ONLY_URIS).anyMatch(uri::startsWith)) {
+	                response.sendRedirect("/signin?redirect="+encodedUrl);
+	            } else {
+	                response.sendRedirect("/error");
+	            }
+	        }
 		}
 	}
-
+	
 }

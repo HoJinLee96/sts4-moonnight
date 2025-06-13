@@ -41,7 +41,7 @@ import net.chamman.moonnight.global.annotation.ClientSpecific;
 import net.chamman.moonnight.global.annotation.ValidEmail;
 import net.chamman.moonnight.global.annotation.ValidPassword;
 import net.chamman.moonnight.global.annotation.ValidPhone;
-import net.chamman.moonnight.global.exception.IllegalValueException;
+import net.chamman.moonnight.global.exception.IllegalRequestException;
 import net.chamman.moonnight.global.security.principal.CustomUserDetails;
 import net.chamman.moonnight.global.util.ApiResponseDto;
 
@@ -154,7 +154,7 @@ public class UserInfoController {
 			HttpServletRequest request){
 		
 		if(!Objects.equals(password, confirmPassword)) {
-			throw new IllegalValueException(ILLEGAL_INPUT_VALUE,"새로운 두 비밀번호가 일치하지 않음. password: "+password+", confirmPassword: "+confirmPassword);
+			throw new IllegalRequestException(ILLEGAL_INPUT_VALUE,"새로운 두 비밀번호가 일치하지 않음. password: "+password+", confirmPassword: "+confirmPassword);
 		}
 		
 		String clientIp = (String) request.getAttribute("clientIp");

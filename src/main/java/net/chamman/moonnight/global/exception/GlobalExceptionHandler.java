@@ -32,7 +32,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(CriticalException.class)
 	public ResponseEntity<ApiResponseDto<Void>> handleCriticalException(CriticalException ex) {
 		HttpStatusCode httpStatusCode = ex.getHttpStatusCode();
-		log.error("{} 발생. HttpStatusCode: [{}]",
+		log.error("*{} 발생. HttpStatusCode: [{}]",
 				ex.getClass().getSimpleName(),
 				httpStatusCode.toString(),
 				ex
@@ -44,7 +44,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(CustomException.class)
 	public ResponseEntity<ApiResponseDto<Void>> handleCustomException(CustomException ex) {
 		HttpStatusCode httpStatusCode = ex.getHttpStatusCode();
-		log.info("{} 발생. HttpStatusCode: [{}]",
+		log.info("*{} 발생. HttpStatusCode: [{}]",
 				ex.getClass().getSimpleName(),
 				httpStatusCode.toString(),
 				ex
@@ -55,7 +55,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<ApiResponseDto<Void>> handleMethodArgumentNotValidException(
 			MethodArgumentNotValidException ex, HttpServletRequest request) {
-		log.info("MethodArgumentNotValidException 발생.", ex);
+		log.info("*MethodArgumentNotValidException 발생.", ex);
 		
 		BindingResult bindingResult = ex.getBindingResult(); // 에러 정보가 다 여기 들어있음!
 		

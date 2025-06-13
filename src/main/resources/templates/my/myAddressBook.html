@@ -169,7 +169,6 @@ p{
 	import { getMyAddress, getMyAddressList, registerAddress, updateAddress, updatePrimary, deleteAddress } from '/js/address.js';
 	document.addEventListener("DOMContentLoaded", function() {
 		const addressList = getMyAddressList();
-		console.log(addressList);
 		
 		if (addressList && addressList.length > 0) {
 		    const contentDiv = document.querySelector('.content'); // 이 부분은 아래 th:each로 대체 가능

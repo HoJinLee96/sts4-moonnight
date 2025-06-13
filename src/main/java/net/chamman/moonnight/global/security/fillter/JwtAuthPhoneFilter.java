@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.global.exception.jwt.IllegalJwtException;
 import net.chamman.moonnight.global.exception.jwt.TimeOutJwtException;
 import net.chamman.moonnight.global.security.principal.AuthPhoneDetails;
+import net.chamman.moonnight.global.util.HttpServletUtil;
 
 @Component
 @Slf4j
@@ -29,7 +30,7 @@ public class JwtAuthPhoneFilter extends AbstractAccessTokenFilter<AuthPhoneDetai
 	
 	@Override
 	protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain filterChain) throws ServletException, IOException {
-		log.debug("JwtAuthPhoneFilter.doFilterInternal 실행.");
+		log.debug("*JwtAuthPhoneFilter.doFilterInternal 실행.");
 		
 		// ClientIp
 		String clientIp = (String) req.getAttribute("clientIp");
@@ -50,7 +51,7 @@ public class JwtAuthPhoneFilter extends AbstractAccessTokenFilter<AuthPhoneDetai
 		
 //		 1. 토큰 null 체크
 		if (authPhoneToken == null || authPhoneToken.isBlank()) {
-			buildCookie(res,"X-Auth-Phone-Token", "", Duration.ZERO);
+			HttpServletUtil.resSetCookie(res,"X-Auth-Phone-Token", "", Duration.ZERO);
 			setErrorResponse(res, 4011, "유효하지 않은 요청 입니다.");
 			filterChain.doFilter(req, res);
 			return;
@@ -59,7 +60,7 @@ public class JwtAuthPhoneFilter extends AbstractAccessTokenFilter<AuthPhoneDetai
 //		 2. 블랙리스트 확인
 		String value = tokenProvider.getBlackListValue(authPhoneToken);
 		if(value!=null) {
-			buildCookie(res,"X-Auth-Phone-Token", "", Duration.ZERO);
+			HttpServletUtil.resSetCookie(res,"X-Auth-Phone-Token", "", Duration.ZERO);
 			setErrorResponse(res, 4012, "유효하지 않은 요청 입니다.");
 			filterChain.doFilter(req, res);
 			return;
@@ -74,7 +75,7 @@ public class JwtAuthPhoneFilter extends AbstractAccessTokenFilter<AuthPhoneDetai
 			
 		// 4. Access Token 만료.
 		} catch (TimeOutJwtException e) {
-			buildCookie(res,"X-Auth-Phone-Token", "", Duration.ZERO);
+			HttpServletUtil.resSetCookie(res,"X-Auth-Phone-Token", "", Duration.ZERO);
 			setErrorResponse(res, 4012, "유효하지 않은 요청 입니다.");
 			filterChain.doFilter(req, res);
 			return;
@@ -85,7 +86,7 @@ public class JwtAuthPhoneFilter extends AbstractAccessTokenFilter<AuthPhoneDetai
 	
 	@Override
 	protected AuthPhoneDetails buildUserDetails(Map<String, Object> claims) {
-		log.debug("JwtAuthPhoneFilter.buildUserDetails 실행.");
+		log.debug("*JwtAuthPhoneFilter.buildUserDetails 실행.");
 		
 		Object subjectRaw = claims.get("subject");
 		if (subjectRaw == null) {

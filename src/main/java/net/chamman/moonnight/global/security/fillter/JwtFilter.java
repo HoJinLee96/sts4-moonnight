@@ -23,7 +23,7 @@ public class JwtFilter extends AbstractAccessTokenFilter<CustomUserDetails> {
 	
 	@Override
 	protected CustomUserDetails buildUserDetails(Map<String, Object> claims) {
-		log.debug("JwtFilter.buildUserDetails 실행.");
+		log.debug("*JwtFilter.buildUserDetails 실행.");
 		
 		// 복호화 때문에 claims.getSbuject()가 아님.
 		Object subjectRaw = claims.get("subject");
