@@ -7,22 +7,22 @@ public class NoSuchTokenException extends CustomException{
 
 	public NoSuchTokenException(HttpStatusCode httpStatusCode, Exception e) {
 		super(httpStatusCode, e);
-		// TODO Auto-generated constructor stub
+
 	}
 
 	public NoSuchTokenException(HttpStatusCode httpStatusCode, String message, Exception e) {
 		super(httpStatusCode, message, e);
-		// TODO Auto-generated constructor stub
+
 	}
 
 	public NoSuchTokenException(HttpStatusCode httpStatusCode, String message) {
 		super(httpStatusCode, message);
-		// TODO Auto-generated constructor stub
+
 	}
 
 	public NoSuchTokenException(HttpStatusCode httpStatusCode) {
 		super(httpStatusCode);
-		// TODO Auto-generated constructor stub
+
 	}
 
 	
