@@ -24,6 +24,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import net.chamman.moonnight.global.security.principal.CustomUserDetails;
 import net.chamman.moonnight.global.util.ApiResponseDto;
+import net.chamman.moonnight.global.util.ApiResponseFactory;
 
 @RestController
 @RequestMapping("/api/comment")
@@ -31,6 +32,7 @@ import net.chamman.moonnight.global.util.ApiResponseDto;
 public class CommentController {
 	
 	private final CommentService commentService;
+	private final ApiResponseFactory apiResponseFactory;
 	
 //  댓글 등록
 	@PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
@@ -41,7 +43,7 @@ public class CommentController {
 		
 		CommentResponseDto commentResponseDto = commentService.registerComment(userDetails.getUserId(), commentRequestDto);
 		
-		return ResponseEntity.ok(ApiResponseDto.of(CREATE_SUCCESS, commentResponseDto));
+		return ResponseEntity.ok(apiResponseFactory.success(CREATE_SUCCESS, commentResponseDto));
 	}
 	
 //  특정 견적의 댓글 목록 조회 
@@ -52,9 +54,9 @@ public class CommentController {
 			@PathVariable("estimateId") int encodedEstimateId) {
 		List<CommentResponseDto> list = commentService.getCommentList(encodedEstimateId, userDetails.getUserId());
 		if(list==null) {
-			return ResponseEntity.ok(ApiResponseDto.of(READ_SUCCESS_NO_DATA, null));
+			return ResponseEntity.ok(apiResponseFactory.success(READ_SUCCESS_NO_DATA, null));
 		}
-		return ResponseEntity.ok(ApiResponseDto.of(READ_SUCCESS, list));
+		return ResponseEntity.ok(apiResponseFactory.success(READ_SUCCESS, list));
 	}
 	
 //  댓글 수정
@@ -66,7 +68,7 @@ public class CommentController {
 			@Valid @RequestBody CommentRequestDto commentRequestDto) {
 		
 		commentService.updateComment(userDetails.getUserId(), encodedCommentId, commentRequestDto);
-		return ResponseEntity.ok(ApiResponseDto.of(UPDATE_SUCCESS, null));
+		return ResponseEntity.ok(apiResponseFactory.success(UPDATE_SUCCESS));
 	}
 	
 //  댓글 삭제
@@ -77,7 +79,7 @@ public class CommentController {
 			@PathVariable("commentId") int encodedCommentId) {
 		
 		commentService.deleteComment(userDetails.getUserId(), encodedCommentId);
-		return ResponseEntity.ok(ApiResponseDto.of(DELETE_SUCCESS, null));
+		return ResponseEntity.ok(apiResponseFactory.success(DELETE_SUCCESS));
 	}
 	
 }

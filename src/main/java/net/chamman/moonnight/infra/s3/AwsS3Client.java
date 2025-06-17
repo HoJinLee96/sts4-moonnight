@@ -30,7 +30,7 @@ public class AwsS3Client {
 	
 	@Value("${aws.s3.bucket}")
 	private String bucket;
-	private S3Client s3Client;
+	private final S3Client s3Client;
 
 	/** 파일들 업로드
 	 * @param files
@@ -52,7 +52,7 @@ public class AwsS3Client {
 	 */
 	private String uploadFile(MultipartFile file, String keyPrefix) {
 		String key = keyPrefix + UUID.randomUUID() + "_" + file.getOriginalFilename(); // 고유한 파일명 생성
-		log.debug("*S3 파일 업로드 요청. Bucket: [{}], Key: [{}]", bucket, key);
+		log.debug("* S3 파일 업로드 요청. Bucket: [{}], Key: [{}]", bucket, key);
 
 		try {
 			

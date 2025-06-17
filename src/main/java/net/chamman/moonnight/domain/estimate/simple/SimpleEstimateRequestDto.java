@@ -11,15 +11,15 @@ public record SimpleEstimateRequestDto(
 		
 		Integer estimateId,
 		
-		@NotBlank(message = "{validation.user.phone.required}")
-		@Pattern(regexp = "^\\d{3,4}-\\d{3,4}-\\d{4}$", message = "{validation.user.phone.invalid}")
+		@NotBlank(message = "validation.user.phone.required")
+		@Pattern(regexp = "^\\d{3,4}-\\d{3,4}-\\d{4}$", message = "validation.user.phone.invalid")
 		@Size(max = 20, message = "{validation.user.phone.length}")
 		String phone,
 		
-		@NotBlank(message = "{validation.estimate.cleaning_service.required}")
+		@NotBlank(message = "validation.estimate.cleaning_service.required")
 		CleaningService cleaningService,
 		
-		@NotBlank(message = "{validation.estimate.region.required}")
+		@NotBlank(message = "validation.estimate.region.required")
 		Region region
 		
 		)

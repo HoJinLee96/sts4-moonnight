@@ -30,8 +30,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.chamman.moonnight.domain.user.UserCreateRequestDto;
-import net.chamman.moonnight.global.annotation.AutoSetMessageResponse;
 import net.chamman.moonnight.global.annotation.ClientSpecific;
 import net.chamman.moonnight.global.annotation.Redirect;
 import net.chamman.moonnight.global.annotation.ValidEmail;
@@ -40,7 +38,8 @@ import net.chamman.moonnight.global.annotation.ValidPhone;
 import net.chamman.moonnight.global.exception.IllegalRequestException;
 import net.chamman.moonnight.global.security.principal.CustomUserDetails;
 import net.chamman.moonnight.global.util.ApiResponseDto;
-import net.chamman.moonnight.global.util.HttpServletUtil;
+import net.chamman.moonnight.global.util.ApiResponseFactory;
+import net.chamman.moonnight.global.util.CookieUtil;
 import net.chamman.moonnight.global.util.LogMaskingUtil;
 import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 
@@ -52,9 +51,9 @@ import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 public class SignController {
 
 	private final SignService signService;
+	private final ApiResponseFactory apiResponseFactory;
 
 	@Operation(summary = "LOCAL 유저 로그인", description = "LOCAL 유저 로그인")
-	@AutoSetMessageResponse
 	@PostMapping("/public/in/local")
 	public ResponseEntity<ApiResponseDto<Map<String,String>>> signInLocal(
 			@RequestHeader(required = false, value = "X-Client-Type") String userAgent,
@@ -72,18 +71,17 @@ public class SignController {
 		Map<String,String> signJwt = signService.signInLocal(signInRequestDto, clientIp);
 		
 		if (isMobileApp) {
-			return ResponseEntity.status(HttpStatus.OK).body(ApiResponseDto.of(SUCCESS, signJwt));
+			return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(SUCCESS, signJwt));
 		} else {
-			HttpServletUtil.resSetCookie(res, "X-Access-Token", signJwt.get("accessToken"), Duration.ofMinutes(120));
-			HttpServletUtil.resSetCookie(res, "X-Refresh-Token", signJwt.get("refreshToken"),Duration.ofDays(14));
+			CookieUtil.addCookie(res, "X-Access-Token", signJwt.get("accessToken"), Duration.ofMinutes(120));
+			CookieUtil.addCookie(res, "X-Refresh-Token", signJwt.get("refreshToken"),Duration.ofDays(14));
 			
-		    return ResponseEntity.status(HttpStatus.OK).body(ApiResponseDto.of(SUCCESS, Map.of("redirect", redirect)));
+		    return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(SUCCESS, Map.of("redirect", redirect)));
 		}
 	}
 	
 	@Operation(summary = "AUTH 로그인", description = "휴대폰 인증 통해 로그인 토큰 발급")
 	@SecurityRequirement(name = "X-Verification-Phone-Token")
-	@AutoSetMessageResponse
 	@PostMapping("/public/in/auth/sms")
 	public ResponseEntity<ApiResponseDto<Map<String,String>>> signInAuthSms(
 			@RequestHeader(required = false, value = "X-Client-Type") String userAgent,
@@ -105,18 +103,17 @@ public class SignController {
 		String authPhoneToken = signService.signInAuthSms(verificationPhoneToken, phone, name, clientIp);
 		
 		if (isMobileApp) {
-			return ResponseEntity.status(HttpStatus.OK).body(ApiResponseDto.of(SUCCESS, Map.of("X-Auth-Phone-Token",authPhoneToken)));
+			return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(SUCCESS, Map.of("X-Auth-Phone-Token",authPhoneToken)));
 		} else {
-			HttpServletUtil.resSetCookie(res, "X-Auth-Phone-Token", authPhoneToken,Duration.ofMinutes(30));
+			CookieUtil.addCookie(res, "X-Auth-Phone-Token", authPhoneToken,Duration.ofMinutes(30));
 
-		    return ResponseEntity.status(HttpStatus.OK).body(ApiResponseDto.of(SUCCESS, Map.of("redirect", redirect)));
+		    return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(SUCCESS, Map.of("redirect", redirect)));
 		}
 	}
 	
 	@Operation(summary = "로그아웃", description = "로그아웃")
 	@SecurityRequirement(name = "X-Access-Token")
 	@SecurityRequirement(name = "X-Refresh-Token")
-	@AutoSetMessageResponse
 	@PreAuthorize("hasRole('LOCAL') or hasRole('OAUTH')")
 	@PostMapping("/public/out/local")
 	public ResponseEntity<ApiResponseDto<Void>> signOut(
@@ -135,21 +132,18 @@ public class SignController {
 				isMobileApp?"mobile":"web"
 				);
 		
-		
 		signService.signOut(accessToken, refreshToken, clientIp);
 		
 		if(!isMobileApp) {
-			HttpServletUtil.resSetCookie(res, "X-Access-Token", "", Duration.ZERO);
-			HttpServletUtil.resSetCookie(res, "X-Refresh-Token", "",Duration.ZERO);
+			CookieUtil.addCookie(res, "X-Access-Token", "", Duration.ZERO);
+			CookieUtil.addCookie(res, "X-Refresh-Token", "",Duration.ZERO);
 		}
 		
-		return ResponseEntity.ok(ApiResponseDto.of(SUCCESS, null));
+		return ResponseEntity.ok(apiResponseFactory.success(SUCCESS));
 	}
 	
 	@Operation(summary = "회원가입 1차", description = "이메일 인증, 비밀번호 입력")
 	@SecurityRequirement(name = "X-Verification-Email-Token")
-
-	@AutoSetMessageResponse
 	@PostMapping("/public/up/first")
 	public ResponseEntity<ApiResponseDto<Map<String,String>>> signup1(
 			@RequestHeader(required = false, value = "X-Client-Type") String userAgent,
@@ -175,7 +169,7 @@ public class SignController {
 		String accessSignUpToken = signService.createSignUpToken(email, password, verificationEmailToken);
 		
 		if(isMobileApp) {
-			return ResponseEntity.ok(ApiResponseDto.of(SUCCESS, Map.of("X-Access-SignUp-Token",accessSignUpToken)));
+			return ResponseEntity.ok(apiResponseFactory.success(SUCCESS, Map.of("X-Access-SignUp-Token",accessSignUpToken)));
 		}else {
 			ResponseCookie cookie = ResponseCookie.from("X-Access-SignUp-Token", accessSignUpToken)
 					.httpOnly(true)
@@ -188,20 +182,19 @@ public class SignController {
 			return ResponseEntity
 					.status(HttpStatus.OK) 
 					.header(HttpHeaders.SET_COOKIE, cookie.toString())
-					.body(ApiResponseDto.of(SUCCESS_NO_DATA, null));
+					.body(apiResponseFactory.success(SUCCESS_NO_DATA, null));
 		}
 	}
 	
 	@Operation(summary = "회원가입 2차", description = "휴대폰 문자 인증, 개인정보 입력")
 	@SecurityRequirement(name = "X-Access-SignUp-Token")
 	@SecurityRequirement(name = "X-Verification-Phone-Token")
-	@AutoSetMessageResponse
 	@PostMapping("/public/up/second")
 	public ResponseEntity<ApiResponseDto<String>> signup2(
 			@RequestHeader(required = false, value = "X-Client-Type") String userAgent,
 			@ClientSpecific("X-Access-SignUp-Token") String accessSignUpToken,
 			@ClientSpecific("X-Verification-Phone-Token") String verificationPhoneToken,
-			@Valid @RequestBody UserCreateRequestDto userCreateRequestDto,
+			@Valid @RequestBody SignUpRequestDto signUpRequestDto,
 			HttpServletRequest request) {
 		
 		String clientIp = (String) request.getAttribute("clientIp");
@@ -213,10 +206,10 @@ public class SignController {
 				isMobileApp?"mobile":"web"
 				);
 		
-		String name = signService.signUpLocalUser(userCreateRequestDto, accessSignUpToken, verificationPhoneToken);
+		String name = signService.signUpLocalUser(signUpRequestDto, accessSignUpToken, verificationPhoneToken);
 		
 		
-		return ResponseEntity.ok(ApiResponseDto.of(CREATE_SUCCESS, name));
+		return ResponseEntity.ok(apiResponseFactory.success(CREATE_SUCCESS, name));
 	}
 
 }

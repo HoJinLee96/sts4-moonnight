@@ -17,47 +17,41 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.chamman.moonnight.auth.crypto.JwtProvider;
-import net.chamman.moonnight.auth.crypto.TokenProvider;
 import net.chamman.moonnight.auth.crypto.TokenProvider.TokenType;
-import net.chamman.moonnight.auth.sign.SignService;
-import net.chamman.moonnight.auth.sign.log.SignLogService;
+import net.chamman.moonnight.domain.user.User.UserProvider;
 import net.chamman.moonnight.global.exception.jwt.IllegalJwtException;
-import net.chamman.moonnight.global.exception.token.TimeOutTokenException;
-import net.chamman.moonnight.global.security.principal.SilentUserDetails;
-import net.chamman.moonnight.infra.naver.sms.GuidanceService;
+import net.chamman.moonnight.global.exception.jwt.TimeOutJwtException;
+import net.chamman.moonnight.global.security.principal.CustomUserDetails;
+import net.chamman.moonnight.global.util.LogMaskingUtil;
+import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
-public class SilentAuthenticationFilter extends AbstractAccessTokenFilter<SilentUserDetails>{
-	
-	protected JwtProvider jwtTokenProvider;
-	protected TokenProvider tokenStore;
-	protected SignLogService signLogService;
-	protected GuidanceService guidanceService;
-	protected SignService signService;
+public class SilentAuthenticationFilter extends AbstractAccessTokenFilter<CustomUserDetails>{
 	
 	@Override
 	protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res,
 			FilterChain filterChain) throws ServletException, IOException {
-		log.debug("*SilentAuthenticationFilter.doFilterInternal 실행.");
 		
 		// ClientIp
-		String clientIp = (String) req.getAttribute("clientIp");
+		String clientIp = customInterceptor.extractClientIp(req);
 		
 		// Mobile Or Web
 		String clientType = req.getHeader("X-Client-Type");
 		boolean isMobileApp = clientType != null && clientType.contains("mobile");
 		
+		log.debug("* [{}] SilentAuthenticationFilter 실행 - clientIp: [{}], isMobileApp: [{}]", req.getRequestURI(), clientIp, isMobileApp);
+
 		// AccessToken
 		String accessToken = getAccessToken(isMobileApp, req);
 		String refreshToken = getRefreshToken(isMobileApp, req);
 		
+		log.debug("* AccessToken: [{}], RefreshToken: [{}]", LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM), LogMaskingUtil.maskToken(refreshToken, MaskLevel.MEDIUM));
+
 		// 1. 토큰 null 체크
 		if(!validateTokens(new String[] {accessToken,refreshToken})) {
+			log.warn("* 토큰 누락 또는 빈 값.");
 			initTokenToCookie(res);
 			filterChain.doFilter(req, res);
 			return;
@@ -65,6 +59,7 @@ public class SilentAuthenticationFilter extends AbstractAccessTokenFilter<Silent
 		
 //		 2. 블랙리스트 확인
 		String value = tokenProvider.getBlackListValue(accessToken);
+		log.debug("* 블랙리스트 조회 결과 value: [{}]",value);
 //		 2-1. 로그아웃한 토큰
 		if(Objects.equals(value, "SIGNOUT")) {
 			initTokenToCookie(res);
@@ -78,7 +73,7 @@ public class SilentAuthenticationFilter extends AbstractAccessTokenFilter<Silent
 				filterChain.doFilter(req, res);
 				return;
 			} catch (Exception refreshEx) {
-				// 리프레쉬 토큰 통해 SignIn Tokens 재발급 실패
+				log.error("* AccessToken UPDATE 인해 Refresh 중 익셉션 발생.",refreshEx);
 				initTokenToCookie(res);
 				filterChain.doFilter(req, res);
 				return;
@@ -93,21 +88,21 @@ public class SilentAuthenticationFilter extends AbstractAccessTokenFilter<Silent
 			return;
 			
 		// 4. Access Token 만료.
-		} catch (TimeOutTokenException e) {
+		} catch (TimeOutJwtException e) {
 			try {
-//				리프레쉬 
+				log.debug("* AccessToken 만료 확인.");
 				refresh(refreshToken, clientIp, res, isMobileApp);
 				filterChain.doFilter(req, res);
 				return;
 
 			} catch (Exception refreshEx) {
-				// 리프레쉬 토큰 통해 SignIn Tokens 재발급 실패
+				log.error("* AccessToken 만료 인해 Refresh 중 익셉션 발생.", refreshEx);
 				initTokenToCookie(res);
 				filterChain.doFilter(req, res);
 				return;
 			}
 		} catch (Exception e) {
-			log.error("AT validate 실패 또는 UserDetails 생성 중 실패.",e);
+			log.error("* AccessToken validate 실패 또는 UserDetails 생성 중 실패.", e);
 			initTokenToCookie(res);
 			filterChain.doFilter(req, res);
 			return;
@@ -115,35 +110,43 @@ public class SilentAuthenticationFilter extends AbstractAccessTokenFilter<Silent
 	}
 	
 	@Override
-	protected SilentUserDetails buildUserDetails(Map<String, Object> claims) {
-		log.debug("*SilentAuthenticationFilter.buildUserDetails 실행.");
-
+	protected CustomUserDetails buildUserDetails(Map<String, Object> claims) {
+		log.debug("* SilentAuthenticationFilter.buildUserDetails 실행.");
+		
+		// 복호화 때문에 claims.getSbuject()가 아님.
 		Object subjectRaw = claims.get("subject");
 		if (subjectRaw == null) {
-			throw new IllegalJwtException(JWT_ILLEGAL,"JWT SilentUserDetails 생성중 오류 발생. subject");
+			throw new IllegalJwtException(JWT_ILLEGAL,"JWT CustomUserDetails 생성중 오류 발생. subject");
 		}
-		
-		int subject = Integer.parseInt(subjectRaw.toString());
-		if(subject==0) {
-			throw new IllegalJwtException(JWT_ILLEGAL,"JWT SilentUserDetails 생성중 오류 발생. subject");
-		}
-		
-		String name = (String) claims.get("name");
-		if (name == null || name.isEmpty()) {
-			throw new IllegalJwtException(JWT_ILLEGAL,"JWT SilentUserDetails 생성중 오류 발생. name");
+		int userId = Integer.parseInt(subjectRaw.toString());
+		if(userId==0) {
+			throw new IllegalJwtException(JWT_ILLEGAL,"JWT CustomUserDetails 생성중 오류 발생. subject");
 		}
 		
 		Object rolesObj = claims.get("roles");
 		if (!(rolesObj instanceof List)) {
-			throw new IllegalJwtException(JWT_ILLEGAL,"JWT SilentUserDetails 생성중 오류 발생. roles");
+			throw new IllegalJwtException(JWT_ILLEGAL,"JWT AuthUserDetails 생성중 오류 발생. - roles");
 		}
-		
 		@SuppressWarnings("unchecked")
 		List<String> roles = (List<String>) rolesObj;
 		List<GrantedAuthority> authorities =
 				roles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
 		
-		return new SilentUserDetails(subject, name, authorities);
+		String providerStr = (String) claims.get("provider");
+		if (providerStr == null || providerStr.isEmpty()) {
+			throw new IllegalJwtException(JWT_ILLEGAL,"JWT AuthUserDetails 생성중 오류 발생. - provider");
+		}
+		UserProvider userProvider = UserProvider.valueOf(providerStr); // 문자열을 Provider Enum으로 변환
+		String email = (String) claims.get("email");
+		if (email == null || email.isEmpty()) {
+			throw new IllegalJwtException(JWT_ILLEGAL,"JWT AuthUserDetails 생성중 오류 발생. - email");
+		}
+		String name = (String) claims.get("name");
+		if (name == null || name.isEmpty()) {
+			throw new IllegalJwtException(JWT_ILLEGAL,"JWT AuthUserDetails 생성중 오류 발생. - name");
+		}
+		
+		return new CustomUserDetails(userId, userProvider, email, name, authorities);
 	}
 	
 	@Override
@@ -161,7 +164,8 @@ public class SilentAuthenticationFilter extends AbstractAccessTokenFilter<Silent
 				|| matcher.match("/v3/api-docs/**", uri)
 				|| matcher.match("/openapi.yaml", uri)
 				|| matcher.match("/.well-known/**", uri)
-				|| matcher.match("/favicon.ico", uri);
+				|| matcher.match("/favicon.ico", uri)
+				|| matcher.match("/api/*/private/**", uri);
 	}
 	
 	

@@ -13,8 +13,8 @@ public record CommentRequestDto(
     @NotNull
     int encodedEstimateId,
     
-    @NotBlank(message = "{validation.comment.text.required}")
-    @Size(max = 250, message = "{validation.comment.text.length}")
+    @NotBlank(message = "validation.comment.text.required")
+    @Size(max = 250, message = "validation.comment.text.length")
     String commentText
     
 ) {

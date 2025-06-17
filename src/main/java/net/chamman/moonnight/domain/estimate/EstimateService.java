@@ -23,6 +23,7 @@ import net.chamman.moonnight.global.exception.ForbiddenException;
 import net.chamman.moonnight.global.exception.NoSuchDataException;
 import net.chamman.moonnight.global.exception.StatusDeleteException;
 import net.chamman.moonnight.global.exception.infra.s3.S3UploadException;
+import net.chamman.moonnight.global.interceptor.IpAddressContextHolder;
 import net.chamman.moonnight.infra.naver.sms.GuidanceService;
 import net.chamman.moonnight.infra.s3.AwsS3Service;
 
@@ -54,6 +55,7 @@ public class EstimateService {
 	public EstimateResponseDto registerEstimate(EstimateRequestDto estimateRequestDto, List<MultipartFile> images, int userId)  {
 		
 		List<String> imagesPath = null;
+		String requestIp = IpAddressContextHolder.getIpAddress();
 		
 //		1. 이미지 S3 등록
 		if (images != null && !images.isEmpty()) {
@@ -62,9 +64,9 @@ public class EstimateService {
 		
 //		2. 견적서 DB 등록
 		try {
-			User user = userRepository.getReferenceById(userId);
-			
+			User user = userId != 0 ? userRepository.getReferenceById(userId) : null;
 			Estimate estimate = estimateRequestDto.toEntity(user, imagesPath);
+			estimate.setRequestIp(requestIp);
 			estimateRepository.save(estimate);
 			
 			guidanceService.sendEstimateInfoSms(estimate.getPhone(), obfuscator.encode(estimate.getEstimateId())+"");
@@ -74,11 +76,11 @@ public class EstimateService {
 //			3. 견적서 DB 등록 실패시 등록했던 이미지 S3 삭제 
 	        if (imagesPath != null && !imagesPath.isEmpty()) {
 	            try {
-	                log.debug("*견적서 등록 중. DB 작업 실패로 인한 S3 이미지 롤백 시작. 삭제 대상 경로: [{}]", imagesPath);
+	                log.debug("* 견적서 등록 중. DB 작업 실패로 인한 S3 이미지 롤백 시작. 삭제 대상 경로: [{}]", imagesPath);
 	                awsS3Service.deleteEstimateImages(imagesPath);
-	                log.debug("*S3 이미지 롤백 완료.");
+	                log.debug("* S3 이미지 롤백 완료.");
 	            } catch (Exception s3DeleteEx) {
-	                log.error("S3 이미지 롤백 중 심각한 오류 발생! 삭제 대상 경로: [{}]. 에러: [{}]", imagesPath, s3DeleteEx.getMessage(), s3DeleteEx);
+	                log.error(" S3 이미지 롤백 중 심각한 오류 발생! 삭제 대상 경로: [{}]. 에러: [{}]", imagesPath, s3DeleteEx.getMessage(), s3DeleteEx);
 	                guidanceService.sendAdminAlert("S3 이미지 롤백 중 심각한 오류 발생!");
 	            }
 	        }

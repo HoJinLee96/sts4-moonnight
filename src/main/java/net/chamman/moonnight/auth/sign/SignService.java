@@ -25,7 +25,6 @@ import net.chamman.moonnight.domain.address.Address;
 import net.chamman.moonnight.domain.address.AddressRepository;
 import net.chamman.moonnight.domain.user.User;
 import net.chamman.moonnight.domain.user.User.UserProvider;
-import net.chamman.moonnight.domain.user.UserCreateRequestDto;
 import net.chamman.moonnight.domain.user.UserRepository;
 import net.chamman.moonnight.domain.user.UserService;
 import net.chamman.moonnight.global.exception.DuplicationException;
@@ -124,7 +123,7 @@ public class SignService {
 	 * @return 회원 가입 유저 이름
 	 */
 	@Transactional
-	public String signUpLocalUser(UserCreateRequestDto userCreateRequestDto, String accessSignUpToken, String verificationPhoneToken) {
+	public String signUpLocalUser(SignUpRequestDto signUpRequestDto, String accessSignUpToken, String verificationPhoneToken) {
 		
 		SignUpTokenDto signUpTokenDto = tokenProvider.getDecryptedTokenDto(SignUpTokenDto.TOKENTYPE, accessSignUpToken);
 		
@@ -136,20 +135,20 @@ public class SignService {
 		// 비밀번호 인코딩 후 저장
 		String encodedPassoword = passwordEncoder.encode(signUpTokenDto.getRawPassword());
 		
-		User user = userCreateRequestDto.toEntity();
+		User user = signUpRequestDto.toEntity();
 		user.setEmail(signUpTokenDto.getEmail());
 		user.setPassword(encodedPassoword);
 		user.setPhone(verificationPhoneTokenDto.getPhone());
 		userRepository.save(user);
 		
-		Address address = userCreateRequestDto.toAddressEntity();
+		Address address = signUpRequestDto.toAddressEntity();
 		address.setUser(user);
 		addressRepository.save(address);
 		
 		tokenProvider.removeToken(SignUpTokenDto.TOKENTYPE, accessSignUpToken);
 		tokenProvider.removeToken(VerificationPhoneTokenDto.TOKENTYPE, verificationPhoneToken);
 		
-		return userCreateRequestDto.name();
+		return signUpRequestDto.name();
 	}
 	
 	/** LOCAL 유저 로그인
