@@ -5,9 +5,7 @@
 	  
 <head>
 	<title>로그인</title>
-	<th:block layout:fragment="custom-head">
-		<link rel="stylesheet" th:href="@{/css/signin.css}" />
-	</th:block>
+	<link rel="stylesheet" th:href="@{/css/signin.css}" />
  </head>
 
 <div layout:fragment="content">
@@ -49,8 +47,6 @@
     </div>
     
 </div>
-</div>
-<th:block layout:fragment="custom-script">
 <script th:src="@{/js/rememberEmail.js}"></script>
 <script th:inline="javascript">
     const encodedRedirect = /*[[${redirect}]]*/ null;
@@ -176,6 +172,6 @@
 		});
 	});
 </script>
-</th:block>
+</div>
 </html>
 

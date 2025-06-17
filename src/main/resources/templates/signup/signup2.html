@@ -4,7 +4,6 @@
       layout:decorate="~{main/base}">
 <head>
 <title>회원가입</title>
-<th:block layout:fragment="custom-head">
 <style>
 /* Hide the spinner (arrow buttons) */
 input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button
@@ -158,7 +157,6 @@ input[type="number"] {
 	top: 4px;
 }
 </style>
-</th:block>
 </head>
 <div layout:fragment="content">
 	<div class="container">
@@ -221,12 +219,9 @@ input[type="number"] {
 		</form>
 
 	</div>
-</div>
-<th:block layout:fragment="custom-script">
 
 <!-- 주소 검색 api -->
 <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-<script src="/js/daumAddressSearch4.js"></script>
 
 <script type="module">
 import {
@@ -235,6 +230,7 @@ import {
 	verifySmsCode,
 	startVerificationTimer
 } from '/js/smsVerification.js';
+import { searchAddress } from '/js/daumAddressSearch4.js';
 
 document.getElementById("sendSmsButton").addEventListener("click", () => {
 	var reqPhone = document.getElementById("phone").value;
@@ -405,5 +401,5 @@ document.getElementById("submitButton").addEventListener("click", (e)=> {
 });
 
 </script>
-</th:block>
+</div>
 </html>

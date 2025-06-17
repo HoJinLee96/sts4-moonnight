@@ -17,10 +17,8 @@ public class MainViewController {
 	
 	@GetMapping("/error")
 	public String showError() {
-		System.out.println("---------- WebMainController.error() 실행 ----------");
 		return "error";
 	}
-	
 	
 	@GetMapping({"/", "/home"})
 	public String showHome() {
@@ -34,25 +32,21 @@ public class MainViewController {
 	
 	@GetMapping("/review")
 	public String showReview(HttpServletRequest req, HttpServletResponse res) {
-		System.out.println("----------WebMainController.showReview() 실행----------");
 		return "review";
 	}
 	
 	@GetMapping("/find/email")
 	public String showFindEmail(HttpServletRequest req, HttpServletResponse res) {
-		System.out.println("----------WebMainController.showFindEmail() 실행----------");
 		return "findEmailBlank";
 	}
 	
 	@GetMapping("/find/password")
 	public String showFindPassword(HttpServletRequest req, HttpServletResponse res) {
-		System.out.println("----------WebMainController.showFindId() 실행----------");
 		return "findPasswordBlank";
 	}
 	
 	@GetMapping("/update/password/blank")
 	public String showUpdatePasswordBlank(HttpServletRequest req, HttpServletResponse res) {
-		System.out.println("----------WebMainController.verifyPhoneBlank() 실행----------");
 		return "updatePasswordBlank";
 	}
    

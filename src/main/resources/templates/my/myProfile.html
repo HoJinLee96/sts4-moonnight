@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{main/base}">
+
+<head>
+	<title>프로필 정보</title>
+	<th:block th:replace="~{my/mypageSidebar :: sidebarStyles}"></th:block>
+	<style type="text/css">
+		.subContent {
+			margin-top: 30px;
+		}
+
+		.contentTitle {
+			padding-bottom: 15px;
+			border-bottom: 4px solid #20367a;
+		}
+
+		#overlay {
+			position: flex;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background-color: rgba(128, 128, 128, 0.7);
+			display: none;
+			justify-content: center;
+			align-items: center;
+			z-index: 1000;
+		}
+
+		.switchDiv {
+			position: absolute;
+			right: 0px;
+			bottom: 20px;
+		}
+
+		.label {
+			display: block;
+			margin: 20px 0px 10px 0px;
+			font-size: 14px;
+			color: #acacac;
+		}
+
+		.valueDiv {
+			border-bottom: 2px solid #20367a;
+			max-width: 550px;
+			position: relative;
+			padding-bottom: 10px;
+		}
+
+		.value {
+			width: 450px;
+			white-space: nowrap;
+			/* 줄바꿈없음 */
+			overflow: hidden;
+			text-overflow: ellipsis;
+			/*...으로표시  */
+			margin: 15px 0px 10px 0px;
+		}
+
+		.changeButton {
+			z-index: 1;
+			color: #20367a;
+			background: white;
+			border: 1px solid #20367a;
+			border-radius: 10px;
+			cursor: pointer;
+			padding: 6px 8px;
+			position: absolute;
+			right: 0;
+			bottom: 15px;
+		}
+
+		.changeBox {
+			position: absolute;
+			right: 0;
+			bottom: 15px;
+		}
+
+		button:hover {
+			color: white;
+			background: #20367a;
+			border: 1px solid white;
+		}
+	</style>
+	<!-- 스위치 -->
+	<style type="text/css">
+		/* 스위치 전체 컨테이너 */
+		.switch {
+			position: relative;
+			width: 50px;
+			height: 26px;
+		}
+
+		/* 체크박스는 숨김 */
+		.toggle-checkbox {
+			display: none;
+		}
+
+		/* 라벨: 배경과 껐다 켜졌을 때의 스타일 */
+		.toggle-label {
+			display: block;
+			width: 100%;
+			height: 100%;
+			background-color: #ccc;
+			/* 꺼졌을 때 배경색 */
+			border-radius: 30px;
+			position: relative;
+			cursor: pointer;
+			transition: background-color 0.3s;
+		}
+
+		/* 스위치 버튼 */
+		.toggle-button {
+			content: '';
+			position: absolute;
+			top: 1px;
+			left: 2px;
+			width: 24px;
+			height: 24px;
+			background-color: white;
+			border-radius: 50%;
+			transition: transform 0.3s ease;
+			/* 부드러운 애니메이션 */
+		}
+
+		/* 체크박스가 체크되었을 때의 스타일 */
+		.toggle-checkbox:checked+.toggle-label {
+			background-color: #20367a;
+			/* 켜졌을 때 배경색 */
+		}
+
+		/* 스위치 버튼이 오른쪽으로 이동하는 효과 */
+		.toggle-checkbox:checked+.toggle-label .toggle-button {
+			transform: translateX(22px);
+			/* 부드럽게 이동 */
+		}
+	</style>
+	<style>
+		.profile-form{
+			padding-top: 10px;
+		}
+	    .profile-form .form-group {
+	        margin-bottom: 25px;
+	    }
+	    .profile-form label {
+	        display: block;
+	        font-weight: bold;
+	        margin-bottom: 8px;
+	        font-size: 14px;
+	        color: #555;
+	    }
+	    .profile-form input[type="text"], .profile-form input[type="email"] {
+	        width: 350px;
+	        padding: 10px;
+	        border: 1px solid #ccc;
+	        border-radius: 4px;
+	    }
+	    /* 기본적으로는 읽기 전용 스타일 */
+	    .profile-form input:read-only, .profile-form input:disabled {
+	        background-color: #f2f2f2;
+	        cursor: not-allowed;
+	        color: #777;
+	    }
+	    /* 수정 모드일 때 스타일 */
+	    .profile-form input:not(:read-only) {
+	        background-color: #fff;
+	    }
+	    .profile-form .provider-info {
+	        font-size: 12px;
+	        color: #888;
+	        margin-left: 10px;
+	    }
+	    .profile-form .actions {
+	        margin-top: 40px;
+	        padding-top: 20px;
+	        border-top: 1px solid #eee;
+	    }
+	    /* 버튼 스타일 등은 필요에 따라 추가 */
+	</style>
+</head>
+<div layout:fragment="content">
+	<div class="container">
+		<div th:replace="~{my/mypageSidebar :: sidebarFragment}"></div>
+		<div class="content">
+			<p class="headerFont contentTitle">프로필 관리</p>
+
+			<form th:object="${user}" class="profile-form">
+
+				<div class="form-group">
+					<label for="profileName">이름</label>
+					<input type="text" id="profileName" th:value="*{name}" readonly />
+				</div>
+
+				<div class="form-group">
+					<label for="profileEmail">이메일</label>
+					<input type="email" id="profileEmail" th:value="*{email}" disabled />
+					<span class="provider-info" th:text="|(*{userProvider} 계정)|"></span>
+				</div>
+
+				<div class="form-group">
+					<label for="profileBirth">생년월일</label>
+					<input type="text" id="profileBirth" th:value="*{birth}" readonly />
+				</div>
+
+				<div class="form-group">
+					<label for="profilePhone">휴대폰 번호</label>
+					<input type="text" id="profilePhone" th:value="*{phone}" readonly />
+				</div>
+
+				<div class="form-group">
+					<label for="marketingAgree">마케팅 정보 수신 동의</label>
+					<div>
+						<input type="checkbox" id="marketingAgree" th:checked="*{marketingReceivedStatus}" disabled />
+						<span style="font-size:14px;">마케팅 및 프로모션 알림(이메일, SMS) 수신에 동의합니다.</span>
+					</div>
+				</div>
+
+				<div class="actions">
+					<button type="button" id="editProfileBtn">정보 수정</button>
+					<button type="submit" id="saveProfileBtn" style="display:none;">저장</button>
+					<a th:href="@{/my/withdrawal}" style="margin-left:20px;">회원 탈퇴</a>
+				</div>
+
+			</form>
+		</div>
+	</div>
+	<th:block th:replace="~{my/mypageSidebar :: sidebarScripts}"></th:block>
+	
+</div>
+</html>

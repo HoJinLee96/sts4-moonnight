@@ -1,73 +1,94 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
-<th:block th:fragment="sidebarStyles">
-<style type="text/css">
-.container {
-	display: flex;
-	margin: 0 auto;
-	padding-top: 50px;
-	width: 100vw;
-	max-width: 1900px;
-	min-width: 980px;
-	justify-content: center;
-}
+	<th:block th:fragment="sidebarStyles">
+		<style type="text/css">
+			/* mypageSidebar.css */
+			.container {
+				display: flex;
+				margin: 0 auto;
+				padding-top: 50px;
+				width: 100vw;
+				max-width: 1900px;
+				min-width: 980px;
+				justify-content: center;
+			}
 
-.sidebar {
-	min-width: 120px;
-	padding-right: 25px;
-	padding-left: 20px;
-	margin: 0;
-	border-right: 2px solid #efefef;
-}
+			.sidebarDiv {
+				/* 이 클래스명은 sidebarFragment의 div에 직접 적용 */
+				border-right: 2px solid #efefef;
+			}
 
-.sidebar ul {
-	list-style-type: none;
-	padding: 0;
-	margin: 0;
-}
+			.sidebar {
+				min-width: 120px;
+				padding-right: 25px;
+				padding-left: 20px;
+				margin: 0;
+			}
 
-.sidebar a {
-	text-decoration: none;
-	color: black;
-}
+			.sidebar ul {
+				list-style-type: none;
+				padding: 0;
+				margin: 0;
+			}
 
-.category-title {
-	padding-bottom: 20px;
-}
+			.sidebar a {
+				text-decoration: none;
+				color: black;
+			}
 
-.category-title li {
-	padding-bottom: 10px;
-}
+			.category-title {
+				padding-bottom: 20px;
+			}
 
-.content {
-	min-width: 713px;
-	max-width: 989px;
-	width: 100vw;
-	padding: 0px 50px;
-}
+			.category-title li {
+				padding-bottom: 10px;
+			}
 
-.sidebar li a:not(.headerFont) {
-	color: #afafaf;
-}
-.headerFont{
-	margin:0px;
-	font-size: 24px;
-}
-.subHeaderFont{
-	margin:0px;
-	font-size: 20px;
-	
-}
-</style>
-</th:block>
+			.content {
+				min-width: 713px;
+				max-width: 989px;
+				width: 100vw;
+				padding: 0px 50px;
+			}
+
+			.sidebar li a:not(.headerFont) {
+				color: #afafaf;
+			}
+
+			.headerFont {
+				margin: 0px;
+				font-size: 24px;
+			}
+
+			.subHeaderFont {
+				margin: 0px;
+				font-size: 20px;
+			}
+		</style>
+	</th:block>
+
+	<th:block th:fragment="sidebarScripts">
+		<script type="text/javascript">
+			// 현재 URL과 일치하는 사이드바 메뉴를 활성화(색상 변경)하는 스크립트
+			document.querySelectorAll('.sidebar li a').forEach(function (link) {
+				if (link.href === window.location.href) {
+					link.style.color = 'black';
+				}
+			});
+		</script>
+	</th:block>
 </head>
-<div th:fragment="sidebarFragment">
+
+<body>
+	<div th:fragment="sidebarFragment" class="sidebarDiv">
 		<nav class="sidebar">
 			<ul>
-				<li style="margin-bottom:18px;"><a class="headerFont" href="/my" >마이페이지</a></li>
+				<li style="margin-bottom:18px;"><a class="headerFont" href="/my">마이페이지</a></li>
 				<li><a href="/my/estimate">견적 내역</a></li>
-				<li class="category-title"><h3>내정보</h3>
+				<li class="category-title">
+					<h3>내정보</h3>
 					<ul class="sidebar2">
 						<li><a href="/my/loginInfo">로그인 정보</a></li>
 						<li><a href="/my/profile">프로필 관리</a></li>
@@ -76,14 +97,7 @@
 				</li>
 			</ul>
 		</nav>
-</div>
-<th:block th:fragment="sidebarScripts">
-		<script type="text/javascript">
-		document.querySelectorAll('.sidebar li a').forEach(function(link) {
-		    if (link.href === window.location.href) {
-		        link.style.color = 'black';
-		    }
-		});
-</script>
-</th:block>
+	</div>
+</body>
+
 </html>

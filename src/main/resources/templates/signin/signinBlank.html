@@ -1,10 +1,10 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
 <!DOCTYPE html>
-<html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{main/base}">
+
 <head>
-<meta charset="UTF-8">
-<title>로그인</title>
+	<title>로그인</title>
+	<th:block th:replace="~{my/mypageSidebar :: sidebarStyles}"></th:block>
 <style type="text/css">
 @font-face {
 	font-family: 'SF_HambakSnow';
@@ -144,7 +144,7 @@ padding-left: 5px;
 }
 #findEmail:hover, #findPassword:hover{
 color: #20367a;
-cursor:  
+cursor: pointer;
 }
 #etcActionDiv{
     display: flex;
