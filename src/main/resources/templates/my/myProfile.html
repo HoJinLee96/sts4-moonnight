@@ -193,19 +193,14 @@
 				</div>
 
 				<div class="form-group">
-					<label for="profileEmail">이메일</label>
-					<input type="email" id="profileEmail" th:value="*{email}" disabled />
-					<span class="provider-info" th:text="|(*{userProvider} 계정)|"></span>
-				</div>
-
-				<div class="form-group">
 					<label for="profileBirth">생년월일</label>
-					<input type="text" id="profileBirth" th:value="*{birth}" readonly />
+					<input type="text" id="profileBirth" th:value="*{birth}" />
 				</div>
 
 				<div class="form-group">
 					<label for="profilePhone">휴대폰 번호</label>
 					<input type="text" id="profilePhone" th:value="*{phone}" readonly />
+					<button>휴대폰 변경</button>
 				</div>
 
 				<div class="form-group">
@@ -219,7 +214,6 @@
 				<div class="actions">
 					<button type="button" id="editProfileBtn">정보 수정</button>
 					<button type="submit" id="saveProfileBtn" style="display:none;">저장</button>
-					<a th:href="@{/my/withdrawal}" style="margin-left:20px;">회원 탈퇴</a>
 				</div>
 
 			</form>

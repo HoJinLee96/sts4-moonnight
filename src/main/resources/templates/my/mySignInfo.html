@@ -211,37 +211,26 @@
 			<form th:object="${user}" class="profile-form">
 
 				<div class="form-group">
-					<label for="profileName">이름</label>
-					<input type="text" id="profileName" th:value="*{name}" readonly />
-				</div>
-
-				<div class="form-group">
-					<label for="profileEmail">이메일</label>
-					<input type="email" id="profileEmail" th:value="*{email}" disabled />
+					<label for="email">이메일</label>
+					<input type="email" id="email" th:value="*{email}" disabled />
 					<span class="provider-info" th:text="|(*{userProvider} 계정)|"></span>
 				</div>
 
 				<div class="form-group">
-					<label for="profileBirth">생년월일</label>
-					<input type="text" id="profileBirth" th:value="*{birth}" readonly />
+					<label for="password">비밀번호</label>
+					<input type="text" id="password" value="********" readonly />
+					<a href="/my/signInfo/password">비밀번호 변경</a>
 				</div>
-
+				
 				<div class="form-group">
-					<label for="profilePhone">휴대폰 번호</label>
-					<input type="text" id="profilePhone" th:value="*{phone}" readonly />
+					<label>카카오 연동</label>
+					<button>카카오</button>
 				</div>
-
 				<div class="form-group">
-					<label for="marketingAgree">마케팅 정보 수신 동의</label>
-					<div>
-						<input type="checkbox" id="marketingAgree" th:checked="*{marketingReceivedStatus}" disabled />
-						<span style="font-size:14px;">마케팅 및 프로모션 알림(이메일, SMS) 수신에 동의합니다.</span>
-					</div>
+					<label>네이버 연동</label>
+					<button>네이버</button>
 				</div>
-
 				<div class="actions">
-					<button type="button" id="editProfileBtn">정보 수정</button>
-					<button type="submit" id="saveProfileBtn" style="display:none;">저장</button>
 					<a th:href="@{/my/withdrawal}" style="margin-left:20px;">회원 탈퇴</a>
 				</div>
 

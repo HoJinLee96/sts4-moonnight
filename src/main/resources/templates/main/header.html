@@ -32,7 +32,7 @@
 				<ul id="user-header" sec:authorize="isAuthenticated()">
 					<li><span id="user-welcome" th:text="|${#authentication.principal.name}님|"></span></li>
 					<li><a th:href="@{/my}">마이페이지</a></li>
-					<li><span id="signOut">로그아웃</span></button>
+					<li><a href="" id="signOut">로그아웃</a></button>
 					</li>
 					<li><a href="#">고객센터</a></li>
 				</ul>

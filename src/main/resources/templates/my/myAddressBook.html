@@ -151,6 +151,9 @@ p{
 	top: 30%;
 	left: 50%;
 }
+#emptyDiv{
+	padding-top: 10px;
+}
 </style>
 </head>
 
@@ -160,7 +163,7 @@ p{
 		<div class="content">
 			<p class="headerFont contentTitle">주소록</p>
 
-			<div th:if="${#lists.isEmpty(addressList)}">
+			<div id="emptyDiv" th:if="${#lists.isEmpty(addressList)}">
 				<p>등록된 주소가 없습니다.</p>
 			</div>
 
@@ -194,6 +197,7 @@ p{
 
 	<th:block th:replace="~{my/mypageSidebar :: sidebarScripts}"></th:block>
 	<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+	
 	<script type="module" th:inline="javascript">
 	    import { registerAddress, updateAddress, updatePrimary , deleteAddress} from '/js/address.js';
 		import { searchAddress } from '/js/daumAddressSearch4.js';
