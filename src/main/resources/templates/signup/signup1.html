@@ -4,7 +4,6 @@
       layout:decorate="~{main/base}">
 <head>
 <title>회원가입</title>
-<th:block layout:fragment="custom-head">
 <style>
 .container {
 	max-width: 1200px;
@@ -111,7 +110,6 @@ margin-bottom: 50px;
             color: red;
             pointer-events: none; /* 타이머가 클릭되지 않도록 설정 */}
 </style>
-</th:block>
 </head>
 <div layout:fragment="content">
 	<div class="container">
@@ -145,8 +143,6 @@ margin-bottom: 50px;
 			
 		</form>
 	</div>
-</div>
-<th:block layout:fragment="custom-script">
 <script type="module">
   import {
     validateEmail,
@@ -305,5 +301,5 @@ document.getElementById("userConfirmPassword").addEventListener("input", (e)=> {
 });
 
 </script>
-</th:block>
+</div>
 </html>

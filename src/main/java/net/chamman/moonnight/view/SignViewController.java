@@ -49,7 +49,7 @@ public class SignViewController {
 	}
 	
 	@GetMapping("/signup2")
-	public String showJoin2(@ClientSpecific(required = false, value = "X-Access-SignUp-Token") String accessSignUpToken) {
+	public String showJoin2(@ClientSpecific(required = true, value = "X-Access-SignUp-Token") String accessSignUpToken) {
 		if (accessSignUpToken == null || accessSignUpToken.isBlank()) {
 			return "redirect:/signup1";
 		}
@@ -58,22 +58,18 @@ public class SignViewController {
 	
 	@GetMapping("/signup/sns/confirm")
 	public String showJoinSnsConfirm(HttpServletRequest req, HttpServletResponse res) {
-		System.out.println("----------WebMainController.showJoinSnsConfirm() 실행----------");
 		return "joinSnsConfirm";
 	}
 	@GetMapping("/sign/stay")
 	public String showUserStatusStay(HttpServletRequest req, HttpServletResponse res) {
-		System.out.println("----------WebMainController.showJoinSnsConfirm() 실행----------");
 		return "sign/signStay";
 	}
 	@GetMapping("/sign/stop")
 	public String showUserStatusStop(HttpServletRequest req, HttpServletResponse res) {
-		System.out.println("----------WebMainController.showJoinSnsConfirm() 실행----------");
 		return "sign/signStop";
 	}
 	@GetMapping("/sign/delete")
 	public String showUserStatusDelete(HttpServletRequest req, HttpServletResponse res) {
-		System.out.println("----------WebMainController.showJoinSnsConfirm() 실행----------");
 		return "sign/signDelete";
 	}
 	
