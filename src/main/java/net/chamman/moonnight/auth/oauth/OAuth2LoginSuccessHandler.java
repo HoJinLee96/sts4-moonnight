@@ -33,9 +33,8 @@ import net.chamman.moonnight.domain.user.User;
 import net.chamman.moonnight.domain.user.User.UserProvider;
 import net.chamman.moonnight.domain.user.User.UserStatus;
 import net.chamman.moonnight.domain.user.UserRepository;
-import net.chamman.moonnight.global.interceptor.ClientIpInterceptor;
+import net.chamman.moonnight.global.interceptor.CustomInterceptor;
 import net.chamman.moonnight.global.util.CookieUtil;
-import net.chamman.moonnight.global.util.HttpServletUtil;
 import net.chamman.moonnight.global.util.LogMaskingUtil;
 import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 import net.chamman.moonnight.global.validator.RedirectResolver;
@@ -50,7 +49,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 	private final JwtProvider jwtProvider;
 	private final TokenProvider tokenProvider;
 	private final SignLogService signLogService;
-    private final ClientIpInterceptor clientIpInterceptor;
+    private final CustomInterceptor customInterceptor;
     private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
     private final RedirectResolver redirectResolver;
 	private final RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
@@ -61,7 +60,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 	public void onAuthenticationSuccess(HttpServletRequest req, HttpServletResponse res, Authentication authentication) throws IOException {
 	
 		// 1. 정보 추출
-		String clientIp = clientIpInterceptor.extractClientIp(req);
+		String clientIp = customInterceptor.extractClientIp(req);
 		DefaultOAuth2User oAuth2User = (DefaultOAuth2User) authentication.getPrincipal();
 		
 		String provider = extractProvider(authentication).toUpperCase(); // registrationId 추출
@@ -168,8 +167,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 						"refreshToken", refreshToken
 						)));
 			} else {
-				HttpServletUtil.resSetCookie(res, "X-Access-Token", accessToken, Duration.ofMinutes(120));
-				HttpServletUtil.resSetCookie(res, "X-Refresh-Token", refreshToken, Duration.ofDays(14));
+				CookieUtil.addCookie(res, "X-Access-Token", accessToken, Duration.ofMinutes(120));
+				CookieUtil.addCookie(res, "X-Refresh-Token", refreshToken, Duration.ofDays(14));
 				
 				String redirect = getRedirect(req, res);
 

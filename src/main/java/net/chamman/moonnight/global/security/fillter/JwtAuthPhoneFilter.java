@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.global.exception.jwt.IllegalJwtException;
 import net.chamman.moonnight.global.exception.jwt.TimeOutJwtException;
 import net.chamman.moonnight.global.security.principal.AuthPhoneDetails;
-import net.chamman.moonnight.global.util.HttpServletUtil;
+import net.chamman.moonnight.global.util.CookieUtil;
 
 @Component
 @Slf4j
@@ -33,7 +33,7 @@ public class JwtAuthPhoneFilter extends AbstractAccessTokenFilter<AuthPhoneDetai
 		log.debug("*JwtAuthPhoneFilter.doFilterInternal 실행.");
 		
 		// ClientIp
-		String clientIp = (String) req.getAttribute("clientIp");
+//		String clientIp = (String) req.getAttribute("clientIp");
 		
 		// Mobile Or Web
 		String clientType = req.getHeader("X-Client-Type");
@@ -51,7 +51,7 @@ public class JwtAuthPhoneFilter extends AbstractAccessTokenFilter<AuthPhoneDetai
 		
 //		 1. 토큰 null 체크
 		if (authPhoneToken == null || authPhoneToken.isBlank()) {
-			HttpServletUtil.resSetCookie(res,"X-Auth-Phone-Token", "", Duration.ZERO);
+			CookieUtil.addCookie(res,"X-Auth-Phone-Token", "", Duration.ZERO);
 			setErrorResponse(res, 4011, "유효하지 않은 요청 입니다.");
 			filterChain.doFilter(req, res);
 			return;
@@ -60,7 +60,7 @@ public class JwtAuthPhoneFilter extends AbstractAccessTokenFilter<AuthPhoneDetai
 //		 2. 블랙리스트 확인
 		String value = tokenProvider.getBlackListValue(authPhoneToken);
 		if(value!=null) {
-			HttpServletUtil.resSetCookie(res,"X-Auth-Phone-Token", "", Duration.ZERO);
+			CookieUtil.addCookie(res,"X-Auth-Phone-Token", "", Duration.ZERO);
 			setErrorResponse(res, 4012, "유효하지 않은 요청 입니다.");
 			filterChain.doFilter(req, res);
 			return;
@@ -75,7 +75,7 @@ public class JwtAuthPhoneFilter extends AbstractAccessTokenFilter<AuthPhoneDetai
 			
 		// 4. Access Token 만료.
 		} catch (TimeOutJwtException e) {
-			HttpServletUtil.resSetCookie(res,"X-Auth-Phone-Token", "", Duration.ZERO);
+			CookieUtil.addCookie(res,"X-Auth-Phone-Token", "", Duration.ZERO);
 			setErrorResponse(res, 4012, "유효하지 않은 요청 입니다.");
 			filterChain.doFilter(req, res);
 			return;

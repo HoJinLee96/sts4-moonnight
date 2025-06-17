@@ -22,11 +22,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import net.chamman.moonnight.global.annotation.AutoSetMessageResponse;
 import net.chamman.moonnight.global.annotation.ClientSpecific;
 import net.chamman.moonnight.global.annotation.ValidEmail;
 import net.chamman.moonnight.global.annotation.ValidPhone;
 import net.chamman.moonnight.global.util.ApiResponseDto;
+import net.chamman.moonnight.global.util.ApiResponseFactory;
 
 @Tag(name = "VerificationController", description = "인증 관련 API")
 @RestController
@@ -36,9 +36,9 @@ public class VerificationController {
 	
 	private final VerificationService verificationService;
 	private final RateLimiterStore rateLimiter;
+	private final ApiResponseFactory apiResponseFactory;
 	
 	@Operation(summary = "휴대폰 문자 인증번호 검사", description = "휴대폰 문자 인증번호 검사")
-	@AutoSetMessageResponse
 	@PostMapping("/public/compare/sms/uuid")
 	public ResponseEntity<ApiResponseDto<Map<String,String>>> compareSmsVerification(
 			@RequestHeader(required = false, value = "X-Client-Type") String userAgent,
@@ -58,7 +58,7 @@ public class VerificationController {
 				clientIp);
 		
 		if(isMobileApp) {
-			return ResponseEntity.ok(ApiResponseDto.of(SUCCESS, Map.of("X-Verification-Phone-Token",token)));
+			return ResponseEntity.ok(apiResponseFactory.success(SUCCESS, Map.of("X-Verification-Phone-Token",token)));
 		}else {
 			ResponseCookie cookie = ResponseCookie.from("X-Verification-Phone-Token", token)
 					.httpOnly(true)
@@ -71,12 +71,11 @@ public class VerificationController {
 			return ResponseEntity
 					.status(HttpStatus.OK) 
 					.header(HttpHeaders.SET_COOKIE, cookie.toString())
-					.body(ApiResponseDto.of(SUCCESS_NO_DATA, null));
+					.body(apiResponseFactory.success(SUCCESS_NO_DATA, null));
 		}
 	}
 	
 	@Operation(summary = "이메일 인증 인증번호 검사", description = "이메일 인증 인증번호 검사")
-	@AutoSetMessageResponse
 	@PostMapping("/public/compare/email/uuid")
 	public ResponseEntity<ApiResponseDto<Map<String,String>>> compareEmailVerification(
 			@RequestHeader(required = false, value = "X-Client-Type")String userAgent,
@@ -96,7 +95,7 @@ public class VerificationController {
 				clientIp);
 		
 		if(isMobileApp) {
-			return ResponseEntity.ok(ApiResponseDto.of(SUCCESS, Map.of("X-Verification-Email-Token",token)));
+			return ResponseEntity.ok(apiResponseFactory.success(SUCCESS, Map.of("X-Verification-Email-Token",token)));
 		}else {
 			ResponseCookie cookie = ResponseCookie.from("X-Verification-Email-Token", token)
 					.httpOnly(true)
@@ -109,12 +108,11 @@ public class VerificationController {
 			return ResponseEntity
 					.status(HttpStatus.OK) 
 					.header(HttpHeaders.SET_COOKIE, cookie.toString())
-					.body(ApiResponseDto.of(SUCCESS_NO_DATA, null));
+					.body(apiResponseFactory.success(SUCCESS_NO_DATA, null));
 		}
 	}
 	
 	@Operation(summary = "휴대폰 문자 인증번호 발송", description = "휴대폰 문자 인증번호 발송")
-	@AutoSetMessageResponse
 	@PostMapping("/public/sms")
 	public ResponseEntity<ApiResponseDto<Map<String,String>>> verifyToSms(
 			@RequestHeader(required = false, value = "X-Client-Type")String userAgent,
@@ -130,7 +128,7 @@ public class VerificationController {
 		String encodingVerificationId = verificationService.sendSmsVerificationCode(phone, clientIp)+"";
 		
 		if(isMobileApp) {
-			return ResponseEntity.ok(ApiResponseDto.of(SUCCESS, Map.of("X-Verification-Id",encodingVerificationId)));
+			return ResponseEntity.ok(apiResponseFactory.success(SUCCESS, Map.of("X-Verification-Id",encodingVerificationId)));
 		}else {
 			ResponseCookie cookie = ResponseCookie.from("X-Verification-Id", encodingVerificationId)
 					.httpOnly(true)
@@ -143,12 +141,11 @@ public class VerificationController {
 			return ResponseEntity
 					.status(HttpStatus.OK) 
 					.header(HttpHeaders.SET_COOKIE, cookie.toString())
-					.body(ApiResponseDto.of(SUCCESS_NO_DATA, null));
+					.body(apiResponseFactory.success(SUCCESS_NO_DATA, null));
 		}
 	}
 	
 	@Operation(summary = "이메일 인증번호 발송", description = "이메일 인증번호 발송")
-	@AutoSetMessageResponse
 	@PostMapping("/public/email")
 	public ResponseEntity<ApiResponseDto<Map<String,String>>> verifyToEmail(
 			@RequestHeader(required = false, value = "X-Client-Type")String userAgent,
@@ -164,7 +161,7 @@ public class VerificationController {
 		String encodingVerificationId = verificationService.sendEmailVerificationCode(email, clientIp)+"";
 		
 		if(isMobileApp) {
-			return ResponseEntity.ok(ApiResponseDto.of(SUCCESS, Map.of("X-Verification-Id",encodingVerificationId)));
+			return ResponseEntity.ok(apiResponseFactory.success(SUCCESS, Map.of("X-Verification-Id",encodingVerificationId)));
 		}else {
 			ResponseCookie cookie = ResponseCookie.from("X-Verification-Id", encodingVerificationId)
 					.httpOnly(true)
@@ -177,7 +174,7 @@ public class VerificationController {
 			return ResponseEntity
 					.status(HttpStatus.OK) 
 					.header(HttpHeaders.SET_COOKIE, cookie.toString())
-					.body(ApiResponseDto.of(SUCCESS_NO_DATA, null));
+					.body(apiResponseFactory.success(SUCCESS_NO_DATA, null));
 		}
 	}
 	

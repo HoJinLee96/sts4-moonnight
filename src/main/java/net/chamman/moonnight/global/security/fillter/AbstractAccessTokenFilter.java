@@ -6,9 +6,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -29,11 +27,12 @@ import net.chamman.moonnight.auth.crypto.TokenProvider.TokenType;
 import net.chamman.moonnight.auth.sign.SignService;
 import net.chamman.moonnight.auth.sign.log.SignLogService;
 import net.chamman.moonnight.global.exception.jwt.TimeOutJwtException;
-import net.chamman.moonnight.global.util.HttpServletUtil;
+import net.chamman.moonnight.global.interceptor.CustomInterceptor;
+import net.chamman.moonnight.global.util.CookieUtil;
+import net.chamman.moonnight.infra.naver.sms.GuidanceService;
 
 @Slf4j
 public abstract class AbstractAccessTokenFilter <T extends UserDetails> extends OncePerRequestFilter{
-	protected abstract T buildUserDetails(Map<String, Object> claims);
 	
 	@Autowired
 	protected JwtProvider jwtProvider;
@@ -42,11 +41,17 @@ public abstract class AbstractAccessTokenFilter <T extends UserDetails> extends 
 	@Autowired
 	protected SignLogService signLogService;
 	@Autowired
-	protected SignService signService; 
+	protected SignService signService;
+	@Autowired
+	protected CustomInterceptor customInterceptor; 
+	@Autowired
+	protected GuidanceService guidanceService;
+
+	protected abstract T buildUserDetails(Map<String, Object> claims);
 	
 	@Override
 	protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain filterChain) throws ServletException, IOException {
-		log.debug("*AbstractAccessTokenFilter.doFilterInternal 실행.");
+		log.debug("* AbstractAccessTokenFilter.doFilterInternal 실행.");
 		
 		// ClientIp
 		String clientIp = (String) req.getAttribute("clientIp");
@@ -157,6 +162,8 @@ public abstract class AbstractAccessTokenFilter <T extends UserDetails> extends 
 	}
 	
 	protected void refresh(String refreshToken, String clientIp, HttpServletResponse res, boolean isMobileApp) {
+		log.debug("* Refresh 진행.");
+
 		Map<String,String> newTokens = signService.refresh(refreshToken, clientIp);
 		// 새로운 토큰 Set Response
 		setTokenToResponse(newTokens, res, isMobileApp);
@@ -172,14 +179,17 @@ public abstract class AbstractAccessTokenFilter <T extends UserDetails> extends 
 			res.setHeader("X-Access-Token", accessToken);
 			res.setHeader("X-Refresh-Token", refreshToken);
 		}else {
-			HttpServletUtil.resSetCookie(res,"X-Access-Token", accessToken, Duration.ofMinutes(120));
-			HttpServletUtil.resSetCookie(res,"X-Refresh-Token", refreshToken, Duration.ofDays(14));
+			CookieUtil.addCookie(res,"X-Access-Token", accessToken, Duration.ofMinutes(120));
+			CookieUtil.addCookie(res,"X-Refresh-Token", refreshToken, Duration.ofDays(14));
 		}
 	}
 	
 	protected void initTokenToCookie(HttpServletResponse res) {
-		HttpServletUtil.resSetCookie(res,"X-Access-Token", "", Duration.ZERO);
-		HttpServletUtil.resSetCookie(res,"X-Refresh-Token", "", Duration.ZERO);
+		log.debug("* Cookie AccessToken, RefreshToken 초기화 진행.");
+		
+		CookieUtil.addCookie(res,"X-Access-Token", "", Duration.ZERO);
+		CookieUtil.addCookie(res,"X-Refresh-Token", "", Duration.ZERO);
+		
 	}
 	
 	protected void setErrorResponse(HttpServletResponse res, int code, String message) throws IOException {

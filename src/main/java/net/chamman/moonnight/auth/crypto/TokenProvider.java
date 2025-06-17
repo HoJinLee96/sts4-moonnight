@@ -164,7 +164,7 @@ public class TokenProvider {
 	 * @throws RedisSetException {@link #addAccessJwtBlacklist} Redis 저장 중 오류
 	 */
 	public void addAccessTokenBlacklist(String accessToken, long ttl, String result) {
-		log.debug("*AccessToken 블랙리스트에 저장. AccessToken: [{}], ttl: [{}], Result: [{}]",
+		log.debug("* AccessToken 블랙리스트에 저장. AccessToken: [{}], ttl: [{}], Result: [{}]",
 				LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM),
 				ttl, result);
 
@@ -180,7 +180,7 @@ public class TokenProvider {
 	 * @return Redis 조회 value 또는 null
 	 */
 	public String getBlackListValue(String accessToken) {
-		log.debug("*블랙리스트 조회. AccessToken: [{}]",LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM));
+		log.debug("* 블랙리스트 조회. AccessToken: [{}]",LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM));
 		
 		return redisTemplate.opsForValue().get(TokenType.JWT_BLACKLIST.getPrefix()+ accessToken);
 	}
@@ -200,7 +200,7 @@ public class TokenProvider {
 	 * @return 삭제 여부
 	 */
 	public boolean removeToken(TokenType type, String key) {
-		log.debug("*Redis에서 {} 타입 토큰 삭제 조회. Key: [{}]", type, LogMaskingUtil.maskToken(key, MaskLevel.MEDIUM));
+		log.debug("* Redis에서 {} 타입 토큰 삭제 조회. Key: [{}]", type, LogMaskingUtil.maskToken(key, MaskLevel.MEDIUM));
 
 		return redisTemplate.delete(type.getPrefix() + key);
 	}
@@ -214,7 +214,7 @@ public class TokenProvider {
 	 * @throws TokenValueMismatchException {@link #validRefreshToken} Redis 값과 비교 불일치
 	 */
 	public boolean validRefreshToken(String userId, String reqRefreshToken) {
-		log.debug("*RefreshToken 검증. RefreshToken: [{}]",LogMaskingUtil.maskToken(reqRefreshToken, MaskLevel.MEDIUM));
+		log.debug("* RefreshToken 검증. RefreshToken: [{}]",LogMaskingUtil.maskToken(reqRefreshToken, MaskLevel.MEDIUM));
 
 		String path = TokenType.JWT_REFRESH.getPrefix()+userId;
 		String refreshToken = redisTemplate.opsForValue().get(path);
@@ -237,7 +237,7 @@ public class TokenProvider {
 	 * @throws NoSuchTokenException {@link #getToken} 일치하는 토큰 없음
 	 */
 	private String getToken(TokenType tokenType, String token) {
-		log.debug("*Redis에 {} 토큰 조회. Token: [{}]", tokenType, LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
+		log.debug("* Redis에 {} 토큰 조회. Token: [{}]", tokenType, LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
 
 		if(token == null || token.isBlank()) {
 			throw new IllegalTokenException(TOKEN_ILLEGAL,tokenType.name()+" Token null 또는 비어있음.");

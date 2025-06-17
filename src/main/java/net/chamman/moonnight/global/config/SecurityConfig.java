@@ -90,7 +90,7 @@ public class SecurityConfig {
 			"/find/**", "/update/password/blank" 
 	};
 	
-	// 로그인 하면 안 되는 접근
+	// 로그인 안 하면 안 되는 접근
 	public static final String[] SIGNIN_ONLY_URIS = {
 			"/my","/my/**"
 	};
@@ -100,6 +100,8 @@ public class SecurityConfig {
 	@Bean
 	@Order(0)
 	public SecurityFilterChain staticFilterChain(HttpSecurity http) throws Exception {
+		log.debug("* staticFilterChain() @Order(0) 필터 적용.");
+
 		http
 		.securityMatcher("/css/**", "/js/**", "/images/**", "/favicon.ico",
 				"/v3/api-docs/**","/swagger-ui/**","/swagger-ui.html","/swagger-resources/**","/webjars/**","/openapi.yaml","/.well-known/**")
@@ -116,6 +118,7 @@ public class SecurityConfig {
 	@Bean
 	@Order(1)
 	public SecurityFilterChain authSecurityFilterChain(HttpSecurity http) throws Exception {
+		log.debug("* authSecurityFilterChain() @Order(1) 필터 적용.");
 		http
 		.securityMatcher("/api/spem/private/auth/**", "/api/estimate/private/auth/**")
 		.csrf(AbstractHttpConfigurer::disable)
@@ -132,7 +135,7 @@ public class SecurityConfig {
 	@Bean
 	@Order(2)
 	public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
-		log.debug("*apiSecurityFilterChain() @Order(2)");
+		log.debug("* apiSecurityFilterChain() @Order(2) 필터 적용.");
 		http
 		.securityMatcher("/api/*/private/**")
 		.csrf(AbstractHttpConfigurer::disable)
@@ -149,6 +152,8 @@ public class SecurityConfig {
 	@Bean
 	@Order(3)
 	public SecurityFilterChain oauthSecurityFilterChain(HttpSecurity http) throws Exception {
+		log.debug("* oauthSecurityFilterChain() @Order(3) 필터 적용.");
+
 		return http
 				.securityMatcher("/oauth2/**", "/login/oauth2/**")
 				.csrf(AbstractHttpConfigurer::disable)
@@ -165,6 +170,8 @@ public class SecurityConfig {
 	@Bean
 	@Order(4)
 	public SecurityFilterChain signFilterChain(HttpSecurity http) throws Exception {
+		log.debug("* signFilterChain() @Order(4) 필터 적용.");
+
 		http
 		.securityMatcher(SIGNIN_ONLY_URIS)
 		.csrf(AbstractHttpConfigurer::disable)
@@ -182,6 +189,8 @@ public class SecurityConfig {
 	@Bean
 	@Order(5)
 	public SecurityFilterChain nonSignFilterChain(HttpSecurity http) throws Exception {
+		log.debug("* signFilterChain() @Order(5) 필터 적용.");
+
 		http
 		.securityMatcher(NON_SIGNIN_ONLY_URIS)
 		.csrf(AbstractHttpConfigurer::disable)
@@ -202,6 +211,8 @@ public class SecurityConfig {
 	@Bean
 	@Order(6)
 	public SecurityFilterChain publicFilterChain(HttpSecurity http) throws Exception {
+		log.debug("* signFilterChain() @Order(6) 필터 적용.");
+
 		http
 		.securityMatcher(PUBLIC_URIS)
 		.csrf(AbstractHttpConfigurer::disable)
@@ -217,6 +228,8 @@ public class SecurityConfig {
 	@SuppressWarnings("unchecked")
 	@Bean
 	public OAuth2UserService<OAuth2UserRequest, OAuth2User> customOAuth2UserService() {
+		log.debug("* customOAuth2UserService() 적용.");
+
 		return userRequest -> {
 			OAuth2UserService<OAuth2UserRequest, OAuth2User> delegate = new DefaultOAuth2UserService();
 			OAuth2User oAuth2User = delegate.loadUser(userRequest);

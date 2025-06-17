@@ -9,7 +9,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Component
-public class ClientIpInterceptor implements HandlerInterceptor {
+public class CustomInterceptor implements HandlerInterceptor {
+	
+	//추후 여러 계층에서 ip를 필요하게 되면 ContextHolder방식으로 리팩토링.
 	
 	private List<String> headers = List.of(
 			"X-Forwarded-For",
@@ -23,8 +25,16 @@ public class ClientIpInterceptor implements HandlerInterceptor {
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response,
 			Object handler) {
 		String ip = extractClientIp(request);
-		request.setAttribute("clientIp", ip); // 컨트롤러에서 꺼내쓸 수 있게 저장
+		request.setAttribute("clientIp", ip); // 컨트롤러 계층에서 사용 저장
+		IpAddressContextHolder.setIpAddress(ip); // 컨트롤러 외 계층에서 사용 (업그레이드)
+
 		return true; // 계속 진행
+	}
+	
+	@Override
+	public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex)
+			throws Exception {
+		IpAddressContextHolder.clear();
 	}
 	
 	public String extractClientIp(HttpServletRequest request) {

@@ -28,8 +28,8 @@ public class AwsS3Service {
 	 */
 	public List<String> uploadEstimateImages(List<MultipartFile> images, String phone) {
 		
-		String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-		String keyPrefix = "estimateImages/" + timestamp + "_" + phone.replace("-", "") + "/";
+		String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+		String keyPrefix = "estimateImages/" + timestamp + "/" + phone + "/";
 		
 		return awsS3Client.uploadFiles(images, keyPrefix);
 	}
@@ -44,8 +44,9 @@ public class AwsS3Service {
 	 */
 	public void deleteEstimateImages(List<String> imagesPath) {
 		for(String path : imagesPath) {
+			path = path.replace("https://chamman.s3.amazonaws.com/", "");
 			if(!path.startsWith("estimateImages/")) {
-				throw new IllegalStateException("AWSS3 이미지 조회 실패 : 데이터 형식 부적합.");
+				throw new IllegalStateException("AWSS3 이미지 삭제 실패 : 데이터 형식 부적합.");
 			}
 		}
 		awsS3Client.deleteFiles(imagesPath.toArray(String[]::new));

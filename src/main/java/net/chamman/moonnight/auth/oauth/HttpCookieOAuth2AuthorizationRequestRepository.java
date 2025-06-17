@@ -1,5 +1,7 @@
 package net.chamman.moonnight.auth.oauth;
 
+import java.time.Duration;
+
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.stereotype.Component;
@@ -17,7 +19,7 @@ public class HttpCookieOAuth2AuthorizationRequestRepository implements Authoriza
 
     public static final String OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME = "oauth2_auth_request";
     public static final String REDIRECT_URI_PARAM_COOKIE_NAME = "redirect_uri";
-    private static final int COOKIE_EXPIRE_SECONDS = 180;
+    private static final Duration COOKIE_EXPIRE = Duration.ofMinutes(3);
 
     @Override
     public OAuth2AuthorizationRequest loadAuthorizationRequest(HttpServletRequest request) {
@@ -40,13 +42,13 @@ public class HttpCookieOAuth2AuthorizationRequestRepository implements Authoriza
 
         log.debug("* OAuth2 인증 요청 정보(state 포함) 쿠키에 저장.");
         // OAuth2AuthorizationRequest 객체 전체를 쿠키에 저장
-        CookieUtil.addCookie(response, OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME, CookieUtil.serialize(authorizationRequest), COOKIE_EXPIRE_SECONDS);
+        CookieUtil.addCookie(response, OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME, CookieUtil.serialize(authorizationRequest), COOKIE_EXPIRE);
 
         // redirect 파라미터도 별도의 쿠키에 저장
         String redirectUri = request.getParameter("redirect");
         if (StringUtils.isNotBlank(redirectUri)) {
             log.debug("* OAuth2 인증 요청 redirect 파라미터를 쿠키에 저장. Redirect URL: [{}]", redirectUri);
-            CookieUtil.addCookie(response, REDIRECT_URI_PARAM_COOKIE_NAME, redirectUri, COOKIE_EXPIRE_SECONDS);
+            CookieUtil.addCookie(response, REDIRECT_URI_PARAM_COOKIE_NAME, redirectUri, COOKIE_EXPIRE);
         }
     }
 

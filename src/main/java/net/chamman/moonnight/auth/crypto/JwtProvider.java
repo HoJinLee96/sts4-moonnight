@@ -78,7 +78,7 @@ public class JwtProvider {
 	 * @throws CreateJwtException {@link #createAccessToken} 토큰 생성 실패
 	 */
 	public String createAccessToken(int userId, List<String> roles, Map<String, Object> claims) {
-		log.debug("*AccessToken 발행. UserID: [{}], Roles: [{}]", LogMaskingUtil.maskId(userId, MaskLevel.MEDIUM), roles.get(0));
+		log.debug("* AccessToken 발행. UserID: [{}], Roles: [{}]", LogMaskingUtil.maskId(userId, MaskLevel.MEDIUM), roles.get(0));
 		
 		try {
 			JwtBuilder builder = Jwts.builder()
@@ -111,7 +111,7 @@ public class JwtProvider {
 	 * @throws CreateJwtException {@link #createRefreshToken} 토큰 생성 실패
 	 */
 	public String createRefreshToken(int userId) {
-		log.debug("*RefreshToken 발행. UserID: [{}]", LogMaskingUtil.maskId(userId, MaskLevel.MEDIUM));
+		log.debug("* RefreshToken 발행. UserID: [{}]", LogMaskingUtil.maskId(userId, MaskLevel.MEDIUM));
 		
 		try {
 			return Jwts.builder()
@@ -132,7 +132,7 @@ public class JwtProvider {
 	 * @throws CreateJwtException {@link #createVerifyPhoneToken} 토큰 생성 실패
 	 */
 	public String createAuthPhoneToken(String verificationId, String phone) {
-		log.debug("*AuthPhoneToken 발행. VerificationId: [{}], Phone: [{}]", 
+		log.debug("* AuthPhoneToken 발행. VerificationId: [{}], Phone: [{}]", 
 				LogMaskingUtil.maskId(verificationId, MaskLevel.MEDIUM),
 				LogMaskingUtil.maskPhone(phone, MaskLevel.MEDIUM)
 				);
@@ -162,7 +162,7 @@ public class JwtProvider {
 	 * @throws ValidateJwtException {@link #validateAccessToken} JWT 파싱 실패
 	 */
 	public Map<String, Object> validateAccessToken(String token) {
-		log.debug("*AccessToken 검증. AccessToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
+		log.debug("* AccessToken 검증. AccessToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
 		
 		try {
 			Claims claims = Jwts.parserBuilder()
@@ -173,9 +173,9 @@ public class JwtProvider {
 			
 			return getDecryptedClaims(claims);
 		} catch (ExpiredJwtException e) {
-			throw new TimeOutJwtException(JWT_EXPIRED, "AccessToken 시간 만료.", e);
+			throw new TimeOutJwtException(JWT_EXPIRED, "* AccessToken 시간 만료.", e);
 		} catch (Exception e) {
-			throw new ValidateJwtException(JWT_VALIDATE_FIAL, "AccessToken 검증 중 익셉션 발생. "+e.getMessage(), e);
+			throw new ValidateJwtException(JWT_VALIDATE_FIAL, "* AccessToken 검증 중 익셉션 발생. "+e.getMessage(), e);
 		}
 	}
 	
@@ -187,7 +187,7 @@ public class JwtProvider {
 	 * @throws ValidateJwtException {@link #validateRefreshToken} JWT 파싱 실패
 	 */
 	public String validateRefreshToken(String token) {
-		log.debug("*RefreshToken 검증. RefreshToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
+		log.debug("* RefreshToken 검증. RefreshToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
 
 		try {
 			Claims claims = Jwts.parserBuilder()
@@ -213,7 +213,7 @@ public class JwtProvider {
 	 * @throws ValidateJwtException {@link #validateAccessToken} JWT 파싱 실패
 	 */
 	public Map<String, Object> validateAuthPhoneToken(String token) {
-		log.debug("*AuthPhoneToken 검증. AuthPhoneToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
+		log.debug("* AuthPhoneToken 검증. AuthPhoneToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
 		
 		try {
 			Claims claims = Jwts.parserBuilder()
@@ -238,7 +238,7 @@ public class JwtProvider {
 	 * @throws ValidateJwtException {@link #getSignJwtRemainingTime} JWT 파싱 실패
 	 */
 	public long getAccessTokenRemainingTime(String accessToken) {
-		log.debug("*토큰 유효시간 검증. Token: [{}]", LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM));
+		log.debug("* 토큰 유효시간 검증. Token: [{}]", LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM));
 
 		try {
 			Claims claims = Jwts.parserBuilder()

@@ -3,6 +3,7 @@ package net.chamman.moonnight.domain.estimate.simple;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.CREATE_SUCCESS;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.DELETE_SUCCESS;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.READ_SUCCESS;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.READ_SUCCESS_NO_DATA;
 
 import java.nio.file.AccessDeniedException;
 import java.util.List;
@@ -27,6 +28,7 @@ import net.chamman.moonnight.auth.verification.RateLimiterStore;
 import net.chamman.moonnight.global.annotation.ValidId;
 import net.chamman.moonnight.global.security.principal.CustomUserDetails;
 import net.chamman.moonnight.global.util.ApiResponseDto;
+import net.chamman.moonnight.global.util.ApiResponseFactory;
 
 @RestController
 @RequestMapping("/api/spem")
@@ -35,6 +37,7 @@ public class SimpleEstimateController {
 	
 	private final SimpleEstimateService spemService;
 	private final RateLimiterStore rateLimiter;
+	private final ApiResponseFactory apiResponseFactory;
 	
 	// SimpleEstimate = Spem
 	//1.로그인한 유저 조회 OAUTH, LOCAL
@@ -54,7 +57,7 @@ public class SimpleEstimateController {
 		SimpleEstimateResponseDto spemResponseDto = 
 				spemService.registerSpem(simpleEstimateRequestDto, clientIp);
 		
-		return ResponseEntity.status(HttpStatus.OK).body(ApiResponseDto.of(CREATE_SUCCESS, spemResponseDto));
+		return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(CREATE_SUCCESS, spemResponseDto));
 	}
 	
 //  1
@@ -65,12 +68,16 @@ public class SimpleEstimateController {
 		
 		List<SimpleEstimateResponseDto> list = spemService.getMyAllSpem(userDetails.getUserId());
 		
-		return ResponseEntity.ok(ApiResponseDto.of(READ_SUCCESS, list));
+		if(list==null || list.isEmpty() || list.size()==0) {
+			return ResponseEntity.ok(apiResponseFactory.success(READ_SUCCESS_NO_DATA, null));
+		}
+		
+		return ResponseEntity.ok(apiResponseFactory.success(READ_SUCCESS, list));
 	}
 	
 //  1
 	@PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
-	@GetMapping("/private/user/{estimateId}")
+	@GetMapping("/private/user/{spemId}")
 	public ResponseEntity<ApiResponseDto<SimpleEstimateResponseDto>> getMyEstimateByEstimateId(
 			@AuthenticationPrincipal CustomUserDetails userDetails,
 			@ValidId @PathVariable int spemId
@@ -78,7 +85,7 @@ public class SimpleEstimateController {
 		
 		SimpleEstimateResponseDto spemResponseDto = spemService.getMySpemBySpemId(spemId, userDetails.getUserId());
 		
-		return ResponseEntity.ok(ApiResponseDto.of(READ_SUCCESS, spemResponseDto));
+		return ResponseEntity.ok(apiResponseFactory.success(READ_SUCCESS, spemResponseDto));
 	}
 	
 //  2
@@ -87,15 +94,18 @@ public class SimpleEstimateController {
 	public ResponseEntity<ApiResponseDto<List<SimpleEstimateResponseDto>>> getAllEstimateByAuthPhone(
 			@AuthenticationPrincipal CustomUserDetails userDetails) {
 		
-		List<SimpleEstimateResponseDto> list = 
-				spemService.getAllSpemByAuthPhone(userDetails.getUsername());
+		List<SimpleEstimateResponseDto> list = spemService.getAllSpemByAuthPhone(userDetails.getUsername());
 		
-		return ResponseEntity.ok(ApiResponseDto.of(READ_SUCCESS, list));
+		if(list==null || list.isEmpty() || list.size()==0) {
+			return ResponseEntity.ok(apiResponseFactory.success(READ_SUCCESS_NO_DATA, null));
+		}
+		
+		return ResponseEntity.ok(apiResponseFactory.success(READ_SUCCESS, list));
 	}
 	
 //  2
 	@PreAuthorize("hasRole('AUTH')")
-	@GetMapping("/private/auth/{estimateId}")
+	@GetMapping("/private/auth/{spemId}")
 	public ResponseEntity<ApiResponseDto<SimpleEstimateResponseDto>> getEstimateByAuthPhone(
 			@AuthenticationPrincipal CustomUserDetails userDetails,
 			@ValidId @PathVariable int spemId) throws AccessDeniedException {
@@ -103,7 +113,7 @@ public class SimpleEstimateController {
 		SimpleEstimateResponseDto simpleEstimateResponseDto = 
 				spemService.getSpemBySpemIdAndAuthPhone(spemId,userDetails.getUsername());
 		
-		return ResponseEntity.ok(ApiResponseDto.of(READ_SUCCESS, simpleEstimateResponseDto));
+		return ResponseEntity.ok(apiResponseFactory.success(READ_SUCCESS, simpleEstimateResponseDto));
 	}
 	
 //  3
@@ -125,7 +135,7 @@ public class SimpleEstimateController {
 		
 		spemService.deleteMySpem(spemId, userDetails.getUserId());
 		
-		return ResponseEntity.ok(ApiResponseDto.of(DELETE_SUCCESS, null));
+		return ResponseEntity.ok(apiResponseFactory.success(DELETE_SUCCESS));
 	}
 	
 	@PreAuthorize("hasRole('AUTH')")
@@ -136,8 +146,6 @@ public class SimpleEstimateController {
 		
 		spemService.deleteSpemByAuth(spemId, userDetails.getUsername());
 		
-		return ResponseEntity.ok(ApiResponseDto.of(DELETE_SUCCESS, null));
+		return ResponseEntity.ok(apiResponseFactory.success(DELETE_SUCCESS));
 	}
-	
-	
 }

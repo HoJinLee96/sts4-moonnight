@@ -1,13 +1,14 @@
-package net.chamman.moonnight.domain.user;
+package net.chamman.moonnight.auth.sign;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import net.chamman.moonnight.domain.address.Address;
+import net.chamman.moonnight.domain.user.User;
 import net.chamman.moonnight.domain.user.User.UserProvider;
 import net.chamman.moonnight.domain.user.User.UserStatus;
 
-public record UserCreateRequestDto(
+public record SignUpRequestDto(
     
     @NotBlank(message = "{validation.user.name.required}")
     @Pattern(regexp = "^[가-힣a-zA-Z\\s]+$", message = "{validation.user.name.invalid}")

@@ -21,6 +21,8 @@ import net.chamman.moonnight.global.exception.StatusDeleteException;
 import net.chamman.moonnight.global.exception.StatusStayException;
 import net.chamman.moonnight.global.exception.StatusStopException;
 import net.chamman.moonnight.global.exception.infra.DaumStateException;
+import net.chamman.moonnight.global.util.LogMaskingUtil;
+import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 import net.chamman.moonnight.infra.kakao.DaumMapClient;
 
 @Service
@@ -85,7 +87,7 @@ public class AddressService {
 	 * @return 주소 리스트
 	 */
 	public List<AddressResponseDto> getAddressList(int userId) {
-		
+		log.debug("* UserId: [{}] 주소 목록 조회.", LogMaskingUtil.maskId(userId, MaskLevel.MEDIUM));
 		List<Address> list = addressRepository.findByUserOrderByPrimaryAndDate(userId);
 		
 		return list.stream()

@@ -1,25 +1,24 @@
 package net.chamman.moonnight.domain.address;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import net.chamman.moonnight.domain.user.User;
 
 public record AddressRequestDto(
-    @Pattern(regexp = "^[가-힣a-zA-Z\\s]+$", message = "{validation.address.name.invalid}")
-    @Size(max = 20, message = "{validation.address.name.length}")
+    @NotBlank(message = "validation.address.name.required")
+    @Size(max = 20, message = "validation.address.name.length")
     String name,
     
-    @NotBlank(message = "{validation.address.postcode.required}")
-    @Size(max = 10, message = "{validation.address.invalid}")
+    @NotBlank(message = "validation.address.postcode.required")
+    @Size(max = 10, message = "validation.address.invalid")
     String postcode,
     
     @NotBlank(message = "validation.address.main_address.required")
-    @Size(max = 255, message = "{validation.address.invalid}")
+    @Size(max = 255, message = "validation.address.invalid")
     String mainAddress,
     
     @NotBlank(message = "validation.address.detail_address.required")
-    @Size(max = 255, message = "{validation.address.invalid}")
+    @Size(max = 255, message = "validation.address.invalid")
     String detailAddress
     ) {
 
