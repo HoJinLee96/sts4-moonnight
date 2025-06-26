@@ -46,7 +46,7 @@ public class CommentController {
 		return ResponseEntity.ok(apiResponseFactory.success(CREATE_SUCCESS, commentResponseDto));
 	}
 	
-//  특정 견적의 댓글 목록 조회 
+//  견적의 댓글 목록 조회 
 	@PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
 	@GetMapping("/private/estimate/{estimateId}")
 	public ResponseEntity<ApiResponseDto<List<CommentResponseDto>>> getCommentList(

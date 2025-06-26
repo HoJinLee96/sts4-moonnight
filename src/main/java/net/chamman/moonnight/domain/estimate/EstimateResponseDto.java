@@ -2,7 +2,9 @@ package net.chamman.moonnight.domain.estimate;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
 import lombok.Builder;
+import lombok.Getter;
 import net.chamman.moonnight.auth.crypto.Obfuscator;
 import net.chamman.moonnight.domain.estimate.Estimate.CleaningService;
 import net.chamman.moonnight.domain.estimate.Estimate.EstimateStatus;
@@ -14,8 +16,7 @@ public record EstimateResponseDto(
      String phone,
      String email,
      boolean emailAgree,
-     boolean smsAgree,
-     boolean callAgree,
+     boolean phoneAgree,
      String postcode,
      String mainAddress,
      String detailAddress,
@@ -34,8 +35,7 @@ public record EstimateResponseDto(
     .phone(estimate.getPhone())
     .email(estimate.getEmail())
     .emailAgree(estimate.isEmailAgree())
-    .smsAgree(estimate.isSmsAgree())
-    .callAgree(estimate.isCallAgree())
+    .phoneAgree(estimate.isPhoneAgree())
     .postcode(estimate.getPostcode())
     .mainAddress(estimate.getMainAddress())
     .detailAddress(estimate.getDetailAddress())

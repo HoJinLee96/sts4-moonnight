@@ -53,11 +53,8 @@ public class Estimate {
 	@Column(name = "email_agree")
 	private boolean emailAgree;
 	
-	@Column(name = "sms_agree")
-	private boolean smsAgree;
-	
-	@Column(name = "call_agree")
-	private boolean callAgree;
+	@Column(name = "phone_agree")
+	private boolean phoneAgree;
 	
 	@Column(name = "postcode", length = 10, nullable = false)
 	private String postcode;

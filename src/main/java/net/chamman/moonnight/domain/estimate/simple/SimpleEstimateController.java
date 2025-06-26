@@ -63,7 +63,7 @@ public class SimpleEstimateController {
 //  1
 	@PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
 	@GetMapping("/private/user")
-	public ResponseEntity<ApiResponseDto<List<SimpleEstimateResponseDto>>> getMyAllEstimateByUserId(
+	public ResponseEntity<ApiResponseDto<List<SimpleEstimateResponseDto>>> getMyAllSimpleEstimateByUserId(
 			@AuthenticationPrincipal CustomUserDetails userDetails) {
 		
 		List<SimpleEstimateResponseDto> list = spemService.getMyAllSpem(userDetails.getUserId());
@@ -78,7 +78,7 @@ public class SimpleEstimateController {
 //  1
 	@PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
 	@GetMapping("/private/user/{spemId}")
-	public ResponseEntity<ApiResponseDto<SimpleEstimateResponseDto>> getMyEstimateByEstimateId(
+	public ResponseEntity<ApiResponseDto<SimpleEstimateResponseDto>> getMySimpleEstimateByEstimateId(
 			@AuthenticationPrincipal CustomUserDetails userDetails,
 			@ValidId @PathVariable int spemId
 			) throws AccessDeniedException {
@@ -91,7 +91,7 @@ public class SimpleEstimateController {
 //  2
 	@PreAuthorize("hasRole('AUTH')")
 	@GetMapping("/private/auth")
-	public ResponseEntity<ApiResponseDto<List<SimpleEstimateResponseDto>>> getAllEstimateByAuthPhone(
+	public ResponseEntity<ApiResponseDto<List<SimpleEstimateResponseDto>>> getAllSimpleEstimateByAuthPhone(
 			@AuthenticationPrincipal CustomUserDetails userDetails) {
 		
 		List<SimpleEstimateResponseDto> list = spemService.getAllSpemByAuthPhone(userDetails.getUsername());
@@ -106,7 +106,7 @@ public class SimpleEstimateController {
 //  2
 	@PreAuthorize("hasRole('AUTH')")
 	@GetMapping("/private/auth/{spemId}")
-	public ResponseEntity<ApiResponseDto<SimpleEstimateResponseDto>> getEstimateByAuthPhone(
+	public ResponseEntity<ApiResponseDto<SimpleEstimateResponseDto>> getSimpleEstimateByAuthPhone(
 			@AuthenticationPrincipal CustomUserDetails userDetails,
 			@ValidId @PathVariable int spemId) throws AccessDeniedException {
 		
@@ -129,7 +129,7 @@ public class SimpleEstimateController {
 	
 	@PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
 	@DeleteMapping("/private/{spemId}")
-	public ResponseEntity<ApiResponseDto<Void>> deleteEstimateByUser(
+	public ResponseEntity<ApiResponseDto<Void>> deleteMySimpleEstimate(
 			@AuthenticationPrincipal CustomUserDetails userDetails,
 			@PathVariable int spemId) throws AccessDeniedException{
 		
@@ -140,7 +140,7 @@ public class SimpleEstimateController {
 	
 	@PreAuthorize("hasRole('AUTH')")
 	@DeleteMapping("/private/auth/{spemId}")
-	public ResponseEntity<ApiResponseDto<Void>> deleteEstimateByAuthPhone(
+	public ResponseEntity<ApiResponseDto<Void>> deleteSimpleEstimateByAuthPhone(
 			@AuthenticationPrincipal CustomUserDetails userDetails,
 			@PathVariable int spemId) throws AccessDeniedException{
 		
