@@ -1,188 +1,269 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{main/base}">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{main/base}">
+
 <head>
-	<title>달빛청소</title>
-		<style type="text/css">
-		.container {
-			min-width: 980px;
-			margin: 0 auto;
-			min-height: 1080px;
-			padding-top: 30px;
-		}
-		.mainImg {
-			max-width: 900px;
-			min-width: 900px; 
+	<title layout:fragment="title">달빛 청소</title>
+	<style type="text/css">
+		/* --- 간편 견적 바 --- */
+		.estimate-bar {
+			min-width: var(--layout-min-width);
+			max-width: var(--layout-max-width);
 			margin: 0px auto;
-		}
-		.mainImg img{
-			display:block;
 			width: 100%;
-		}
-		#speedEstimateContainer{
-			width: 100vw;
-			min-width: 980px;
-		    max-width: 1900px;
-		    margin: 0px auto;
-			line-height: 60px;
+			padding: 10px 0;
+			line-height: 40px;
+			/* 높이 조절 */
 			background-color: #dbf1fd;
+			/* position, top, z-index는 JS로 제어 */
+			transition: all 0.2s ease-in-out;
 		}
-		#speedEstimate{
-			font-size: 14px;
+		
+		/* ★ JS로 추가될 클래스: 스크롤 시 상단 고정 스타일 */
+		.is-sticky {
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			z-index: 1000;
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+			/* 살짝 그림자 효과 */
+		}
+
+		/* ★ 꿀팁: position:fixed로 인한 콘텐츠 점프 방지용 패딩을 받을 요소 */
+		.content-after-sticky {
+			/* JS로 padding-top이 동적으로 추가될 것임 */
+			transition: padding-top 0.2s ease-in-out;
+		}
+
+		.estimate-form {
 			display: flex;
-		    justify-content: center;
-		    align-items: center;
-		}
-		#speedEstimate form{
-			display: inline;
-		}
-		#phone{
-			width:140px;
-		}
-		#phoneFirst{
-			width: 50px;
-			outline: none;
-			border:none;
+			justify-content: center;
+			align-items: center;
+			gap: 15px;
+			/* 아이템 사이 간격 */
 			font-size: 14px;
 		}
-		#phone, #cleaningService, #region{
+
+		.estimate-form__group {
+			display: flex;
+			align-items: center;
+			gap: 5px;
+			/* 라벨과 입력 필드 사이 간격 */
+		}
+
+		.form-field {
 			outline: none;
-			border:none;
-			margin-left: 3px;
-			margin-right: 5px;
+			border: 1px solid #ccc;
+			/* 테두리를 살짝 줘서 구분 */
+			border-radius: 4px;
+			padding: 5px 8px;
 			font-size: 14px;
 		}
-		#speedEstimate a{
-			text-decoration: none;
-			color:black;
+
+		.form-field--select {
+			border: none;
+			background-color: white;
 		}
-		#submitButton{
-			border:2px solid #20367a;
-			border-radius:7px;
-			background-color: #20367a;
+
+		.form-field--text {
+			width: 30px;
+		}
+
+		.btn--estimate {
+			border: 2px solid var(--main-color, #20367a);
+			border-radius: 7px;
+			background-color: var(--main-color, #20367a);
 			color: white;
 			cursor: pointer;
-			padding: 3px 8px;
+			padding: 4px 10px;
 			font-size: 14px;
-			margin-right: 3px;
+			transition: all 0.2s;
 		}
-		#submitButton:hover{
-			border:2px solid #20367a;
+
+		.btn--estimate:hover {
 			background-color: white;
-			color: #20367a;
+			color: var(--main-color, #20367a);
 		}
-		#agreement{
-			margin: 0px;
+
+		.agreement-group input[type="checkbox"] {
+			margin: 0;
 			position: relative;
 			top: 1.5px;
-		}
-		label[for="agreement"]{
 			cursor: pointer;
 		}
-		.fixed-top {
-			width:100%;
-		    position: fixed;
-		    top: 0;
-		}
-		#agreeMentDiv{
-			display: inline;
-		}
-		iframe{
 
+		.agreement-group label {
+			cursor: pointer;
 		}
-		</style>	
+
+		.agreement-group a {
+			text-decoration: none;
+			color: #555;
+			font-size: 14px;
+		}
+
+
+		/* --- 메인 콘텐츠 이미지 --- */
+		.main-content {
+			padding-top: 30px;
+			min-height: 1080px;
+		}
+
+		.main-image-wrapper {
+			max-width: 900px;
+			margin: 0 auto;
+			/* 중앙 정렬 */
+		}
+
+		.main-image-wrapper img {
+			display: block;
+			width: 100%;
+			margin-bottom: -5px;
+			/* 이미지 사이 미세한 간격 제거 */
+		}
+	</style>
 </head>
-<div layout:fragment="content">
-	<div id="speedEstimateContainer">
-		<div id="speedEstimate">
-				<label for="phone">연락처 </label>
-				<select id="phoneFirst" name="phoneFirst">
-					<option value="">선택</option>
-					<option value="010">010</option>
-					<option value="02">02</option>
-					<option value="031">031</option>
-					<option value="032">032</option>
-					<option value="033">033</option>
-					<option value="041">041</option>
-					<option value="042">042</option>
-					<option value="044">044</option>
-					<option value="051">051</option>
-					<option value="052">052</option>
-					<option value="053">053</option>
-					<option value="054">054</option>
-					<option value="055">055</option>
-					<option value="061">061</option>
-					<option value="062">062</option>
-					<option value="063">063</option>
-					<option value="064">064</option>
-					<option value="070">070</option>
-					<option value="080">080</option>
-					<option value="0130">0130</option>
-					<option value="0303">0303</option>
-					<option value="0502">0502</option>
-					<option value="0503">0503</option>
-					<option value="0504">0504</option>
-					<option value="0505">0505</option>
-					<option value="0506">0506</option>
-					<option value="0507">0507</option>
-					<option value="0508">0508</option>
-					<option value="050">050</option>
-				</select> 
-				<input type="text" id="phone" name="phone" oninput="formatPhoneNumber(this)" placeholder="연락처" maxlength="9" required autocomplete="off">
-				<label for="cleaningService">청소 서비스 선택 </label>
-				<select id="cleaningService" name="cleaningService">
-					<option value="">선택</option>
-					<option value="신축">신축 입주 청소</option>
-					<option value="이사">이사 입주 청소</option>
-					<option value="거주">거주 청소</option>
-					<option value="리모델링">리모델링 청소</option>
-					<option value="준공">준공 청소</option>
-					<option value="상가">상가 청소</option>
-					<option value="오피스">오피스 청소</option>
-					<option value="기타">기타 청소</option>
-				</select> 
-				<label for="region">지역 </label>
-				<select id="region" name="region">
-					<option value="">선택</option>
-					<option value="서울">서울특별시</option>
-					<option value="부산">부산광역시</option>
-					<option value="대구">대구광역시</option>
-					<option value="인천">인천광역시</option>
-					<option value="광주">광주광역시</option>
-					<option value="대전">대전광역시</option>
-					<option value="울산">울산광역시</option>
-					<option value="세종">세종특별자치시</option>
-					<option value="경기">경기도</option>
-					<option value="강원">강원도</option>
-					<option value="충북">충청북도</option>
-					<option value="충남">충청남도</option>
-					<option value="전북">전라북도</option>
-					<option value="전남">전라남도</option>
-					<option value="경북">경상북도</option>
-					<option value="경남">경상남도</option>
-					<option value="제주">제주특별자치도</option>
-				</select>
-				<button id="submitButton">간편 견적 신청</button>
-			<div id="agreeMentDiv">
-				<input type="checkbox" id="agreement" name="agreement">
-				<label for="agreement" style="font-size: 14px;">개인정보 수집 및 이용 동의</label>
+<main layout:fragment="content">
+	<div id="estimateBar" class="estimate-bar">
+		<div class="content-wrapper">
+			<form class="estimate-form" action="/estimate/simple" method="post">
+				<div class="estimate-form__group">
+					<label for="phone">연락처</label>
+					<select id="phoneFirst" name="phoneFirst" class="form-field form-field--select">
+						<option value="">선택</option>
+						<option value="010">010</option>
+						<option value="02">02</option>
+						<option value="031">031</option>
+						<option value="032">032</option>
+						<option value="033">033</option>
+						<option value="041">041</option>
+						<option value="042">042</option>
+						<option value="044">044</option>
+						<option value="051">051</option>
+						<option value="052">052</option>
+						<option value="053">053</option>
+						<option value="054">054</option>
+						<option value="055">055</option>
+						<option value="061">061</option>
+						<option value="062">062</option>
+						<option value="063">063</option>
+						<option value="064">064</option>
+						<option value="070">070</option>
+						<option value="080">080</option>
+						<option value="0130">0130</option>
+						<option value="0303">0303</option>
+						<option value="0502">0502</option>
+						<option value="0503">0503</option>
+						<option value="0504">0504</option>
+						<option value="0505">0505</option>
+						<option value="0506">0506</option>
+						<option value="0507">0507</option>
+						<option value="0508">0508</option>
+						<option value="050">050</option>
+					</select>
+					<span>-</span>
+					<input type="text" id="phoneMiddle" name="phone" class="form-field form-field--text" maxlength="4"
+						required autocomplete="off">
+					<span>-</span>
+					<input type="text" id="phoneLast" name="phone" class="form-field form-field--text" maxlength="4"
+						required autocomplete="off">
+				</div>
+
+				<div class="estimate-form__group">
+					<select id="cleaningService" name="cleaningService" class="form-field form-field--select">
+						<option value="">서비스</option>
+						<option value="신축">신축 입주 청소</option>
+						<option value="이사">이사 입주 청소</option>
+						<option value="거주">거주 청소</option>
+						<option value="리모델링">리모델링 청소</option>
+						<option value="준공">준공 청소</option>
+						<option value="상가">상가 청소</option>
+						<option value="오피스">오피스 청소</option>
+						<option value="기타">기타 청소</option>
+					</select>
+				</div>
+
+				<div class="estimate-form__group">
+					<select id="region" name="region" class="form-field form-field--select">
+						<option value="">지역</option>
+						<option value="서울">서울특별시</option>
+						<option value="부산">부산광역시</option>
+						<option value="대구">대구광역시</option>
+						<option value="인천">인천광역시</option>
+						<option value="광주">광주광역시</option>
+						<option value="대전">대전광역시</option>
+						<option value="울산">울산광역시</option>
+						<option value="세종">세종특별자치시</option>
+						<option value="경기">경기도</option>
+						<option value="강원">강원도</option>
+						<option value="충북">충청북도</option>
+						<option value="충남">충청남도</option>
+						<option value="전북">전라북도</option>
+						<option value="전남">전라남도</option>
+						<option value="경북">경상북도</option>
+						<option value="경남">경상남도</option>
+						<option value="제주">제주특별자치도</option>
+					</select>
+				</div>
+
+				<button type="submit" class="btn btn--estimate">간편 견적 신청</button>
+
+				<div class="estimate-form__group agreement-group">
+					<input type="checkbox" id="agreement" name="agreement" required>
+					<label for="agreement">개인정보 수집 및 이용 동의</label>
+					<a href="javascript:;"
+						onclick="javascript:footerlayerLoad('/static/infoAgreement.html'); return false;">[보기]</a>
+				</div>
+
+			</form>
+		</div>
+	</div>
+
+	<div class="content-after-sticky">
+		<div class="container main-content">
+			<div class="main-image-wrapper">
+				<img src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/dal1.png" alt="달빛청소 서비스 소개 1">
+				<img src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/dal2.png" alt="달빛청소 서비스 소개 2">
+				<img src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/dal3.png" alt="달빛청소 서비스 소개 3">
+				<img src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/dal4.png" alt="달빛청소 서비스 소개 4">
+				<img src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/dal5.png" alt="달빛청소 서비스 소개 5">
 			</div>
-			<a style="font-size: 14px;" href="javascript:;"
-				onclick="javascript:footerlayerLoad('/static/infoAgreement.html'); return false;">[원본]</a>
 		</div>
 	</div>
 
-	<div class="container">
+	<script th:inline="javascript">
+		document.addEventListener('DOMContentLoaded', function () {
+			// 1. 필요한 요소들을 가져온다.
+			const estimateBar = document.getElementById('estimateBar');
+			const contentAfterSticky = document.querySelector('.content-after-sticky');
 
-		<div class="mainImg" id="img1">
-			<img src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/dal1.png" alt="dal1">
-			<img src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/dal2.png" alt="dal2">
-			<img src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/dal3.png" alt="dal4">
-			<img src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/dal4.png" alt="dal4">
-			<img src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/dal5.png" alt="dal5">	
-		</div>
+			// 요소가 없을 경우 에러 방지
+			if (!estimateBar) return;
 
-	</div>
-</div>
+			// 2. 간편 견적 바의 원래 위치를 파악한다 (페이지 상단으로부터의 거리).
+			const stickyPoint = estimateBar.offsetTop;
+			const stickyBarHeight = estimateBar.offsetHeight;
+
+			// 3. 스크롤 이벤트를 감지하는 함수를 만든다.
+			function handleScroll() {
+				// 현재 스크롤된 Y축 위치가 원래 위치보다 커지면
+				if (window.scrollY > stickyPoint) {
+					// 'is-sticky' 클래스를 추가해서 position:fixed 스타일을 적용한다.
+					estimateBar.classList.add('is-sticky');
+					// ★★★ 콘텐츠가 딸려 올라오지 않도록, 다음 컨텐츠에 '견적 바'의 높이만큼 padding-top을 준다.
+					contentAfterSticky.style.paddingTop = stickyBarHeight + 'px';
+				} else {
+					// 스크롤이 다시 원래 위치로 돌아오면, 클래스와 패딩을 제거한다.
+					estimateBar.classList.remove('is-sticky');
+					contentAfterSticky.style.paddingTop = '0';
+				}
+			}
+
+			// 4. window 객체에 스크롤 이벤트 리스너를 등록한다.
+			window.addEventListener('scroll', handleScroll);
+		});
+	</script>
+</main>
+
 </html>

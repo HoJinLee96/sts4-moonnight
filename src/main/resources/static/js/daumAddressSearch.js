@@ -1,4 +1,4 @@
-function searchAddress(callback) {
+export function searchAddress(callback) {
 		new daum.Postcode({
 			oncomplete : function(data) {
 
@@ -47,4 +47,3 @@ function searchAddress(callback) {
 			}
 		}).open();
 	}
-

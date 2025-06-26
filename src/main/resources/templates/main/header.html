@@ -1,28 +1,118 @@
-<div th:fragment="headerFragment">
-	<script type="module">
-		import {signOut} from '/js/sign.js';
+<style th:fragment="headerCss">
+	body {
+		margin: 0;
+		padding: 0;
+		font-size: var(--font-size-base);
+		color: var(--main-text-color);
+		min-width: var(--layout-min-width);
+		/* 스크롤바가 생겨도 레이아웃이 깨지지 않도록 body에 최소 너비 설정 */
+	}
 
-		const signOutButton = document.getElementById("signOut");
-		if (signOutButton) {
-			signOutButton.addEventListener("click", (e) => {
-				signOut(
-					() => {
-						location.reload(true);
-					},
-					(status) => {
-						alert(status);
-					}
-				);
+	/* --- ★★★ 핵심: 레이아웃 래퍼(Wrapper) ★★★ --- */
+	.content-wrapper {
+		min-width: var(--layout-min-width);
+		max-width: var(--layout-max-width);
+		margin: 0 auto;
+		/* 좌우 마진을 auto로 주어 중앙 정렬 */
+		padding: 0 5vw;
+		/* 좌우 여백을 vw로 주어 반응형 대응 */
+		box-sizing: border-box;
+	}
 
-			});
-		}
 
-	</script>
-	<div id="headerContainer">
-		<div class="background-image"></div>
+	/* --- Header --- */
+	header {
+		max-width: var(--layout-max-width);
+		margin: 0 auto;
 
-		<div class="top_inner">
-			<nav class="top_nav">
+		height: 125px;
+		padding-top: 8px;
+		padding-bottom: 13px;
+		position: relative;
+		/* 자식 요소의 z-index 기준점 */
+		background-image: url('/jpg/headerBackground.jpg');
+		background-size: cover;
+		background-position: center;
+		color: var(--main-text-color-light);
+		/* 헤더 내 기본 텍스트 색상은 흰색 */
+	}
+
+	.header-content {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		position: relative;
+		/* z-index를 주기 위해 */
+		z-index: 2;
+		/* 배경 위에 콘텐츠가 오도록 */
+	}
+
+	/* --- Top Navigation --- */
+	.header-top {
+		display: flex;
+		justify-content: flex-end;
+	}
+
+	.nav--top ul {
+		display: flex;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.nav--top a,
+	.user-welcome {
+		/* ID 대신 class로 변경 */
+		text-decoration: none;
+		color: inherit;
+		/* 부모(header)의 색상 상속 */
+		padding-left: 10px;
+		font-size: 14px;
+		font-weight: 300;
+	}
+
+	/* --- Main Navigation & Logo --- */
+	.header-main {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-end;
+		/* 로고와 네비게이션 하단 정렬 */
+	}
+
+	.logo a {
+		display: block;
+		height: 100px;
+		/* 로고 크기 조절 */
+	}
+
+	.logo img {
+		height: 100%;
+		object-fit: contain;
+	}
+
+	.nav--main ul {
+		display: flex;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.nav--main a {
+		text-decoration: none;
+		color: inherit;
+		font-size: 23px;
+		padding-left: 20px;
+	}
+
+	/* --- Page Container --- */
+	.container {
+		min-height: 1080px;
+	}
+</style>
+<header th:fragment="headerFragment">
+	<div class="content-wrapper header-content">
+		<div class="header-top">
+			<nav class="nav--top">
 				<ul id="login-header" sec:authorize="!isAuthenticated()">
 					<li><a th:href="@{/signin}">로그인</a></li>
 					<li><a th:href="@{/signup1}">회원가입</a></li>
@@ -32,26 +122,48 @@
 				<ul id="user-header" sec:authorize="isAuthenticated()">
 					<li><span id="user-welcome" th:text="|${#authentication.principal.name}님|"></span></li>
 					<li><a th:href="@{/my}">마이페이지</a></li>
-					<li><a href="" id="signOut">로그아웃</a></button>
+					<li><a href="#" id="signOut">로그아웃</a></li>
 					</li>
 					<li><a href="#">고객센터</a></li>
 				</ul>
 			</nav>
 		</div>
-		<div class="top_main">
-			<div id="log_div">
-				<a id="logopng" href="/">
-					<img src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/headerLogo.png" alt="Logo"
-						class="logopng">
+
+		<div class="header-main">
+			<div class="logo">
+				<a href="/">
+					<img src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/headerLogo.png" alt="사이트 로고">
 				</a>
 			</div>
-			<div id="main_nav_div">
-				<ul class="main_nav">
+			<nav class="nav--main">
+				<ul>
 					<li><a href="/estimate">견적신청</a></li>
 					<li><a href="/review">현장사진</a></li>
 				</ul>
-			</div>
+			</nav>
 		</div>
 
 	</div>
-</div>
+</header>
+
+<script type="module" th:fragment="headerJs">
+	import {signOut} from '/js/sign.js';
+
+	document.addEventListener('DOMContentLoaded', () => {
+
+		const signOutButton = document.getElementById('signOut');
+		if (signOutButton) {
+			signOutButton.addEventListener('click', async (e) => {
+				e.preventDefault();
+				try {
+					await signOut();
+					location.reload();
+				} catch (error) {
+					console.error("로그아웃 처리 중 에러 발생:", error);
+					alert(error.message);
+				}
+			});
+		}
+	});
+
+</script>

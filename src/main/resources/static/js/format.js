@@ -1,4 +1,4 @@
-export function formatEmail(email,message) {
+export function formatEmail(email, message) {
 	const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 	const isValid = emailPattern.test(email);
 
@@ -9,12 +9,13 @@ export function formatEmail(email,message) {
 	return isValid;
 }
 
-export function formatPasswords(password,message,confirmMessage) {
+
+export function formatPasswords(password, message, confirmMessage) {
 	var passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
-	if(message){
+	if (message) {
 		message.innerText = ' ';
 	}
-	if(confirmMessage){
+	if (confirmMessage) {
 		confirmMessage.innerText = ' ';
 	}
 	const isValid = passwordPattern.test(password);
@@ -26,23 +27,16 @@ export function formatPasswords(password,message,confirmMessage) {
 	return isValid;
 }
 
-export function validateConfirmPasswords(password, confirmPassword, confirmMessage) {
-	const isValid = (password===confirmPassword);
-	if (confirmMessage) {
-		confirmMessage.style.color = isValid ? 'green' : 'red';
-		confirmMessage.innerText = isValid ? "비밀번호가 일치합니다." : "비밀번호가 일치하지 않습니다.";
-	}
-	return isValid;
-}
+
 
 export function formatName(name, message) {
-	
+
 	// 정규 표현식: 공백 또는 특수기호
 	var regex = /[!@#$%^&*(),.?":{}|<>\s]/;
-	if(message){
-		message.innerText="";
+	if (message) {
+		message.innerText = "";
 	}
-	
+
 	if (name === "" || regex.test(name)) {
 		if (message) {
 			message.style.color = 'red';
@@ -50,57 +44,40 @@ export function formatName(name, message) {
 		}
 		return false;
 	} else {
-		if(message){
-			message.innerText="";
+		if (message) {
+			message.innerText = "";
 		}
 		return true;
 	}
-	
+
 }
 
-export function formatBirth(input,message) {
-	
+export function formatBirth(input, message) {
+
 	var regex = /[^0-9]/g; //숫자가 아닌 문자
 	input.value = input.value.replace(regex, '');
-	
+
 	if (input.value.length > 8) {
-	    input.value = input.value.substring(0, 8);
+		input.value = input.value.substring(0, 8);
 	}
 	var birth = input.value;
 	if (birth === "" || regex.test(birth) || birth.length !== 8 || !validDate(birth)) {
-		if(message){
-		message.style.color = 'red';
-		message.innerText = "올바른 생년월일 입력 해주세요.";
+		if (message) {
+			message.style.color = 'red';
+			message.innerText = "올바른 생년월일 입력 해주세요.";
 		}
 		return false;
-	}else {
-		if(message){
-			message.innerText="";
+	} else {
+		if (message) {
+			message.innerText = "";
 		}
 		return true;
 	}
 }
 
-export function validDate(birth) {
-	const year = parseInt(birth.substring(0,4),10);
-	const month = parseInt(birth.substring(4,6),10);
-	const day = parseInt(birth.substring(6,8),10);
-	const date = new Date(year, month -1, day);
-	
-	if (date.getFullYear() !== year|| date.getMonth() !== month - 1 || date.getDate() !== day) {
-  		return false;
-	}
-	
-	const today = new Date();
-    today.setHours(0, 0, 0, 0); // 시/분/초/밀리초를 0으로 설정하여 날짜만 비교
-    if (date > today) {
-        return false;
-    }
-	
-	return true;
-}
 
-export function formatPhoneNumber(input,message) {
+
+export function formatPhoneNumber(input, message) {
 	let value = input.value.replace(/[^0-9]/g, ''); // 숫자 이외의 문자를 제거합니다.
 	let formattedValue = value;
 
@@ -115,15 +92,15 @@ export function formatPhoneNumber(input,message) {
 		formattedValue = '010-' + value.slice(0, 4) + '-' + value.slice(4); // 5~7자리의 경우
 	} else {
 		formattedValue = '010-' + value.slice(0, 4) + '-'
-				+ value.slice(4, 8); // 8자리 이상의 경우
+			+ value.slice(4, 8); // 8자리 이상의 경우
 	}
-	
+
 	input.value = formattedValue;
-	if(message){
-		if(value.length<8){
-				message.style.color = 'red';
-				message.innerText = "올바른 휴대폰 번호를 입력 해주세요.";
-		}else{
+	if (message) {
+		if (value.length < 8) {
+			message.style.color = 'red';
+			message.innerText = "올바른 휴대폰 번호를 입력 해주세요.";
+		} else {
 			message.innerText = "";
 		}
 	}
@@ -135,6 +112,6 @@ export function formatPhoneNumber(input,message) {
 export function formatVerifyCode(input) {
 	input.value = input.value.replace(/[^0-9]/g, '');
 	if (input.value.length > 6) {
-	    input.value = input.value.substring(0, 6);
+		input.value = input.value.substring(0, 6);
 	}
 }
