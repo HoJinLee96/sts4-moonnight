@@ -262,8 +262,7 @@ public class EstimateService {
 			estimate.setName(estimateRequestDto.name());
 			estimate.setEmail(estimateRequestDto.email());
 			estimate.setEmailAgree(estimateRequestDto.emailAgree());
-			estimate.setSmsAgree(estimateRequestDto.smsAgree());
-			estimate.setCallAgree(estimateRequestDto.callAgree());
+			estimate.setPhoneAgree(estimateRequestDto.phoneAgree());
 			estimate.setPostcode(estimateRequestDto.postcode());
 			estimate.setMainAddress(estimateRequestDto.mainAddress());
 			estimate.setDetailAddress(estimateRequestDto.detailAddress());

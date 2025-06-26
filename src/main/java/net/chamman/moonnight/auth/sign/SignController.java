@@ -115,7 +115,7 @@ public class SignController {
 	@SecurityRequirement(name = "X-Access-Token")
 	@SecurityRequirement(name = "X-Refresh-Token")
 	@PreAuthorize("hasRole('LOCAL') or hasRole('OAUTH')")
-	@PostMapping("/public/out/local")
+	@PostMapping("/private/out/local")
 	public ResponseEntity<ApiResponseDto<Void>> signOut(
 			@AuthenticationPrincipal CustomUserDetails user,
 			@RequestHeader(required = false, value = "X-Client-Type") String userAgent,

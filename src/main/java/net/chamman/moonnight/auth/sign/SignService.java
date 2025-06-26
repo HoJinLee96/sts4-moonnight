@@ -308,16 +308,16 @@ public class SignService {
 		try {
 			long ttl = jwtProvider.getAccessTokenRemainingTime(accessToken);
 			tokenProvider.addAccessTokenBlacklist(accessToken, ttl, "SIGNOUT");
-			log.debug("*로그아웃 요청. 블랙리스트에 AT 등록. AccessToken: [{}], RequestIp: [{}]", accessToken, clientIp);
+			log.debug("* 로그아웃 요청. 블랙리스트에 AT 등록. AccessToken: [{}], RequestIp: [{}]", LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM), clientIp);
 		} catch (TimeOutJwtException e) {
-			log.debug("*이미 만료된 AT.");
+			log.debug("* 이미 만료된 AT.");
 		}
 			
 //		2. refreshToken 삭제
 		String userId = jwtProvider.validateRefreshToken(refreshToken);
 		if(!(tokenProvider.removeToken(TokenType.JWT_REFRESH, userId))) {
-			log.warn("로그아웃 중 RefreshToken 삭제 실패. 도용된 RefreshToken.userId: [{}], RefreshToken: [{}], RequestIp: [{}]", userId, refreshToken, clientIp);
-			throw new IllegalJwtException(JWT_ILLEGAL,"로그아웃 - refreshToken 삭제 실패. 도용된 RefreshToken.");
+			log.warn("* 로그아웃 중 RefreshToken 삭제 실패. 도용된 RefreshToken.userId: [{}], RefreshToken: [{}], RequestIp: [{}]", userId, refreshToken, clientIp);
+			throw new IllegalJwtException(JWT_ILLEGAL,"* 로그아웃 - refreshToken 삭제 실패. 도용된 RefreshToken.");
 		}
 	}
 	

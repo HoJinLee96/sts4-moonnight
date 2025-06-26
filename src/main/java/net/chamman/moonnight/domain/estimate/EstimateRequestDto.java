@@ -17,19 +17,16 @@ public record EstimateRequestDto(
     @Size(min = 2, max = 20, message = "validation.user.name.length")
     String name,
     
-    @NotBlank(message = "validation.user.phone.required")
     @Pattern(regexp = "^\\d{3,4}-\\d{3,4}-\\d{4}$", message = "validation.user.phone.invalid")
     @Size(max = 20, message = "validation.user.phone.length")
     String phone,
     
-    @NotBlank(message = "validation.user.email.required")
     @Pattern(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "validation.user.email.invalid")
     @Size(min = 5, max = 50, message = "validation.user.email.length")
     String email,
     
     boolean emailAgree,
-    boolean smsAgree,
-    boolean callAgree,
+    boolean phoneAgree,
     
     @NotBlank(message = "validation.address.postcode.required")
     @Pattern(regexp = "^\\d{5}$", message = "validation.address.postcode.invalid")
@@ -60,8 +57,7 @@ public record EstimateRequestDto(
         .phone(phone)
         .email(email)
         .emailAgree(emailAgree)
-        .smsAgree(smsAgree)
-        .callAgree(callAgree)
+        .phoneAgree(phoneAgree)
         .postcode(postcode)
         .mainAddress(mainAddress)
         .detailAddress(detailAddress)
