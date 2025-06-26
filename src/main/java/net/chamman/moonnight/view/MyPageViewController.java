@@ -58,13 +58,13 @@ public class MyPageViewController {
 		return "my/myEstimate";
 	}
 	
-	@GetMapping("/my/loginInfo")
+	@GetMapping("/my/signInfo")
 	public String showMyLoginInfo(@AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
 		
 		User user = userService.getUserByUserId(userDetails.getUserId());
         model.addAttribute("user", UserResponseDto.fromEntity(user));
 
-		return "my/myLoginInfo";
+		return "my/mySignInfo";
 	}
 	
 	@GetMapping("/my/profile")
@@ -80,6 +80,12 @@ public class MyPageViewController {
 	public String showWithdrawal() {
 		
 		return "my/withdrawal";
+	}
+	
+	@GetMapping("/my/signInfo/password")
+	public String showMyPassword() {
+		
+		return "my/myPassword";
 	}
 	
 }

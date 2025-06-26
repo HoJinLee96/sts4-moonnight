@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{main/base}">
 <head>
-<meta charset="UTF-8">
-<title>아이디 찾기</title>
+<title>이메일 찾기</title>
+<th:block th:replace="~{my/mypageSidebar :: sidebarStyles}"></th:block>
 <style type="text/css">
 * {
 	font-family: 'SF_HambakSnow', sans-serif;
@@ -110,8 +112,7 @@
 }
 </style>
 </head>
-
-<body>
+<div layout:fragment="content">
 	<div class="container">
 		<div id="formDiv">
 			<span class="close" onclick="window.close()">&times;</span>
@@ -146,7 +147,6 @@
 		</div>
 	</div>
 
-</body>
 <script>
 	import {
 		validatePhone,
@@ -239,4 +239,5 @@
 
 	
 </script>
+</div>
 </html>

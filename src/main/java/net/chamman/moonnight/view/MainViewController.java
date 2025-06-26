@@ -37,12 +37,12 @@ public class MainViewController {
 	
 	@GetMapping("/find/email")
 	public String showFindEmail(HttpServletRequest req, HttpServletResponse res) {
-		return "findEmailBlank";
+		return "findEmail";
 	}
 	
 	@GetMapping("/find/password")
 	public String showFindPassword(HttpServletRequest req, HttpServletResponse res) {
-		return "findPasswordBlank";
+		return "findPassword";
 	}
 	
 	@GetMapping("/update/password/blank")

@@ -1,475 +1,1135 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{main/base}">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{main/base}">
+
 <head>
-	<title>청소 견적 문의</title>
-<style type="text/css">
+	<title layout:fragment="title">청소 견적 문의</title>
+	<style>
+		.estimate-form-container {
+			max-width: 800px;
+			/* 폼의 최대 너비 설정 */
+			margin: 40px auto;
+			/* 위아래 여백 및 중앙 정렬 */
+			padding: 40px;
+			background-color: #fff;
+			border: 1px solid var(--border-color, #efefef);
+			border-radius: 8px;
+			box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+		}
 
-.container{
-	width: 1350px;
-	margin: 0 auto;
-	padding: 50px;
-}
-.container h1{
-    border-bottom: 4px solid #20367a;
-    padding-bottom: 15px;
-    margin-bottom: 20px;
-    }
-#estimate{
-	display: flex;
-}
-#rightDiv{
-	margin-right: 20px;
-}
-h1{
-margin-top: 0px;
-margin-bottom: 10px;
-}
-table{
+		/* --- 진행률 표시 바 --- */
+		.progress-bar {
+			width: 100%;
+			height: 8px;
+			background-color: var(--border-color, #efefef);
+			border-radius: 5px;
+			margin-bottom: 40px;
+			overflow: hidden;
+		}
 
-}
-.tableHeader {
-    height: 30px;
-}
-#phone, #name{
-width: 90% !important;
-}
-#formContainer input[type="text"], #formContainer input[type="email"]{
-    border: 1.5px solid #efefef;
-    width: 100%;
-    height: 30px;
-    border-radius: 5px;
-    padding-left: 10px;
-    outline:none;
-}
-#formContainer input:focus{
-	border: 1.5px solid black;
-	transition: border-color 0.3s;
-}
-#postcode{
-width:100px !important;
-}
-#content {
-    border: 1.5px solid #efefef;
-    width: 100%;
-    height: 400px;
-    border-radius: 5px;
-    padding-left: 10px;
-    padding-top: 10px;
-    resize: none;
-    outline:none;
-}
-#content:focus {
-    border-color: black;
-   	transition: border-color 0.3s;
-}
-#submitButton {
-    width: 120px;
-    height: 50px;
-    font-size: 18px;
-    border: none;
-    background-color: #20367a;
-    color: white;
-    border-radius: 5px;
-}
-#submitButton:hover {
-cursor:pointer;
-    border: 1px solid #20367a;
-    padding-left: 10px;
-    background-color: white;
-    color: #20367a;
-}
-.buttonDiv{
-    text-align: right;
-    width: 730px;
-    margin-top: 80px;
-}
-#agreeMentDiv{
-margin-bottom:15px;
-    position: relative;
-}
-#agreementClick{
-    text-decoration: none;
-    color: black;
-}
- #agreement:hover{
-cursor:pointer;
-    position: relative;
-    top: 1px;
-}
-label[for="agreement"]{
-cursor:pointer;
-}
-#agreementMessage{
-    position: absolute;
-    right: 0px;
-    top: -40px;
-    }
-</style>
+		.progress-bar__inner {
+			width: 0%;
+			/* JS로 제어 */
+			height: 100%;
+			background-color: var(--main-color, #20367a);
+			border-radius: 5px;
+			transition: width 0.4s ease-in-out;
+		}
 
-<!-- 이미지 업로드 -->
-<style type="text/css">
-#preview{
-	display: flex;
-    flex-wrap: wrap;
-    width: 720px;
-    height: 290px;
-    border: 1px solid #efefef;
-    border-radius: 5px;
-    margin-top: 15px;
-    gap:5px;
-}
-.image-preview{
-    position: relative;
-}
-.image-preview img{
-    border-radius: 20px;
-}
-.image-preview button{
-    position: absolute;
-    right: 0px;
-    top: 0px;
-    border: none;
-    background: none;
-    font-size: 25px;
-    color: white;
-}
-.image-preview button:hover{
-	cursor:pointer;
-	color:#c4c4c4;
-}
-#dal6{
-	width: 730px;
-	height: 280px;
-	margin-top: 50px;
-}
-	
-.custom-image-label {
-	display: inline-block;
-    padding: 5px 10px;
-    background-color: #20367a;
-    color: white;
-    border: 1px solid #20367a;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-    margin-left: 3px;
-}
+		/* --- 폼 단계 (Step) --- */
+		.form-step {
+			display: none;
+			/* 기본적으로 모든 단계를 숨김 */
+			animation: fadeIn 0.5s;
+		}
 
-.custom-image-label:hover {
-	border: 1px solid #20367a;
-    background-color: white;
-    color:#20367a;
-}
-#receiveAgreeMessage, #emailMessage, #agreementMessage{
-	color: red;
-}
-#headerContainer, .background-image, .top_inner, .top_main, .footer{
-	min-width: 1450px !important;
-} 
-.flexTd{
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-}
-</style>
-<style>
-	.tableDiv{
-		width: 680px;
-		margin-right: 40px;
-		padding-right: 20px;
-		padding-left: 20px;
-	}
-	table{
-	    width: 100%;
-	}
-</style>
+		.form-step--active {
+			display: block;
+			/* 활성화된 단계만 보여줌 */
+		}
 
-<script type="text/javascript">
-document.addEventListener("DOMContentLoaded", function() {
-	var name ="";
-	var phone ="010-";
-	var email ="";
-	var postcode ="";
-	var mainAddress ="";
-	var detailAddress ="";
-		
-	document.getElementById("name").value=name;
-	document.getElementById("phone").value=phone;
-	document.getElementById("email").value=email;
-	document.getElementById("postcode").value=postcode;
-	document.getElementById("mainAddress").value=mainAddress;
-	document.getElementById("detailAddress").value=detailAddress;
-});
+		.form-step h2 {
+			margin-top: 0;
+			margin-bottom: 25px;
+			color: var(--main-text-color, #333);
+		}
 
-</script>
+		.form-group {
+			margin-bottom: 20px;
+		}
 
+		.form-label {
+			display: block;
+			margin-bottom: 8px;
+			font-weight: bold;
+		}
+
+		.form-label .required {
+			color: var(--error-color, red);
+			margin-left: 4px;
+		}
+
+		/* 기존에 만들었던 폼 필드 스타일 재사용 */
+		.form-input,
+		.form-select,
+		.form-textarea {
+			width: 100%;
+			padding: 12px 15px;
+			border: 1px solid #ccc;
+			border-radius: var(--base-border-radius, 5px);
+			font-size: 16px;
+			box-sizing: border-box;
+			transition: border-color 0.3s;
+		}
+
+		.form-input:focus,
+		.form-select:focus,
+		.form-textarea:focus {
+			border-color: var(--main-color, #20367a);
+			outline: none;
+		}
+
+		.form-textarea {
+			min-height: 150px;
+			resize: vertical;
+		}
+
+		/* 주소 필드 그룹 */
+		.address-group {
+			display: flex;
+			gap: 10px;
+		}
+
+		.address-group input:first-child {
+			width: 120px;
+			flex-shrink: 0;
+		}
+
+		/* 동의 체크박스 그룹 */
+		.checkbox-group label {
+			margin-right: 15px;
+			cursor: pointer;
+		}
+
+		.checkbox-group input {
+			margin-right: 5px;
+		}
+
+		/* --- 이미지 첨부 --- */
+		.image-upload-label {
+			display: inline-block;
+			padding: 10px 15px;
+			background-color: #f1f3f5;
+			border: 1px dashed #ccc;
+			border-radius: 5px;
+			cursor: pointer;
+			transition: background-color 0.3s;
+		}
+
+		.image-upload-label:hover {
+			background-color: #e9ecef;
+		}
+
+		#image-preview-container {
+			display: flex;
+			gap: 5px;
+			flex-wrap: wrap;
+			margin-top: 15px;
+			min-width: 765px;
+		}
+
+		/* ... 이미지 미리보기 스타일은 이전 코드 재사용 ... */
+
+
+		/* --- 네비게이션 버튼 --- */
+		.form-navigation {
+			display: flex;
+			justify-content: space-between;
+			margin-top: 40px;
+			border-top: 1px solid var(--border-color, #efefef);
+			padding-top: 20px;
+		}
+
+		/* 기존 버튼 스타일 재사용 및 확장 */
+		.btn {
+			padding: 12px 25px;
+			border: none;
+			border-radius: var(--base-border-radius, 5px);
+			font-size: 16px;
+			font-weight: bold;
+			cursor: pointer;
+			transition: all 0.3s;
+		}
+
+		.btn--primary {
+			background-color: var(--main-color, #20367a);
+			color: white;
+		}
+
+		.btn--primary:hover {
+			opacity: 0.9;
+		}
+
+		.btn--secondary {
+			background-color: #e9ecef;
+			color: #495057;
+		}
+
+		.btn--secondary:hover {
+			background-color: #dee2e6;
+		}
+
+		/* 애니메이션 */
+		@keyframes fadeIn {
+			from {
+				opacity: 0;
+				transform: translateY(10px);
+			}
+
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+
+		.radio-group label {
+			margin-right: 15px;
+			cursor: pointer;
+		}
+
+		.input-with-button {
+			display: flex;
+			gap: 10px;
+		}
+
+		.input-with-button .form-input {
+			flex-grow: 1;
+			/* 입력창이 남은 공간을 모두 차지하도록 */
+		}
+
+		.input-with-button .btn {
+			flex-shrink: 0;
+			/* 버튼 크기가 줄어들지 않도록 */
+			padding: 12px 15px;
+			/* 버튼 패딩 조정 */
+		}
+
+		.timer {
+			display: flex;
+			width: 41px;
+			align-items: center;
+			justify-content: center;
+			padding: 0 15px;
+			color: var(--error-color, red);
+			font-weight: bold;
+			flex-shrink: 0;
+		}
+
+		/* agreement */
+		.agreement-group {
+			padding: 15px;
+			background-color: #f8f9fa;
+			border: 1px solid var(--border-color, #efefef);
+			border-radius: 5px;
+			margin-bottom: 20px;
+		}
+
+		.agreement-group label {
+			font-weight: normal;
+			font-size: 15px;
+			cursor: pointer;
+		}
+
+		.agreement-group input[type="checkbox"] {
+			margin-right: 8px;
+			transform: translateY(1.5px);
+		}
+
+		.agreement-group a {
+			color: #868e96;
+			text-decoration: none;
+			font-size: 14px;
+			margin-left: 10px;
+		}
+
+		.agreement-group a:hover {
+			text-decoration: underline;
+		}
+
+		/* 유효성 검사 실패 시 스타일 */
+		.form-input--error,
+		.form-select--error {
+			border-color: var(--error-color, red) !important;
+			/* !important로 다른 스타일에 덮어씌워지지 않게 함 */
+			box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.2);
+		}
+
+		.image-preview {
+			position: relative;
+		}
+
+		.image-preview img {
+			width: 72px;
+			height: 72px;
+			border-radius: 20px;
+		}
+
+		.image-preview button {
+			position: absolute;
+			right: 0px;
+			top: 0px;
+			border: none;
+			background: none;
+			font-size: 25px;
+			color: white;
+			cursor: pointer;
+		}
+
+		/* --- 로딩 스피너 스타일 --- */
+		.spinner-container {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			width: 100%;
+			min-height: 77px;
+			/* 스피너가 보일 최소 높이 */
+		}
+
+		.loading-spinner {
+			width: 50px;
+			height: 50px;
+			border: 5px solid #f3f3f3;
+			/* 연한 회색 배경 테두리 */
+			border-top: 5px solid var(--main-color, #20367a);
+			/* 메인 색상 스피너 부분 */
+			border-radius: 50%;
+			/* 원으로 만들기 */
+			animation: spin 1s linear infinite;
+			/* spin 애니메이션 적용 */
+		}
+
+		/* 스피너 회전 애니메이션 정의 */
+		@keyframes spin {
+			0% {
+				transform: rotate(0deg);
+			}
+
+			100% {
+				transform: rotate(360deg);
+			}
+		}
+
+		/* --- 피드백 말풍선(Tooltip) 스타일 --- */
+		.feedback-tooltip {
+			position: absolute;
+			/* 다른 요소에 영향을 주지 않고 위치를 잡기 위해 */
+			padding: 10px 15px;
+			background-color: #333;
+			/* 어두운 배경 */
+			color: white;
+			/* 흰색 글씨 */
+			border-radius: 6px;
+			font-size: 14px;
+			z-index: 1001;
+			/* 모달보다는 위에, 다른 요소들보다도 위에 */
+
+			/* 기본 상태는 숨김 */
+			opacity: 0;
+			visibility: hidden;
+			transform: translateY(10px);
+			/* 살짝 아래에서 시작 */
+
+			/* 부드러운 전환 효과 */
+			transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+		}
+
+		/* 말풍선을 보여줄 때 적용할 클래스 */
+		.feedback-tooltip.show {
+			opacity: 1;
+			visibility: visible;
+			transform: translateY(0);
+			/* 원래 위치로 */
+		}
+
+		/* --- 주소록 --- */
+		/* 주소록 모달 스타일 */
+		.overlay {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background-color: rgba(0, 0, 0, 0.6);
+			display: none;
+			justify-content: center;
+			align-items: center;
+			z-index: 1001;
+		}
+
+		.popContent {
+			background-color: white;
+			padding: 20px;
+			border-radius: 8px;
+			box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+			width: 90%;
+			max-width: 500px;
+			position: relative;
+		}
+
+		.popContent h3 {
+			margin-top: 0;
+		}
+
+		.popContent .closeBtn {
+			position: absolute;
+			top: 10px;
+			right: 15px;
+			font-size: 24px;
+			font-weight: bold;
+			cursor: pointer;
+		}
+
+		#address-list-ul {
+			list-style-type: none;
+			padding: 0;
+			max-height: 400px;
+			overflow-y: auto;
+		}
+
+		.address-item {
+			padding: 15px;
+			border: 1px solid #eee;
+			border-radius: 5px;
+			margin-bottom: 10px;
+			cursor: pointer;
+			transition: background-color 0.2s;
+		}
+
+		.address-item:hover {
+			background-color: #f8f9fa;
+		}
+
+		.address-item p {
+			margin: 0 0 5px 0;
+		}
+
+		.address-item .address-name {
+			font-weight: bold;
+		}
+
+		.primary-badge {
+			background-color: #20367a;
+			color: white;
+			font-size: 12px;
+			padding: 2px 6px;
+			border-radius: 10px;
+			margin-left: 8px;
+		}
+	</style>
 </head>
 
-<div layout:fragment="content">
-
-	<div class="container">
-
-		<h1>청소 견적 문의하기</h1>
-		<div id="formContainer">
-			<form id="estimate">
-				<div class="tableDiv">
-					<table>
-						<tr>
-							<td class="tableHeader">성함 (상호명)</td>
-							<td class="tableHeader">
-								<label for="cleaningService">청소 서비스 선택 </label>
-							</td>
-						</tr>
-						<tr>
-							<td><input type="text" id="name" maxlength="20"></td>
-							<td>
-								<select id="cleaningService" name="cleaningService">
-									<option value="">선택</option>
-									<option value="신축">신축 입주 청소</option>
-									<option value="이사">이사 입주 청소</option>
-									<option value="거주">거주 청소</option>
-									<option value="리모델링">리모델링 청소</option>
-									<option value="준공">준공 청소</option>
-									<option value="상가">상가 청소</option>
-									<option value="오피스">오피스 청소</option>
-									<option value="기타">기타 청소</option>
-								</select>
-							</td>
-						</tr>
-
-						<tr>
-							<td class="tableHeader">연락처<span style="color: red">＊</span> <span id="receiveAgreeMessage"></span></td>
-							<td class="tableHeader">수신 동의<span style="color: red">＊</span> <span id="receiveAgreeMessage"></span></td>
-						</tr>
-						<tr>
-							<td class="flexTd">
-								<input type="text" id="phone" maxlength="13" value="010-" required>
-							</td>
-							<td>
-								<input type="checkbox" class="agreeInput" id="eamilAgree">
-								<label for="eamilAgree">이메일</label>
-								<input type="checkbox" class="agreeInput" id="smsAgree">
-								<label for="smsAgree">문자</label>
-								<input type="checkbox" class="agreeInput" id="callAgree">
-								<label for="callAgree">전화</label>
-						
-							</td>
-						</tr>
-						<tr>
-							<td class="tableHeader" colspan="2">이메일 <span id="emailMessage"></span></td>
-						</tr>
-						<tr>
-							<td colspan="2"><input type="email" id="email" maxlength="30"></td>
-						</tr>
-
-						<tr>
-							<td class="tableHeader" colspan="2">주소<span style="color: red">＊</span></td>
-						</tr>
-						<tr>
-							<td colspan="2"><input type="text" id="postcode" placeholder="우편번호" readonly></td>
-						</tr>
-						<tr>
-							<td colspan="2"><input type="text" id="mainAddress" placeholder="주소" readonly></td>
-						</tr>
-						<tr>
-							<td colspan="2"><input type="text" id="detailAddress" autocomplete="off" placeholder="상세주소"></td>
-						</tr>
-						<tr>
-							<td colspan="2"><span id="addressMessage"></span></td>
-						</tr>
-
-						<tr>
-							<td class="tableHeader" colspan="2">내용</td>
-						</tr>
-						<tr>
-							<td colspan="2"><textarea id="content" placeholder="접수 내용"
-									></textarea></td>
-						</tr>
-					</table>
+<main layout:fragment="content">
+	<div class="content-wrapper">
+		<div class="estimate-form-container">
+			<h1>청소 견적 문의하기</h1>
+			<form id="multiStepForm">
+				<div class="progress-bar">
+					<div class="progress-bar__inner"></div>
 				</div>
 
-				<div id="rightDiv">
-					이미지 첨부 <input type="file" id="image-input" accept="image/*"
-						multiple style="display: none;"> <label for="image-input"
-						class="custom-image-label">사진 선택</label>
-					<div id="preview"></div>
-					<img id="dal6" src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/dal6.png" alt="dal6">
-					<div class="buttonDiv">
-						<div id="agreeMentDiv">
-						<p id="agreementMessage"> </p>
-							<input type="checkbox" id="agreement">
-							<label for ="agreement"> 개인정보 수집 및 이용 동의</label>
-						<a id="agreementClick" href="javascript:;"
-							onclick="javascript:footerlayerLoad('static/infoAgreement.html'); return false;">[원본]</a>
-						</div>
-						<input id="submitButton" type="submit" value="등록">
+				<div class="form-step form-step--active">
+					<h2>기본 정보를 입력해주세요.</h2>
+					<div class="form-group">
+						<label for="name" class="form-label">성함 (상호명)<span class="required">＊</span></label>
+						<input type="text" id="name" name="name" class="form-input" required th:value="${user?.name}">
+					</div>
+					<div class="form-group">
+						<label for="cleaningService" class="form-label">청소 서비스<span class="required">＊</span></label>
+						<select id="cleaningService" name="cleaningService" class="form-select" required>
+							<option value="">서비스를 선택하세요</option>
+							<option value="신축">신축 입주 청소</option>
+							<option value="이사">이사 입주 청소</option>
+							<option value="거주">거주 청소</option>
+							<option value="리모델링">리모델링 청소</option>
+							<option value="준공">준공 청소</option>
+							<option value="상가">상가 청소</option>
+							<option value="오피스">오피스 청소</option>
+							<option value="기타">기타 청소</option>
+						</select>
 					</div>
 				</div>
-				<div id="overlay"></div>
+
+				<div class="form-step">
+					<h2>본인 인증을 진행해주세요.</h2>
+
+					<div class="form-group">
+						<label class="form-label">인증 방식 선택<span class="required">＊</span></label>
+						<div class="radio-group" id="authMethodGroup">
+							<label><input type="radio" id="authPhoneRadio" name="authMethod" value="phone" checked>
+								휴대폰</label>
+							<label><input type="radio" id="authEmailRadio" name="authMethod" value="email"> 이메일</label>
+						</div>
+					</div>
+
+					<div id="phone-auth-group" class="auth-input-group">
+						<div class="form-group">
+							<label for="phone" class="form-label">휴대폰 번호<span class="required">＊</span></label>
+							<div class="input-with-button">
+								<input type="tel" id="phone" name="phone" class="form-input" placeholder="'-' 없이 숫자만 입력"
+									th:value="${user?.phone}">
+								<button type="button" class="btn btn--secondary btn-send-code"
+									data-auth-type="phone">인증번호 발송</button>
+							</div>
+						</div>
+					</div>
+
+					<div id="email-auth-group" class="auth-input-group" style="display: none;">
+						<div class="form-group">
+							<label for="email" class="form-label">이메일 주소<span class="required">＊</span></label>
+							<div class="input-with-button">
+								<input type="email" id="email" name="email" class="form-input"
+									placeholder="name@example.com" th:value="${user?.email}">
+								<button type="button" class="btn btn--secondary btn-send-code"
+									data-auth-type="email">인증번호 발송</button>
+							</div>
+						</div>
+					</div>
+
+					<div id="auth-agreement-group" class="agreement-group">
+						<input type="checkbox" id="authAgreement" name="authAgreement">
+						<label for="authAgreement"><span style="font-weight:bold">(필수)</span> 개인정보 수집 및 이용에
+							동의합니다.</label>
+						<a href="javascript:void(0);" onclick="showPolicy('auth')">[내용보기]</a>
+					</div>
+					<div id="verification-code-group" class="form-group" style="display: none;">
+						<label for="verification-code" class="form-label">인증번호<span class="required">＊</span></label>
+						<div class="input-with-button">
+							<input type="text" id="verification-code" class="form-input" placeholder="인증번호 6자리 입력">
+							<span id="timer" class="timer">03:00</span>
+							<button type="button" id="verifyBtn" class="btn btn--primary">인증하기</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="form-step">
+					<h2>청소하실 곳의 주소는 어디인가요?</h2>
+
+					<div class="form-group address-group">
+						<input type="text" id="postcode" name="postcode" class="form-input" placeholder="우편번호" readonly
+							th:value="${primaryAddress?.postcode}">
+						<button type="button" class="btn btn--primary" id="address-search-btn">주소 찾기</button>
+						<button type="button" class="btn btn--secondary" id="address-book-btn"
+							th:if="${addressList != null and not #lists.isEmpty(addressList)}">주소록</button>
+					</div>
+					<div class="form-group">
+						<input type="text" id="mainAddress" name="mainAddress" class="form-input" placeholder="주소"
+							readonly th:value="${primaryAddress?.mainAddress}">
+					</div>
+					<div class="form-group">
+						<input type="text" id="detailAddress" name="detailAddress" class="form-input"
+							placeholder="상세주소 입력" th:value="${primaryAddress?.detailAddress}">
+					</div>
+				</div>
+
+				<div class="form-step">
+					<h2>더 자세한 내용을 알려주세요.</h2>
+
+					<div class="form-group">
+						<label for="content-text-area" class="form-label">상세 내용</label>
+						<textarea id="content-text-area" name="content" class="form-textarea"
+							placeholder="ex) 평수, 원하는 청소 범위, 특별 요청사항 등"></textarea>
+					</div>
+					<div class="form-group">
+						<label class="form-label">이미지 첨부</label>
+						<input type="file" id="image-input" multiple accept="image/*" style="display:none;">
+						<label for="image-input" class="image-upload-label">클릭하여 사진 선택</label>
+						<div id="image-preview-container"></div>
+					</div>
+					<div id="final-agreement-group" class="agreement-group">
+						<input type="checkbox" id="finalAgreement" name="finalAgreement">
+						<label for="finalAgreement"><span style="font-weight:bold">(필수)</span> 견적 문의를 위한 개인정보 수집 및 이용에
+							최종 동의합니다.</label>
+						<a href="javascript:void(0);" onclick="showPolicy('final')">[내용보기]</a>
+					</div>
+				</div>
+
+				<div class="form-navigation">
+					<button type="button" class="btn btn--secondary" id="prevBtn">이전</button>
+					<div class="emptyDiv"></div>
+					<button type="button" class="btn btn--primary" id="nextBtn">다음</button>
+					<button type="submit" class="btn btn--primary" id="submitBtn" style="display:none;" disabled>견적
+						제출</button>
+				</div>
 			</form>
 		</div>
-
-    <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.0.6/compressor.min.js"></script>
-    
-    <script type="module">
-        // 1. estimate.js에서 필요한 함수를 import
-        import { registerEstimate } from '/js/estimate.js';
-        import { searchAddress } from '/js/daumAddressSearch4.js'; // daumAddressSearch4도 모듈로 사용
-        
-        // --- 전역 변수 및 상수 선언 ---
-        const form = document.getElementById('estimate');
-        const imageInput = document.getElementById('image-input');
-        const previewContainer = document.getElementById('preview');
-        const MAX_IMAGES = 10;
-        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-        let selectedFiles = []; // 실제 File 객체를 저장할 배열
-
-        // --- 이벤트 리스너 등록 ---
-        
-        // 폼 제출 이벤트
-        form.addEventListener('submit', handleFormSubmit);
-
-        // 이미지 선택 이벤트
-        imageInput.addEventListener('change', handleImageSelection);
-
-        // 주소 검색 클릭 이벤트
-        document.getElementById('postcode').addEventListener('click', openDaumPostcode);
-        document.getElementById('mainAddress').addEventListener('click', openDaumPostcode);
-
-        // 연락처 자동 포맷팅
-        document.getElementById('phone').addEventListener('input', (e) => formatPhoneNumber(e.target));
-
-
-        // --- 함수 정의 ---
-
-        /**
-         * Daum 주소 검색 API를 호출하는 함수
-         */
-        function openDaumPostcode() {
-            searchAddress((postcode, address) => {
-                document.getElementById('postcode').value = postcode;
-                document.getElementById('mainAddress').value = address;
-                document.getElementById("detailAddress").focus();
-            });
-        }
-        
-        /**
-         * 폼 제출을 처리하는 메인 함수
-         */
-        async function handleFormSubmit(event) {
-            event.preventDefault(); // 기본 제출 동작 방지
-
-            // 1. 폼 데이터 수집
-            const estimateDto = {
-                name: document.getElementById('name').value,
-                phone: document.getElementById('phone').value,
-                email: document.getElementById('email').value,
-                emailAgree: document.getElementById('eamilAgree').checked,
-                smsAgree: document.getElementById('smsAgree').checked,
-                callAgree: document.getElementById('callAgree').checked,
-                postcode: document.getElementById('postcode').value,
-                mainAddress: document.getElementById('mainAddress').value,
-                detailAddress: document.getElementById('detailAddress').value,
-				cleaningService: document.getElementById('cleaningService').value,
-                content: document.getElementById('content').value,
-                agreement: document.getElementById('agreement').checked,
-            };
-
-            // 2. API 호출
-            try {
-                // `estimate.js`의 registerEstimate 함수 호출!
-                // 텍스트 데이터와 실제 파일 객체 배열을 넘겨준다.
-                const result = await registerEstimate(estimateDto, selectedFiles);
-                
-                console.log('등록 성공:', result);
-                alert("이용해 주셔서 감사합니다.\n빠른 답변 드리겠습니다.");
-				location.reload(); 
-
-            } catch (error) {
-				console.error('견적 제출 실패:', error);
-				alert(error.message || '제출에 실패했습니다. 입력 내용을 확인해주세요.');
-            }
-        }
-        
-        // --- 이미지 처리 관련 함수들 ---
-
-        function handleImageSelection(event) {
-            const files = Array.from(event.target.files);
-            // ... (기존 이미지 처리 로직과 거의 동일) ...
-            if ((selectedFiles.length + files.length) > MAX_IMAGES) {
-                return alert(`이미지는 최대 ${MAX_IMAGES}장까지 업로드할 수 있습니다.`);
-            }
-
-            for (const file of files) {
-                if (file.size > MAX_FILE_SIZE) {
-                    alert(`이미지 1장의 최대 용량은 10MB입니다. (${file.name} 제외)`);
-                    continue; // 용량 초과 파일은 건너뛰기
-                }
-                selectedFiles.push(file);
-                displayPreview(file, selectedFiles.length - 1);
-            }
-        }
-
-        function displayPreview(file, index) {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => {
-                const div = document.createElement('div');
-                div.className = 'image-preview';
-                
-                const img = document.createElement('img');
-                img.src = reader.result;
-                img.style.width = '140px';
-                img.style.height = '140px';
-
-                const removeButton = document.createElement('button');
-                removeButton.innerHTML = '&times;';
-                removeButton.dataset.index = index; // 인덱스를 버튼에 저장
-
-                removeButton.addEventListener('click', (e) => {
-                    const indexToRemove = parseInt(e.target.dataset.index, 10);
-                    // selectedFiles에서 해당 파일 제거
-                    selectedFiles.splice(indexToRemove, 1);
-                    // 미리보기 다시 그리기
-                    redrawPreview();
-                });
-
-                div.append(img, removeButton);
-                previewContainer.append(div);
-            };
-        }
-
-        function redrawPreview() {
-            // 미리보기 영역을 비우고
-            previewContainer.innerHTML = '';
-            // 현재 selectedFiles 배열 기준으로 다시 그림
-            selectedFiles.forEach((file, index) => displayPreview(file, index));
-        }
-
-        // --- 포맷팅 헬퍼 함수 ---
-        function formatPhoneNumber(input) {
-            // ... (기존 휴대폰 번호 포맷팅 로직) ...
-            let value = input.value.replace(/[^0-9]/g, '');
-            let result = [];
-            if (value.length >= 3) {
-                result.push(value.substring(0, 3));
-                value = value.substring(3);
-                if(value.length >= 4) {
-                    result.push(value.substring(0, 4));
-                    value = value.substring(4);
-                    if(value.length > 0) result.push(value);
-                } else if (value.length > 0) {
-                    result.push(value);
-                }
-            } else {
-                result.push(value);
-            }
-            input.value = result.join('-');
-        }
-
-    </script>
 	</div>
+	<div id="addressModal" class="overlay" style="display:none;"
+		th:if="${addressList != null and not #lists.isEmpty(addressList)}">
+		<div class="popContent">
+			<span class="closeBtn" id="closeAddressModalBtn">&times;</span>
+			<h3>주소록</h3>
+			<ul id="address-list-ul">
+				<li th:each="addr : ${addressList}" class="address-item" th:data-postcode="${addr.postcode}"
+					th:data-main-address="${addr.mainAddress}" th:data-detail-address="${addr.detailAddress}">
+					<p class="address-name">
+						<span th:text="${addr.name}"></span>
+						<span th:if="${addr.isPrimary()}" class="primary-badge">대표</span>
+					</p>
+					<p class="address-full"
+						th:text="'(' + ${addr.postcode} + ') ' + ${addr.mainAddress} + ' ' + ${addr.detailAddress}"></p>
+				</li>
+			</ul>
+		</div>
+	</div>
+</main>
+
+<th:block layout:fragment="script">
+
+	<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.0.6/compressor.min.js"></script>
+
+	<script th:inline="javascript" type="module">
+		import {validate} from '/js/validate.js';
+		import {sendEmail, verifyMailCode} from '/js/emailVerification.js';
+		import {sendSms, verifySmsCode} from '/js/smsVerification.js';
+		import {initAddressSearch} from '/js/address-api.js';
+		import {registerEstimate} from '/js/estimate.js';
+
+		document.addEventListener('DOMContentLoaded', () => {
+			// --- 1. DOM 요소 가져오기 ---
+			const multiStepForm = document.querySelector('#multiStepForm');
+			const formSteps = [...multiStepForm.querySelectorAll('.form-step')];
+			const prevBtn = multiStepForm.querySelector('#prevBtn');
+			const nextBtn = multiStepForm.querySelector('#nextBtn');
+			const submitBtn = multiStepForm.querySelector('#submitBtn');
+			const progressBar = multiStepForm.querySelector('.progress-bar__inner');
+
+			// 각 단계별 입력 요소들
+			const nameInput = multiStepForm.querySelector("#name");
+			const cleaningServiceSelect = multiStepForm.querySelector("#cleaningService");
+
+			const authMethodRadios = multiStepForm.querySelectorAll('input[name="authMethod"]');
+			const authPhoneRadio = multiStepForm.querySelector("#authPhoneRadio");
+			const authEmailRadio = multiStepForm.querySelector("#authEmailRadio");
+			const phoneInput = multiStepForm.querySelector("#phone");
+			const emailInput = multiStepForm.querySelector("#email");
+
+			const phoneAuthGroup = multiStepForm.querySelector('#phone-auth-group');
+			const emailAuthGroup = multiStepForm.querySelector('#email-auth-group');
+			const sendCodeBtns = multiStepForm.querySelectorAll('.btn-send-code');
+			const verificationGroup = multiStepForm.querySelector('#verification-code-group');
+			const verificationInput = multiStepForm.querySelector('#verification-code');
+			const timerDisplay = multiStepForm.querySelector('#timer');
+			const verifyBtn = multiStepForm.querySelector('#verifyBtn');
+
+			const postcode = multiStepForm.querySelector("#postcode");
+			const mainAddress = multiStepForm.querySelector("#mainAddress");
+			const detailAddress = multiStepForm.querySelector("#detailAddress");
+
+			const authAgreementCheckbox = multiStepForm.querySelector('#authAgreement');
+			const finalAgreementCheckbox = multiStepForm.querySelector('#finalAgreement');
+
+			const imageInput = multiStepForm.querySelector('#image-input');
+			const previewContainer = multiStepForm.querySelector('#image-preview-container');
+
+			const contentTextArea = multiStepForm.querySelector('#content-text-area')
+
+			const addressBookBtn = document.getElementById('address-book-btn');
+			const addressModal = document.getElementById('addressModal');
+
+
+			// --- 2. 상태 관리 변수 ---
+			let currentStep = 0;
+			let currentAuthType;
+			let isVerified = false;
+			let timer;
+			let timeLeft = 180;
+			let timerEndTime;
+			let selectedFiles = [];
+			const MAX_IMAGES = 10;
+			const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+			// --- 3. 함수 정의 ---
+
+			// 단계별 유효성 검사 함수
+			const validateStep = (stepIndex) => {
+				// 일단 현재 스텝의 모든 에러 표시를 초기화
+				formSteps[stepIndex].querySelectorAll('.form-input, .form-select').forEach(el => {
+					el.classList.remove('form-input--error', 'form-select--error');
+				});
+
+				let isValid = true;
+
+				switch (stepIndex) {
+					case 0: // Step 1: 기본 정보
+						try {
+							validate('name', nameInput.value.trim());
+							if (cleaningServiceSelect.value === '') {
+								isValid = false;
+								cleaningServiceSelect.classList.add('form-select--error');
+								alert('청소 서비스를 선택해주세요.');
+								cleaningServiceSelect.focus();
+							}
+						} catch (error) {
+							isValid = false;
+							alert(error.message);
+							nameInput.classList.add('form-select--error');
+							nameInput.focus();
+						}
+						break;
+
+					case 1: // Step 2: 본인 인증
+						if (!isVerified) {
+							isValid = false;
+							alert('본인 인증을 완료해주세요.');
+						}
+						break;
+
+					case 2: // Step 3: 주소 정보
+						if (postcode.value.trim() === '' || mainAddress.value.trim() === '') {
+							isValid = false;
+							alert('주소 찾기를 통해 주소를 입력해주세요.');
+						} else if (detailAddress.value.trim() === '') {
+							isValid = false;
+							detailAddress.classList.add('form-input--error');
+							alert('상세주소를 입력해주세요.');
+							detailAddress.focus();
+						}
+						break;
+
+					case 3: // Step 4: 상세 내용 (필수값 없음)
+						// 이 단계는 필수값이 없으므로 항상 통과
+						isValid = true;
+						break;
+				}
+
+				return isValid;
+			};
+
+
+			nextBtn.addEventListener('click', () => {
+				// 현재 단계의 유효성을 검사하고, 통과했을 때만 다음으로 진행
+				if (validateStep(currentStep)) {
+					if (currentStep < formSteps.length - 1) {
+						currentStep++;
+						showStep(currentStep);
+					}
+				}
+			});
+
+			const showStep = (stepIndex) => {
+				formSteps.forEach((step, index) => {
+					step.classList.toggle('form-step--active', index === stepIndex);
+				});
+				updateNavigationButtons();
+				updateProgressBar();
+			};
+
+			const updateNavigationButtons = () => {
+				prevBtn.style.display = currentStep > 0 ? 'block' : 'none';
+				const isLastStep = currentStep === formSteps.length - 1;
+				nextBtn.style.display = isLastStep ? 'none' : 'block';
+				submitBtn.style.display = isLastStep ? 'block' : 'none';
+
+				// ★★★ 마지막 단계에서 '견적 제출' 버튼 비활성화/활성화 처리 ★★★
+				if (isLastStep) {
+					submitBtn.disabled = false;
+				}
+			};
+
+			// 진행률 바 업데이트 함수
+			const updateProgressBar = () => {
+				const progressPercent = (currentStep / (formSteps.length - 1)) * 100;
+				progressBar.style.width = `${progressPercent}%`;
+			};
+
+			// '이전' 버튼
+			prevBtn.addEventListener('click', () => {
+				if (currentStep > 0) {
+					currentStep--;
+					showStep(currentStep);
+				}
+			});
+
+			// 인증 절차 초기화 함수
+			const resetVerification = () => {
+				//인증 결과
+				isVerified = false;
+
+				//수신 input
+				phoneInput.disabled = false;
+				emailInput.disabled = false;
+
+				//인증번호 전송 버튼
+				sendCodeBtns.forEach(btn => {
+					btn.textContent = '인증번호 발송';
+					btn.disabled = false;
+				});
+
+				//정보 수집동의
+				authAgreementCheckbox.disabled = false;
+				authAgreementCheckbox.checked = false;
+
+				//인증번호 입력 group
+				verificationGroup.style.display = 'none';
+				//인증번호 input
+				verificationInput.disabled = false;
+				verificationInput.value = '';
+				//인증번호 검증 버튼
+				verifyBtn.disabled = false;
+				verifyBtn.textContent = '인증하기';
+
+				//타이머
+				clearInterval(timer);
+				timerDisplay.style.display = 'flex'; // 타이머 표시부는 다시 보이게
+				timerDisplay.textContent = '03:00'; // 기본값으로 리셋
+				timerEndTime = null; // 종료 시각 초기화
+
+
+			};
+
+			// 카운트다운 타이머 시작 함수
+			const startTimer = () => {
+				// 1. 타이머가 끝나는 정확한 '미래 시각'을 계산해서 저장
+				timerEndTime = Date.now() + 180 * 1000; // 현재 시간 + 3분(180초)
+
+				// 2. 기존에 돌아가던 타이머가 있으면 완전히 정지
+				clearInterval(timer);
+
+				// 3. 1초마다 남은 시간을 '재계산'해서 화면을 '갱신'하는 인터벌 시작
+				timer = setInterval(updateTimerDisplay, 1000);
+
+				// 4. 시작하자마자 한번 바로 실행해서 03:00으로 보이게 함
+				updateTimerDisplay();
+			};
+
+			// 1초마다 실행될 타이머 화면 업데이트 함수
+			const updateTimerDisplay = () => {
+				// '종료 시각'과 '현재 시각'의 차이를 계산해서 남은 시간을 구함
+				const remainingMilliseconds = timerEndTime - Date.now();
+
+				// 남은 시간이 0보다 크면
+				if (remainingMilliseconds > 0) {
+					const totalSeconds = Math.round(remainingMilliseconds / 1000);
+					const minutes = Math.floor(totalSeconds / 60);
+					const seconds = totalSeconds % 60;
+
+					// 화면에 '분:초' 형태로 표시 (예: 02:59)
+					timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+				} else {
+					// 남은 시간이 0 이하면 타이머 종료
+					timerDisplay.textContent = '시간만료';
+					verifyBtn.disabled = true; // 인증하기 버튼 비활성화
+					clearInterval(timer); // 인터벌 완전 정지
+				}
+			};
+
+			// 주소 검색 함수
+			const addressConfig = {
+				triggerBtnId: 'address-search-btn', // '우편번호 찾기' 버튼 ID
+				postcodeId: 'postcode',             // 우편번호 input ID
+				mainAddressId: 'mainAddress',       // 도로명주소 input ID
+				detailAddressId: 'detailAddress',   // 상세주소 input ID
+			};
+			initAddressSearch(addressConfig);
+
+			if (addressBookBtn && addressModal) {
+				const closeModalBtn = document.getElementById('closeAddressModalBtn');
+
+				const showModal = () => addressModal.style.display = 'flex';
+				const hideModal = () => addressModal.style.display = 'none';
+
+				addressBookBtn.addEventListener('click', showModal);
+				closeModalBtn.addEventListener('click', hideModal);
+
+				addressModal.addEventListener('click', (e) => {
+					if (e.target === addressModal) {
+						hideModal();
+					}
+				});
+
+				const addressItems = addressModal.querySelectorAll('.address-item');
+				addressItems.forEach(item => {
+					item.addEventListener('click', () => {
+						postcode.value = item.dataset.postcode;
+						mainAddress.value = item.dataset.mainAddress;
+						detailAddress.value = item.dataset.detailAddress;
+						hideModal();
+					});
+				});
+			}
+
+			// 약관 '내용보기' 함수
+			function showPolicy(type) {
+				let policyContent = '';
+				if (type === 'auth') {
+					policyContent = "본인 인증을 위한 개인정보 수집 및 이용 약관 내용입니다.\n\n" +
+						"1. 수집 항목: 휴대폰 번호 또는 이메일 주소\n" +
+						"2. 수집 목적: 본인 확인 및 인증번호 발송\n" +
+						"3. 보유 기간: 인증 완료 후 즉시 파기";
+				} else {
+					policyContent = "견적 문의를 위한 개인정보 수집 및 이용 약관 최종본입니다.\n\n" +
+						"1. 수집 항목: 성함, 연락처, 주소, 서비스 종류 등\n" +
+						"2. 수집 목적: 청소 견적 상담 및 서비스 제공\n" +
+						"3. 보유 기간: 목적 달성 후 3개월 (상담 이력 관리)";
+				}
+				alert(policyContent);
+			}
+
+			// Compressor.js를 적용한 비동기 이미지 처리 함수
+			async function handleImageSelection(event) {
+				const files = Array.from(event.target.files);
+				const remainingSlots = MAX_IMAGES - selectedFiles.length;
+
+				if (files.length === 0) return;
+
+				if ((selectedFiles.length + files.length) > MAX_IMAGES) {
+					alert(`이미지는 최대 ${MAX_IMAGES}장까지 업로드할 수 있습니다.`);
+				}
+
+				const availableFiles = files.slice(0, remainingSlots);
+
+				// ★★★ 1. 처리 시작! 바로 스피너를 보여준다. ★★★
+				previewContainer.innerHTML = `
+			        <div class="spinner-container">
+			            <div class="loading-spinner"></div>
+			        </div>
+			    `;
+				submitBtn.disabled = true;
+				submitBtn.textContent = '이미지 처리 중...';
+
+
+				const compressionPromises = availableFiles.map(file => {
+					if (file.size > MAX_FILE_SIZE) {
+						alert(`이미지 1장의 최대 용량은 10MB입니다. (${file.name} 제외)`);
+						return Promise.resolve(null);
+					}
+					return new Promise((resolve, reject) => {
+						new Compressor(file, {
+							quality: 0.8,
+							maxWidth: 1920,
+							maxHeight: 1080,
+							success(compressedResult) {
+								resolve({file: compressedResult, name: file.name});
+							},
+							error(err) {
+								reject(err);
+							},
+						});
+					});
+				});
+
+				try {
+					const compressedResults = await Promise.all(compressionPromises);
+					const newFiles = compressedResults
+						.filter(result => result !== null)
+						.map(result => result.file);
+
+					selectedFiles.push(...newFiles);
+
+					// ★★★ 2. 성공! redrawPreview가 스피너를 없애고 이미지를 그린다. ★★★
+					redrawPreview();
+
+				} catch (error) {
+					console.error('이미지 처리 실패:', error);
+					alert('이미지를 처리하는 중 오류가 발생했습니다.');
+					// ★★★ 3. 실패! 스피너를 지우고, 기존에 있던 이미지들을 다시 그려준다. ★★★
+					redrawPreview();
+				} finally {
+					// ★★★ 4. 최종적으로 버튼 상태를 원래대로 복구 ★★★
+					submitBtn.disabled = false;
+					submitBtn.textContent = '견적 제출';
+				}
+			}
+
+
+			// displayPreview는 파일 객체(File 또는 Blob)를 받아 화면에 표시
+			function displayPreview(file, index) {
+				const reader = new FileReader();
+				reader.readAsDataURL(file);
+				reader.onload = () => {
+					const div = document.createElement('div');
+					div.className = 'image-preview';
+
+					const img = document.createElement('img');
+					img.src = reader.result;
+					img.alt = file.name; // alt 속성 추가
+
+					const removeButton = document.createElement('button');
+					removeButton.innerHTML = '&times;';
+					removeButton.dataset.index = index;
+
+					removeButton.addEventListener('click', (e) => {
+						const indexToRemove = parseInt(e.target.dataset.index, 10);
+						selectedFiles.splice(indexToRemove, 1);
+						redrawPreview(); // 제거 후 다시 그리기
+					});
+
+					div.append(img, removeButton);
+					previewContainer.append(div);
+				};
+			}
+
+			// redrawPreview는 현재 selectedFiles 배열을 기준으로 화면을 완전히 새로 그림
+			function redrawPreview() {
+				previewContainer.innerHTML = ''; // 미리보기 영역 초기화
+				selectedFiles.forEach((file, index) => displayPreview(file, index));
+			}
+
+
+			// --- 4. 이벤트 리스너 등록 ---
+
+			// 인증 방식 선택 라디오 버튼
+			authMethodRadios.forEach(radio => {
+				radio.addEventListener('change', (e) => {
+					currentAuthType = e.target.value; // ★★★ 라디오 버튼 변경 시 상태도 바로 변경 ★★★
+					const selectedMethod = e.target.value;
+					phoneAuthGroup.style.display = selectedMethod === 'phone' ? 'block' : 'none';
+					emailAuthGroup.style.display = selectedMethod === 'email' ? 'block' : 'none';
+					resetVerification();
+				});
+			});
+
+			// 인증번호 발송
+			sendCodeBtns.forEach(btn => {
+				btn.addEventListener('click', async (event) => {
+
+					// 동의 체크 여부 확인
+					if (!authAgreementCheckbox.checked) {
+						alert('개인정보 수집 및 이용에 동의해주세요.');
+						authAgreementCheckbox.classList.add('form-input--error');
+						return;
+					}
+					authAgreementCheckbox.classList.remove('form-input--error');
+
+					// 1. 클릭된 버튼의 'data-auth-type' 값을 가져옴 (phone 또는 email)
+					currentAuthType = event.target.dataset.authType;
+
+					let targetInput;
+
+					try {
+						btn.disabled = true;
+						btn.textContent = '전송 중...';
+
+						// 2. authType에 따라 입력 필드와 API 경로를 결정
+						if (currentAuthType === 'phone') {
+							console.log('서버에 인증번호 발송 요청!');
+							targetInput = phoneInput;
+							targetInput.disabled = true;
+							const json = await sendSms(phoneInput.value);
+							alert(json.message);
+						} else {
+							console.log('서버에 인증번호 발송 요청!');
+							targetInput = emailInput;
+							targetInput.disabled = true;
+							const json = await sendEmail(emailInput.value);
+							alert(json.message);
+						}
+						verificationGroup.style.display = 'flex';
+						btn.disabled = false;
+						btn.textContent = '재전송';
+						targetInput.classList.remove('form-input--error');
+						startTimer();
+					} catch (error) {
+						console.log(error);
+						alert(error.message);
+						btn.textContent = '인증번호 발송';
+						targetInput.disabled = false;
+						btn.disabled = false;
+						targetInput.classList.add('form-input--error');
+						targetInput.focus();
+					}
+
+
+				});
+			});
+
+			// 인증번호 검증
+			verifyBtn.addEventListener('click', async (event) => {
+
+				const code = verificationInput.value;
+
+				try {
+					verifyBtn.disabled = true;
+					verifyBtn.textContent = '인증 중...';
+
+					if (currentAuthType === 'phone') {
+						await verifySmsCode(phoneInput.value, code);
+						alert('인증 완료');
+					} else {
+						await verifyMailCode(emailInput.value, code);
+						alert('인증 완료');
+					}
+					verifyBtn.textContent = '인증 완료';
+					verificationInput.disabled = true;
+					sendCodeBtns.forEach(btn => btn.disabled = true);
+					authAgreementCheckbox.disabled = true;
+					timerDisplay.style.display = 'none';
+					isVerified = true;
+
+				} catch (error) {
+					console.log(error);
+					verifyBtn.disabled = false;
+					verifyBtn.textContent = '인증하기';
+					alert(error.message);
+				}
+			});
+
+			// Compressor.js를 사용한 이미지 처리
+			imageInput.addEventListener('change', handleImageSelection);
+
+
+			// 폼 최종 제출 로직 수정
+			multiStepForm.addEventListener('submit', async (e) => {
+				e.preventDefault();
+
+				// 견적 동의 확인
+				if (!finalAgreementCheckbox.checked) {
+					alert('견적 문의를 위한 최종 동의가 필요합니다.');
+					return;
+				}
+
+				// 제출 버튼 비활성화 (중복 제출 방지)
+				submitBtn.disabled = true;
+				submitBtn.textContent = '제출 중...';
+
+				// 1. 서버에 보낼 DTO 객체 생성
+				const estimateDto = {
+					name: nameInput.value,
+					phoneAgree: authPhoneRadio.checked,
+					emailAgree: authEmailRadio.checked,
+					phone: phoneInput.value,
+					email: emailInput.value,
+					postcode: postcode.value,
+					mainAddress: mainAddress.value,
+					detailAddress: detailAddress.value,
+					cleaningService: cleaningServiceSelect.value,
+					content: contentTextArea.value
+				};
+
+				try {
+					// 2. API 함수 호출 (DTO와 이미지 파일들 전달)
+					const json = await registerEstimate(estimateDto, selectedFiles);
+					const estimateId = json.data.estimateId;
+
+					// 성공 후 다른 페이지로 이동하거나 폼을 리셋
+					window.location.href = '/estimate/success';
+
+				} catch (error) {
+					console.error('견적 제출 실패:', error);
+					alert(error.message);
+				} finally {
+					// 3. 성공/실패 여부와 관계없이 버튼 다시 활성화
+					submitBtn.disabled = false;
+					submitBtn.textContent = '견적 제출';
+				}
+			});
+
+
+			// --- 5. 초기화 ---
+			showStep(currentStep);
+		});
+
+	</script>
+</th:block>
+
 </html>

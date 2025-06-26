@@ -3,17 +3,38 @@
 	xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 <head>
-    <meta charset="UTF-8">
-	<link rel="stylesheet" th:href="@{/css/header.css}" />
-	<link rel="stylesheet" th:href="@{/css/footer.css}" />
+	<meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
+	<title layout:fragment="title">기본 제목</title>
+	<style>
+		:root {
+			--main-color: #20367a;
+			--main-text-color: #333;
+			--main-text-color-light: white; /* 흰색 텍스트용 변수 추가 */
+			--border-color: #efefef;
+			--error-color: red;
+			--base-border-radius: 5px;
+			--font-size-base: 16px;
+		    --layout-min-width: 940px;
+		    --layout-max-width: 1920px;
+		    --layout-min-height: 650px;
+		}
+		main{
+			min-height: var(--layout-min-height); 
+		}
+	</style>
+	<th:block th:replace="~{main/header :: headerCss}" />
+	<th:block th:replace="~{main/footer :: footerCss}" />
 </head>
 <body>
-	<div th:replace="~{main/header :: headerFragment}"></div>
+	<header th:replace="~{main/header :: headerFragment}"></header>
 
-	<div layout:fragment="content">
+	<th:block layout:fragment="content">
 	    <!-- 각 페이지에서 채울 영역 -->
-	</div>
+	</th:block>
 
-	<div th:replace="~{main/footer :: footerFragment}"></div>
+	<footer th:replace="~{main/footer :: footerFragment}"></footer>
+	
+	<th:block th:replace="~{main/header :: headerJs}" />
+	<th:block layout:fragment="script" />
 </body>
 </html>
