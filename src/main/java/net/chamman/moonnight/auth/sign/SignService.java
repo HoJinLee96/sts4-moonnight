@@ -249,7 +249,7 @@ public class SignService {
 		
 		signLogService.registerSignLog(null, verificationEmailTokenDto.getEmail(), ip, SignResult.AUTH_SUCCESS);
 		
-		tokenProvider.removeToken(TokenType.VERIFICATION_PHONE, verificationEmailToken);
+		tokenProvider.removeToken(TokenType.VERIFICATION_EMAIL, verificationEmailToken);
 
 		return authTokenDto;
 	}

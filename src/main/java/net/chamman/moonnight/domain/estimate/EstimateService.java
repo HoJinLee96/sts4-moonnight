@@ -5,6 +5,7 @@ import static net.chamman.moonnight.global.exception.HttpStatusCode.ESTIMATE_NOT
 import static net.chamman.moonnight.global.exception.HttpStatusCode.ESTIMATE_STATUS_DELETE;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -244,7 +245,7 @@ public class EstimateService {
 	@Transactional
 	private Estimate setNewEstimateAndSave(Estimate estimate, EstimateRequestDto estimateRequestDto, List<MultipartFile> images) {
 		
-		List<String> imagesPath = estimate.getImagesPath();
+		List<String> imagesPath = (estimate.getImagesPath() != null) ? estimate.getImagesPath(): new ArrayList<>();
 		List<String> deletedImagesPath = estimateRequestDto.imagesPath();
 		List<String> newImagesPath = null;
 		

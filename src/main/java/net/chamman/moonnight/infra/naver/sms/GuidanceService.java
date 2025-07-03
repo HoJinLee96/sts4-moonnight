@@ -85,10 +85,10 @@ public class GuidanceService {
 			int statusCode = naverMailClient.sendMail(naverMailPayload);
 
 			if((statusCode/100)!=2) {
-				log.error("안내 문자 발송 실패. statusCode: {}, phone: {}", statusCode, recipientEmail);
+				log.error("안내 이메일 발송 실패. statusCode: {}, email: {}", statusCode, recipientEmail);
 			}
 		} catch (Exception e) {
-			log.error("안내 문자 발송 실패. phone: {}, e: {}", recipientEmail, e);
+			log.error("안내 이메일 발송 실패. email: {}, e: {}", recipientEmail, e);
 		}
 	}
 	
