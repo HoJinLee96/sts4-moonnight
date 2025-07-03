@@ -18,8 +18,8 @@
 			/* position, top, z-index는 JS로 제어 */
 			transition: all 0.2s ease-in-out;
 		}
-		
-		/* ★ JS로 추가될 클래스: 스크롤 시 상단 고정 스타일 */
+
+		/* JS로 추가될 클래스: 스크롤 시 상단 고정 스타일 */
 		.is-sticky {
 			position: fixed;
 			top: 0;
@@ -30,7 +30,7 @@
 			/* 살짝 그림자 효과 */
 		}
 
-		/* ★ 꿀팁: position:fixed로 인한 콘텐츠 점프 방지용 패딩을 받을 요소 */
+		/* 꿀팁: position:fixed로 인한 콘텐츠 점프 방지용 패딩을 받을 요소 */
 		.content-after-sticky {
 			/* JS로 padding-top이 동적으로 추가될 것임 */
 			transition: padding-top 0.2s ease-in-out;
@@ -41,7 +41,6 @@
 			justify-content: center;
 			align-items: center;
 			gap: 15px;
-			/* 아이템 사이 간격 */
 			font-size: 14px;
 		}
 
@@ -49,7 +48,6 @@
 			display: flex;
 			align-items: center;
 			gap: 5px;
-			/* 라벨과 입력 필드 사이 간격 */
 		}
 
 		.form-field {
@@ -67,7 +65,7 @@
 		}
 
 		.form-field--text {
-			width: 30px;
+			width: 120px;
 		}
 
 		.btn--estimate {
@@ -103,7 +101,6 @@
 			font-size: 14px;
 		}
 
-
 		/* --- 메인 콘텐츠 이미지 --- */
 		.main-content {
 			padding-top: 30px;
@@ -126,98 +123,60 @@
 </head>
 <main layout:fragment="content">
 	<div id="estimateBar" class="estimate-bar">
-		<div class="content-wrapper">
-			<form class="estimate-form" action="/estimate/simple" method="post">
-				<div class="estimate-form__group">
-					<label for="phone">연락처</label>
-					<select id="phoneFirst" name="phoneFirst" class="form-field form-field--select">
-						<option value="">선택</option>
-						<option value="010">010</option>
-						<option value="02">02</option>
-						<option value="031">031</option>
-						<option value="032">032</option>
-						<option value="033">033</option>
-						<option value="041">041</option>
-						<option value="042">042</option>
-						<option value="044">044</option>
-						<option value="051">051</option>
-						<option value="052">052</option>
-						<option value="053">053</option>
-						<option value="054">054</option>
-						<option value="055">055</option>
-						<option value="061">061</option>
-						<option value="062">062</option>
-						<option value="063">063</option>
-						<option value="064">064</option>
-						<option value="070">070</option>
-						<option value="080">080</option>
-						<option value="0130">0130</option>
-						<option value="0303">0303</option>
-						<option value="0502">0502</option>
-						<option value="0503">0503</option>
-						<option value="0504">0504</option>
-						<option value="0505">0505</option>
-						<option value="0506">0506</option>
-						<option value="0507">0507</option>
-						<option value="0508">0508</option>
-						<option value="050">050</option>
-					</select>
-					<span>-</span>
-					<input type="text" id="phoneMiddle" name="phone" class="form-field form-field--text" maxlength="4"
-						required autocomplete="off">
-					<span>-</span>
-					<input type="text" id="phoneLast" name="phone" class="form-field form-field--text" maxlength="4"
-						required autocomplete="off">
-				</div>
+		<form class="estimate-form" action="/estimate/simple" method="post">
+			<div class="estimate-form__group">
+				<label for="phone">연락처</label>
+				<input type="text" id="phone" name="phone" class="form-field form-field--text" required
+					autocomplete="off">
+			</div>
 
-				<div class="estimate-form__group">
-					<select id="cleaningService" name="cleaningService" class="form-field form-field--select">
-						<option value="">서비스</option>
-						<option value="신축">신축 입주 청소</option>
-						<option value="이사">이사 입주 청소</option>
-						<option value="거주">거주 청소</option>
-						<option value="리모델링">리모델링 청소</option>
-						<option value="준공">준공 청소</option>
-						<option value="상가">상가 청소</option>
-						<option value="오피스">오피스 청소</option>
-						<option value="기타">기타 청소</option>
-					</select>
-				</div>
+			<div class="estimate-form__group">
+				<select id="cleaningService" name="cleaningService" class="form-field form-field--select">
+					<option value="">서비스</option>
+					<option value="신축">신축 입주 청소</option>
+					<option value="이사">이사 입주 청소</option>
+					<option value="거주">거주 청소</option>
+					<option value="리모델링">리모델링 청소</option>
+					<option value="준공">준공 청소</option>
+					<option value="상가">상가 청소</option>
+					<option value="오피스">오피스 청소</option>
+					<option value="기타">기타 청소</option>
+				</select>
+			</div>
 
-				<div class="estimate-form__group">
-					<select id="region" name="region" class="form-field form-field--select">
-						<option value="">지역</option>
-						<option value="서울">서울특별시</option>
-						<option value="부산">부산광역시</option>
-						<option value="대구">대구광역시</option>
-						<option value="인천">인천광역시</option>
-						<option value="광주">광주광역시</option>
-						<option value="대전">대전광역시</option>
-						<option value="울산">울산광역시</option>
-						<option value="세종">세종특별자치시</option>
-						<option value="경기">경기도</option>
-						<option value="강원">강원도</option>
-						<option value="충북">충청북도</option>
-						<option value="충남">충청남도</option>
-						<option value="전북">전라북도</option>
-						<option value="전남">전라남도</option>
-						<option value="경북">경상북도</option>
-						<option value="경남">경상남도</option>
-						<option value="제주">제주특별자치도</option>
-					</select>
-				</div>
+			<div class="estimate-form__group">
+				<select id="region" name="region" class="form-field form-field--select">
+					<option value="">지역</option>
+					<option value="서울">서울특별시</option>
+					<option value="부산">부산광역시</option>
+					<option value="대구">대구광역시</option>
+					<option value="인천">인천광역시</option>
+					<option value="광주">광주광역시</option>
+					<option value="대전">대전광역시</option>
+					<option value="울산">울산광역시</option>
+					<option value="세종">세종특별자치시</option>
+					<option value="경기">경기도</option>
+					<option value="강원">강원도</option>
+					<option value="충북">충청북도</option>
+					<option value="충남">충청남도</option>
+					<option value="전북">전라북도</option>
+					<option value="전남">전라남도</option>
+					<option value="경북">경상북도</option>
+					<option value="경남">경상남도</option>
+					<option value="제주">제주특별자치도</option>
+				</select>
+			</div>
 
-				<button type="submit" class="btn btn--estimate">간편 견적 신청</button>
+			<button type="submit" class="btn btn--estimate">간편 견적 신청</button>
 
-				<div class="estimate-form__group agreement-group">
-					<input type="checkbox" id="agreement" name="agreement" required>
-					<label for="agreement">개인정보 수집 및 이용 동의</label>
-					<a href="javascript:;"
-						onclick="javascript:footerlayerLoad('/static/infoAgreement.html'); return false;">[보기]</a>
-				</div>
+			<div class="estimate-form__group agreement-group">
+				<input type="checkbox" id="agreement" name="agreement" required>
+				<label for="agreement">개인정보 수집 및 이용 동의</label>
+				<a href="javascript:;"
+					onclick="javascript:footerlayerLoad('/static/infoAgreement.html'); return false;">[보기]</a>
+			</div>
 
-			</form>
-		</div>
+		</form>
 	</div>
 
 	<div class="content-after-sticky">
@@ -231,21 +190,30 @@
 			</div>
 		</div>
 	</div>
+</main>
+<th:block layout:fragment="script">
 
-	<script th:inline="javascript">
+	<script th:inline="javascript" type="module">
+		import {initPhoneFormatting} from '/js/format.js';
+
 		document.addEventListener('DOMContentLoaded', function () {
-			// 1. 필요한 요소들을 가져온다.
+
+			// 1. 필요한 요소들 로드
 			const estimateBar = document.getElementById('estimateBar');
 			const contentAfterSticky = document.querySelector('.content-after-sticky');
+
+			// 간편 견적 바의 원래 위치를 파악한다 (페이지 상단으로부터의 거리).
+			const stickyPoint = estimateBar.offsetTop;
+			const stickyBarHeight = estimateBar.offsetHeight;
+
+			const phoneInput = document.getElementById('phone');
 
 			// 요소가 없을 경우 에러 방지
 			if (!estimateBar) return;
 
-			// 2. 간편 견적 바의 원래 위치를 파악한다 (페이지 상단으로부터의 거리).
-			const stickyPoint = estimateBar.offsetTop;
-			const stickyBarHeight = estimateBar.offsetHeight;
+			// 2. 변수 선언
 
-			// 3. 스크롤 이벤트를 감지하는 함수를 만든다.
+			// 3. 함수 작성
 			function handleScroll() {
 				// 현재 스크롤된 Y축 위치가 원래 위치보다 커지면
 				if (window.scrollY > stickyPoint) {
@@ -260,10 +228,12 @@
 				}
 			}
 
-			// 4. window 객체에 스크롤 이벤트 리스너를 등록한다.
+			// 4. 이벤트 등록
 			window.addEventListener('scroll', handleScroll);
+			initPhoneFormatting(phoneInput);
 		});
 	</script>
-</main>
+
+</th:block>
 
 </html>

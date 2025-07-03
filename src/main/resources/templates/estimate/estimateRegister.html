@@ -6,14 +6,12 @@
 	<style>
 		.estimate-form-container {
 			max-width: 800px;
-			/* 폼의 최대 너비 설정 */
-			margin: 40px auto;
-			/* 위아래 여백 및 중앙 정렬 */
+			margin: 50px auto;
 			padding: 40px;
 			background-color: #fff;
 			border: 1px solid var(--border-color, #efefef);
-			border-radius: 8px;
-			box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+			border-radius: 10px;
+			box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 		}
 
 		/* --- 진행률 표시 바 --- */
@@ -137,7 +135,6 @@
 			min-width: 765px;
 		}
 
-		/* ... 이미지 미리보기 스타일은 이전 코드 재사용 ... */
 
 
 		/* --- 네비게이션 버튼 --- */
@@ -215,7 +212,7 @@
 
 		.timer {
 			display: flex;
-			width: 41px;
+			width: 40px;
 			align-items: center;
 			justify-content: center;
 			padding: 0 15px;
@@ -263,26 +260,29 @@
 			box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.2);
 		}
 
-		.image-preview {
+		.image-preview-item {
 			position: relative;
 		}
 
-		.image-preview img {
-			width: 72px;
-			height: 72px;
-			border-radius: 20px;
+		.image-preview-item img {
+			width: 100px;
+			height: 100px;
+			object-fit: cover;
+			border-radius: 5px;
+			cursor: pointer;
 		}
 
-		.image-preview button {
+		.image-preview-item button {
 			position: absolute;
 			right: 0px;
-			top: 0px;
+			top: 2px;
 			border: none;
 			background: none;
-			font-size: 25px;
+			font-size: 15px;
 			color: white;
 			cursor: pointer;
 		}
+
 
 		/* --- 로딩 스피너 스타일 --- */
 		.spinner-container {
@@ -424,11 +424,105 @@
 			border-radius: 10px;
 			margin-left: 8px;
 		}
+
+		/* --- 등록 완료 화면 스타일 --- */
+		.success-container {
+			text-align: center;
+			padding: 50px 20px;
+			animation: fadeIn 0.5s;
+		}
+
+		.success-container h1 {
+			font-size: 26px;
+			margin-bottom: 10px;
+		}
+
+		.success-container p.subtitle {
+			font-size: 16px;
+			color: #666;
+			line-height: 1.6;
+			margin-bottom: 30px;
+		}
+
+		.success-details {
+			display: inline-block;
+			/* 내용물 크기에 맞게 너비 조정 */
+			width: 100%;
+			max-width: 500px;
+			/* 최대 너비 제한 */
+			background-color: #f8f9fa;
+			padding: 25px;
+			border-radius: 8px;
+			text-align: left;
+			margin-bottom: 35px;
+			border: 1px solid var(--border-color, #efefef);
+		}
+
+		.success-details h3 {
+			text-align: center;
+			margin-top: 0;
+			margin-bottom: 20px;
+			font-size: 18px;
+			border-bottom: 1px solid #ddd;
+			padding-bottom: 15px;
+		}
+
+		.success-details ul {
+			list-style: none;
+			padding: 0;
+			margin: 0;
+		}
+
+		.success-details li {
+			padding: 12px 0;
+			border-bottom: 1px solid #eee;
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
+			/* 여러 줄일 경우 위쪽 정렬 */
+			font-size: 15px;
+		}
+
+		.success-details li:last-child {
+			border-bottom: none;
+		}
+
+		.success-details li strong {
+			color: #333;
+			flex-shrink: 0;
+			/* 라벨 너비가 줄어들지 않도록 */
+			margin-right: 20px;
+			width: 120px;
+			/* 라벨 너비 고정 */
+		}
+
+		.success-details li span {
+			color: #555;
+			text-align: right;
+			word-break: break-all;
+			/* 긴 내용이 있을 경우 줄바꿈 */
+		}
+
+		.btn-home {
+			display: inline-block;
+			background-color: var(--main-color, #20367a);
+			color: white;
+			padding: 12px 30px;
+			text-decoration: none;
+			border-radius: 5px;
+			font-weight: bold;
+			transition: opacity 0.3s;
+			font-size: 16px;
+		}
+
+		.btn-home:hover {
+			opacity: 0.9;
+		}
 	</style>
 </head>
 
 <main layout:fragment="content">
-	<div class="content-wrapper">
+	<div id="estimate-container-wrapper" class="content-wrapper">
 		<div class="estimate-form-container">
 			<h1>청소 견적 문의하기</h1>
 			<form id="multiStepForm">
@@ -474,8 +568,7 @@
 						<div class="form-group">
 							<label for="phone" class="form-label">휴대폰 번호<span class="required">＊</span></label>
 							<div class="input-with-button">
-								<input type="tel" id="phone" name="phone" class="form-input" placeholder="'-' 없이 숫자만 입력"
-									th:value="${user?.phone}">
+								<input type="tel" id="phone" name="phone" class="form-input" th:value="${user?.phone}">
 								<button type="button" class="btn btn--secondary btn-send-code"
 									data-auth-type="phone">인증번호 발송</button>
 							</div>
@@ -588,11 +681,14 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.0.6/compressor.min.js"></script>
 
 	<script th:inline="javascript" type="module">
+		import {initPhoneFormatting, initVerificationCodeFormatting} from '/js/format.js';
 		import {validate} from '/js/validate.js';
 		import {sendEmail, verifyMailCode} from '/js/emailVerification.js';
 		import {sendSms, verifySmsCode} from '/js/smsVerification.js';
+		import {startCountdown, stopCountdown} from '/js/timer.js';
 		import {initAddressSearch} from '/js/address-api.js';
 		import {registerEstimate} from '/js/estimate.js';
+		import {createImageHandler} from '/js/imageHandler.js';
 
 		document.addEventListener('DOMContentLoaded', () => {
 			// --- 1. DOM 요소 가져오기 ---
@@ -640,13 +736,9 @@
 			// --- 2. 상태 관리 변수 ---
 			let currentStep = 0;
 			let currentAuthType;
-			let isVerified = false;
-			let timer;
-			let timeLeft = 180;
-			let timerEndTime;
+			let isVerified = true;
 			let selectedFiles = [];
-			const MAX_IMAGES = 10;
-			const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
 
 			// --- 3. 함수 정의 ---
 
@@ -662,7 +754,7 @@
 				switch (stepIndex) {
 					case 0: // Step 1: 기본 정보
 						try {
-							validate('name', nameInput.value.trim());
+							validate('name', nameInput.value);
 							if (cleaningServiceSelect.value === '') {
 								isValid = false;
 								cleaningServiceSelect.classList.add('form-select--error');
@@ -779,48 +871,9 @@
 				verifyBtn.textContent = '인증하기';
 
 				//타이머
-				clearInterval(timer);
-				timerDisplay.style.display = 'flex'; // 타이머 표시부는 다시 보이게
+				stopCountdown(timerDisplay);
 				timerDisplay.textContent = '03:00'; // 기본값으로 리셋
-				timerEndTime = null; // 종료 시각 초기화
 
-
-			};
-
-			// 카운트다운 타이머 시작 함수
-			const startTimer = () => {
-				// 1. 타이머가 끝나는 정확한 '미래 시각'을 계산해서 저장
-				timerEndTime = Date.now() + 180 * 1000; // 현재 시간 + 3분(180초)
-
-				// 2. 기존에 돌아가던 타이머가 있으면 완전히 정지
-				clearInterval(timer);
-
-				// 3. 1초마다 남은 시간을 '재계산'해서 화면을 '갱신'하는 인터벌 시작
-				timer = setInterval(updateTimerDisplay, 1000);
-
-				// 4. 시작하자마자 한번 바로 실행해서 03:00으로 보이게 함
-				updateTimerDisplay();
-			};
-
-			// 1초마다 실행될 타이머 화면 업데이트 함수
-			const updateTimerDisplay = () => {
-				// '종료 시각'과 '현재 시각'의 차이를 계산해서 남은 시간을 구함
-				const remainingMilliseconds = timerEndTime - Date.now();
-
-				// 남은 시간이 0보다 크면
-				if (remainingMilliseconds > 0) {
-					const totalSeconds = Math.round(remainingMilliseconds / 1000);
-					const minutes = Math.floor(totalSeconds / 60);
-					const seconds = totalSeconds % 60;
-
-					// 화면에 '분:초' 형태로 표시 (예: 02:59)
-					timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-				} else {
-					// 남은 시간이 0 이하면 타이머 종료
-					timerDisplay.textContent = '시간만료';
-					verifyBtn.disabled = true; // 인증하기 버튼 비활성화
-					clearInterval(timer); // 인터벌 완전 정지
-				}
 			};
 
 			// 주소 검색 함수
@@ -875,108 +928,59 @@
 				alert(policyContent);
 			}
 
-			// Compressor.js를 적용한 비동기 이미지 처리 함수
-			async function handleImageSelection(event) {
-				const files = Array.from(event.target.files);
-				const remainingSlots = MAX_IMAGES - selectedFiles.length;
-
-				if (files.length === 0) return;
-
-				if ((selectedFiles.length + files.length) > MAX_IMAGES) {
-					alert(`이미지는 최대 ${MAX_IMAGES}장까지 업로드할 수 있습니다.`);
-				}
-
-				const availableFiles = files.slice(0, remainingSlots);
-
-				// ★★★ 1. 처리 시작! 바로 스피너를 보여준다. ★★★
-				previewContainer.innerHTML = `
-			        <div class="spinner-container">
-			            <div class="loading-spinner"></div>
-			        </div>
-			    `;
-				submitBtn.disabled = true;
-				submitBtn.textContent = '이미지 처리 중...';
 
 
-				const compressionPromises = availableFiles.map(file => {
-					if (file.size > MAX_FILE_SIZE) {
-						alert(`이미지 1장의 최대 용량은 10MB입니다. (${file.name} 제외)`);
-						return Promise.resolve(null);
-					}
-					return new Promise((resolve, reject) => {
-						new Compressor(file, {
-							quality: 0.8,
-							maxWidth: 1920,
-							maxHeight: 1080,
-							success(compressedResult) {
-								resolve({file: compressedResult, name: file.name});
-							},
-							error(err) {
-								reject(err);
-							},
-						});
-					});
-				});
+			// 성공 화면을 동적으로 그려주는 함수
+			function showSuccessView(estimateData) {
+				const container = document.getElementById('estimate-container-wrapper');
 
-				try {
-					const compressedResults = await Promise.all(compressionPromises);
-					const newFiles = compressedResults
-						.filter(result => result !== null)
-						.map(result => result.file);
+				// 연락처 정보 처리
+				const contactInfo = estimateData.phone ? `휴대폰 (${estimateData.phone})` : `이메일 (${estimateData.email})`;
 
-					selectedFiles.push(...newFiles);
+				// 상세 내용 처리: 내용이 없으면 '입력 없음' 표시, 줄바꿈(\n)은 <br>로 변환
+				const contentHtml = estimateData.content
+					? estimateData.content.replace(/\n/g, '<br>')
+					: '<span style="color: #999;">입력된 내용이 없습니다.</span>';
 
-					// ★★★ 2. 성공! redrawPreview가 스피너를 없애고 이미지를 그린다. ★★★
-					redrawPreview();
+				// 새로 교체할 성공 HTML 컨텐츠를 생성
+				const successHtml = `
+			                <div class="success-container">
+			                    <h1>견적 문의가 성공적으로 접수되었습니다.</h1>
+			                    <p class="subtitle">빠른 시일 내에 담당자가 확인 후 연락드리겠습니다.<br>감사합니다.</p>
+			                    
+			                    <div class="success-details">
+			                        <h3>접수된 내용 확인</h3>
+			                        <ul>
+			                            <li><strong>접수 번호:</strong> <span>${estimateData.estimateId}</span></li>
+			                            <li><strong>성함 (상호명):</strong> <span>${estimateData.name}</span></li>
+			                            <li><strong>연락처 정보:</strong> <span>${contactInfo}</span></li>
+			                            <li><strong>요청 서비스:</strong> <span>${estimateData.cleaningService}</span></li>
+			                            <li>
+			                                <strong>주소:</strong> 
+			                                <span>
+			                                    (${estimateData.postcode}) ${estimateData.mainAddress} ${estimateData.detailAddress}
+			                                </span>
+			                            </li>
+			                            <li>
+			                                <strong>상세 내용:</strong>
+			                                <span>${contentHtml}</span>
+			                            </li>
+			                        </ul>
+			                    </div>
+			                    <div>
+			                    <a href="/estimate/search" class="btn btn--secondary">견적 조회</a>
+			                    <a href="/" class="btn btn--primary">홈으로 돌아가기</a>
+								</div>
+			                </div>
+			            `;
 
-				} catch (error) {
-					console.error('이미지 처리 실패:', error);
-					alert('이미지를 처리하는 중 오류가 발생했습니다.');
-					// ★★★ 3. 실패! 스피너를 지우고, 기존에 있던 이미지들을 다시 그려준다. ★★★
-					redrawPreview();
-				} finally {
-					// ★★★ 4. 최종적으로 버튼 상태를 원래대로 복구 ★★★
-					submitBtn.disabled = false;
-					submitBtn.textContent = '견적 제출';
-				}
-			}
-
-
-			// displayPreview는 파일 객체(File 또는 Blob)를 받아 화면에 표시
-			function displayPreview(file, index) {
-				const reader = new FileReader();
-				reader.readAsDataURL(file);
-				reader.onload = () => {
-					const div = document.createElement('div');
-					div.className = 'image-preview';
-
-					const img = document.createElement('img');
-					img.src = reader.result;
-					img.alt = file.name; // alt 속성 추가
-
-					const removeButton = document.createElement('button');
-					removeButton.innerHTML = '&times;';
-					removeButton.dataset.index = index;
-
-					removeButton.addEventListener('click', (e) => {
-						const indexToRemove = parseInt(e.target.dataset.index, 10);
-						selectedFiles.splice(indexToRemove, 1);
-						redrawPreview(); // 제거 후 다시 그리기
-					});
-
-					div.append(img, removeButton);
-					previewContainer.append(div);
-				};
-			}
-
-			// redrawPreview는 현재 selectedFiles 배열을 기준으로 화면을 완전히 새로 그림
-			function redrawPreview() {
-				previewContainer.innerHTML = ''; // 미리보기 영역 초기화
-				selectedFiles.forEach((file, index) => displayPreview(file, index));
+				container.innerHTML = successHtml;
 			}
 
 
 			// --- 4. 이벤트 리스너 등록 ---
+			initPhoneFormatting(phoneInput);
+			initVerificationCodeFormatting(verificationInput);
 
 			// 인증 방식 선택 라디오 버튼
 			authMethodRadios.forEach(radio => {
@@ -1028,7 +1032,9 @@
 						btn.disabled = false;
 						btn.textContent = '재전송';
 						targetInput.classList.remove('form-input--error');
-						startTimer();
+						startCountdown(180, timerDisplay, () => {
+							verifyBtn.disabled = true;
+						});
 					} catch (error) {
 						console.log(error);
 						alert(error.message);
@@ -1063,7 +1069,7 @@
 					verificationInput.disabled = true;
 					sendCodeBtns.forEach(btn => btn.disabled = true);
 					authAgreementCheckbox.disabled = true;
-					timerDisplay.style.display = 'none';
+					stopCountdown(timerDisplay);
 					isVerified = true;
 
 				} catch (error) {
@@ -1075,8 +1081,20 @@
 			});
 
 			// Compressor.js를 사용한 이미지 처리
-			imageInput.addEventListener('change', handleImageSelection);
+			const imageHandler = createImageHandler({
+				previewContainerId: 'image-preview-container',
+				inputElementId: 'image-input',
+			});
+			imageHandler.init();
 
+			/*
+			const config = {
+				previewContainer: 'image-preview-container',
+				submitBtn: 'submitBtn',
+				selectedFiles: selectedFiles
+			};
+			imageInput.addEventListener('change', (e)=>handleImageSelection(e, config));
+			*/
 
 			// 폼 최종 제출 로직 수정
 			multiStepForm.addEventListener('submit', async (e) => {
@@ -1105,22 +1123,20 @@
 					cleaningService: cleaningServiceSelect.value,
 					content: contentTextArea.value
 				};
+				console.log(estimateDto);
+
+				const formData = imageHandler.buildFormData(estimateDto);
 
 				try {
 					// 2. API 함수 호출 (DTO와 이미지 파일들 전달)
-					const json = await registerEstimate(estimateDto, selectedFiles);
-					const estimateId = json.data.estimateId;
+					const json = await registerEstimate(formData);
 
-					// 성공 후 다른 페이지로 이동하거나 폼을 리셋
-					window.location.href = '/estimate/success';
-
+					showSuccessView(json.data);
 				} catch (error) {
-					console.error('견적 제출 실패:', error);
-					alert(error.message);
-				} finally {
-					// 3. 성공/실패 여부와 관계없이 버튼 다시 활성화
 					submitBtn.disabled = false;
 					submitBtn.textContent = '견적 제출';
+					console.error('견적 제출 실패:', error);
+					alert(error.message);
 				}
 			});
 

@@ -1,8 +1,5 @@
 import { validate } from '/js/validate.js';
 
-let timerInterval = null;
-let smsId = 0; // sms 인증 요청 여부
-
 // ======= 휴대폰 유효성 + 중복 검사 =======
 export async function validatePhone(phone) {
 	
@@ -78,30 +75,3 @@ export async function verifySmsCode(phone, code) {
 	}
 
 }
-
-export function startVerificationTimer(onTimeout) {
-	let timeLeft = 180;
-	const timerElement = document.getElementById("verificationTimeMessage");
-
-	timerElement.textContent = formatTime(timeLeft);
-
-	if (timerInterval) clearInterval(timerInterval); // 중복 방지
-
-	timerInterval = setInterval(() => {
-		timeLeft--;
-		timerElement.textContent = formatTime(timeLeft);
-
-		if (timeLeft <= 0) {
-			clearInterval(timerInterval);
-			timerInterval = null;
-			onTimeout();
-		}
-	}, 1000);
-}
-
-function formatTime(seconds) {
-	const m = String(Math.floor(seconds / 60)).padStart(2, "0");
-	const s = String(seconds % 60).padStart(2, "0");
-	return `${m}:${s}`;
-}
-

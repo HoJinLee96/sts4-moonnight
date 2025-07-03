@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-	xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+
 <head>
 	<meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
 	<title layout:fragment="title">기본 제목</title>
@@ -9,32 +9,43 @@
 		:root {
 			--main-color: #20367a;
 			--main-text-color: #333;
-			--main-text-color-light: white; /* 흰색 텍스트용 변수 추가 */
+			--main-text-color-light: white;
+			/* 흰색 텍스트용 변수 추가 */
 			--border-color: #efefef;
 			--error-color: red;
 			--base-border-radius: 5px;
 			--font-size-base: 16px;
-		    --layout-min-width: 940px;
-		    --layout-max-width: 1920px;
-		    --layout-min-height: 650px;
+			--layout-min-width: 940px;
+			--layout-max-width: 1920px;
+			--layout-min-height: 650px;
 		}
-		main{
-			min-height: var(--layout-min-height); 
+
+		main {
+			min-height: var(--layout-min-height);
+			min-width: var(--layout-min-width);
+			max-width: var(--layout-max-width);
+			margin: 0 auto;
+		}
+		.container {
+			display: flex;
+			padding-top: 50px;
+			justify-content: center;
 		}
 	</style>
 	<th:block th:replace="~{main/header :: headerCss}" />
 	<th:block th:replace="~{main/footer :: footerCss}" />
 </head>
+
 <body>
 	<header th:replace="~{main/header :: headerFragment}"></header>
 
 	<th:block layout:fragment="content">
-	    <!-- 각 페이지에서 채울 영역 -->
+		<!-- 각 페이지에서 채울 영역 -->
 	</th:block>
 
 	<footer th:replace="~{main/footer :: footerFragment}"></footer>
-	
 	<th:block th:replace="~{main/header :: headerJs}" />
 	<th:block layout:fragment="script" />
 </body>
+
 </html>

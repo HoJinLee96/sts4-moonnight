@@ -1,8 +1,5 @@
 import { validate } from '/js/validate.js';
 
-let timerInterval = null;
-let mailId = 0; // 이메일 인증 요청 여부
-
 // ======= 이메일 유효성 + 중복 검사 =======
 export async function validateEmail(successHandler, errorHandler) {
 	const email = document.getElementById("userEmail").value;
@@ -55,9 +52,9 @@ export async function sendEmail(email) {
 
 // ======= 이메일 인증번호 검증 =======
 export async function verifyMailCode(email, code) {
-	
+
 	validate('email', email);
-	validate('code',code);
+	validate('code', code);
 
 	const body = {
 		email: email,
@@ -77,33 +74,7 @@ export async function verifyMailCode(email, code) {
 		const error = new Error(json.message || '서버 요청에 실패했습니다.');
 		error.code = json.code;
 		error.type = "SERVER";
-		throw error;	}
+		throw error;
+	}
 
 }
-
-export function startVerificationTimer(onTimeout) {
-	let timeLeft = 180;
-	const timerElement = document.getElementById("verificationTimeMessage");
-
-	timerElement.textContent = formatTime(timeLeft);
-
-	if (timerInterval) clearInterval(timerInterval); // 중복 방지
-
-	timerInterval = setInterval(() => {
-		timeLeft--;
-		timerElement.textContent = formatTime(timeLeft);
-
-		if (timeLeft <= 0) {
-			clearInterval(timerInterval);
-			timerInterval = null;
-			onTimeout();
-		}
-	}, 1000);
-}
-
-function formatTime(seconds) {
-	const m = String(Math.floor(seconds / 60)).padStart(2, "0");
-	const s = String(seconds % 60).padStart(2, "0");
-	return `${m}:${s}`;
-}
-
