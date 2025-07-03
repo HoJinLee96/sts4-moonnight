@@ -13,7 +13,7 @@ public class ImageValidator implements ConstraintValidator<ImageConstraint, List
 	@Override
 	public boolean isValid(List<MultipartFile> images, ConstraintValidatorContext context) {
 		if (images == null || images.isEmpty()) {
-			return true; // 이미지는 optional이면 true로 통과시켜도 됨
+			return true;
 		}
 		
 		if (images.size() > 10) {

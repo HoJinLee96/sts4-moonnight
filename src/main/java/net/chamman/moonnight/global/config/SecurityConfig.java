@@ -45,7 +45,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.oauth.HttpCookieOAuth2AuthorizationRequestRepository;
 import net.chamman.moonnight.auth.oauth.OAuth2LoginSuccessHandler;
-import net.chamman.moonnight.global.security.fillter.JwtAuthPhoneFilter;
+import net.chamman.moonnight.global.security.fillter.JwtAuthFilter;
 import net.chamman.moonnight.global.security.fillter.JwtFilter;
 import net.chamman.moonnight.global.security.fillter.SilentAuthenticationFilter;
 
@@ -56,7 +56,7 @@ import net.chamman.moonnight.global.security.fillter.SilentAuthenticationFilter;
 public class SecurityConfig {
 
 	private final JwtFilter jwtFilter;
-	private final JwtAuthPhoneFilter jwtAuthPhoneFilter;
+	private final JwtAuthFilter jwtAuthFilter;
 	private final SilentAuthenticationFilter silentAuthenticationFilter;
 	private final OAuth2LoginSuccessHandler oauth2LoginSuccessHandler;
 	private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
@@ -77,7 +77,7 @@ public class SecurityConfig {
 	private String kakaoRedirectUri;
 
 	// 누구나 접근 가능
-	public static final String[] PUBLIC_URIS = { "/api/*/public/**", "/", "/home", "/estimate", "/estimate/success", "/review", "/verify/**",
+	public static final String[] PUBLIC_URIS = { "/api/*/public/**", "/", "/home", "/estimate", "/estimate/**", "/review", "/verify/**",
 			"/sign/*" };
 
 	// 로그인 하면 안 되는 접근
@@ -107,11 +107,11 @@ public class SecurityConfig {
 	@Order(1)
 	public SecurityFilterChain authSecurityFilterChain(HttpSecurity http) throws Exception {
 		log.debug("* authSecurityFilterChain() @Order(1) 필터 적용.");
-		http.securityMatcher("/api/spem/private/auth/**", "/api/estimate/private/auth/**")
+		http.securityMatcher("/api/estimate/private/auth", "/api/spem/private/auth", "/api/spem/private/auth/**", "/api/estimate/private/auth/**")
 				.csrf(AbstractHttpConfigurer::disable)
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-				.addFilterBefore(jwtAuthPhoneFilter, UsernamePasswordAuthenticationFilter.class);
+				.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
 	}

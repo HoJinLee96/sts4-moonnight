@@ -186,10 +186,8 @@ public class SignService {
 		}
 	}
 	
-	/** 휴대폰 인증 로그인
-	 * @param token
-	 * @param phone
-	 * @param name
+	/** 휴대폰 인증 토큰 통해 auth jwt 발행
+	 * @param verificationPhoneToken
 	 * @param ip
 	 * 
 	 * @throws IllegalTokenException {@link TokenProvider#getDecryptedTokenDto} 토큰 문자열 null 또는 비어있음
@@ -201,17 +199,17 @@ public class SignService {
 	 * @throws VerificationExpiredException {@link VerificationService#isVerify} DB 미인증된 인증 요청(시관 초과된 인증).
 	 * @throws NotVerifyException {@link VerificationService#isVerify} DB 미인증된 인증 요청.
 	 * 
-     * @throws EncryptException {@link JwtProvider#createVerifyPhoneToken} 암호화 실패
-	 * @throws CreateJwtException {@link JwtProvider#createVerifyPhoneToken} 토큰 생성 실패
+     * @throws EncryptException {@link JwtProvider#createAuthToken} 암호화 실패
+	 * @throws CreateJwtException {@link JwtProvider#createAuthToken} 토큰 생성 실패
 	 * 
-	 * @return 휴대폰 인증 로그인 토큰
+	 * @return auth 로그인 토큰
 	 */
-	public String signInAuthSms(String verificationPhoneToken, String reqPhone, String name, String ip) {
+	public String signInAuthBySms(String verificationPhoneToken, String ip) {
 		
 		VerificationPhoneTokenDto verificationPhoneTokenDto = tokenProvider.getDecryptedTokenDto(VerificationPhoneTokenDto.TOKENTYPE, verificationPhoneToken);
 		verificationService.isVerify(verificationPhoneTokenDto.getIntVerificationId());
 
-		String authPhoneTokenDto = jwtProvider.createAuthPhoneToken(
+		String authTokenDto = jwtProvider.createAuthToken(
 				verificationPhoneTokenDto.getVerificationId(),
 				verificationPhoneTokenDto.getPhone());
 		
@@ -219,7 +217,41 @@ public class SignService {
 		
 		tokenProvider.removeToken(TokenType.VERIFICATION_PHONE, verificationPhoneToken);
 
-		return authPhoneTokenDto;
+		return authTokenDto;
+	}
+	
+	/** 이메일 인증 토큰 통해 auth jwt 발행
+	 * @param verificationEmailToken
+	 * @param ip
+	 * 
+	 * @throws IllegalTokenException {@link TokenProvider#getDecryptedTokenDto} 토큰 문자열 null 또는 비어있음
+	 * @throws NoSuchTokenException {@link TokenProvider#getDecryptedTokenDto} Redis 일치하는 토큰 없음
+     * @throws DecryptException {@link TokenProvider#getDecryptedTokenDto} 복호화 실패
+     * @throws RedisGetException {@link TokenProvider#getDecryptedTokenDto} Redis 조회 실패
+     * 
+	 * @throws NoSuchDataException {@link VerificationService#isVerify} DB verificationId 일치하는 인증 요청 없음.
+	 * @throws VerificationExpiredException {@link VerificationService#isVerify} DB 미인증된 인증 요청(시관 초과된 인증).
+	 * @throws NotVerifyException {@link VerificationService#isVerify} DB 미인증된 인증 요청.
+	 * 
+     * @throws EncryptException {@link JwtProvider#createAuthToken} 암호화 실패
+	 * @throws CreateJwtException {@link JwtProvider#createAuthToken} 토큰 생성 실패
+	 * 
+	 * @return auth jwt
+	 */
+	public String signInAuthByEmail(String verificationEmailToken, String ip) {
+		
+		VerificationEmailTokenDto verificationEmailTokenDto = tokenProvider.getDecryptedTokenDto(VerificationEmailTokenDto.TOKENTYPE, verificationEmailToken);
+		verificationService.isVerify(verificationEmailTokenDto.getIntVerificationId());
+
+		String authTokenDto = jwtProvider.createAuthToken(
+				verificationEmailTokenDto.getVerificationId(),
+				verificationEmailTokenDto.getEmail());
+		
+		signLogService.registerSignLog(null, verificationEmailTokenDto.getEmail(), ip, SignResult.AUTH_SUCCESS);
+		
+		tokenProvider.removeToken(TokenType.VERIFICATION_EMAIL, verificationEmailToken);
+
+		return authTokenDto;
 	}
 	
 //	@Transactional
@@ -287,7 +319,7 @@ public class SignService {
 		}
 	}
 	
-	/** 로그아웃
+	/** LOCAL 로그아웃
 	 * @param accessToken
 	 * @param refreshToken
 	 * @param clientIp
@@ -303,12 +335,12 @@ public class SignService {
 	 */
 	@Transactional
 	public void signOut(String accessToken ,String refreshToken, String clientIp) {
+		log.debug("* LOCAL 로그아웃 요청.");
 		
 //		1. accessToken 블랙리스트 등록
 		try {
 			long ttl = jwtProvider.getAccessTokenRemainingTime(accessToken);
-			tokenProvider.addAccessTokenBlacklist(accessToken, ttl, "SIGNOUT");
-			log.debug("* 로그아웃 요청. 블랙리스트에 AT 등록. AccessToken: [{}], RequestIp: [{}]", LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM), clientIp);
+			tokenProvider.addTokenBlacklist(accessToken, ttl, "SIGNOUT");
 		} catch (TimeOutJwtException e) {
 			log.debug("* 이미 만료된 AT.");
 		}
@@ -318,6 +350,33 @@ public class SignService {
 		if(!(tokenProvider.removeToken(TokenType.JWT_REFRESH, userId))) {
 			log.warn("* 로그아웃 중 RefreshToken 삭제 실패. 도용된 RefreshToken.userId: [{}], RefreshToken: [{}], RequestIp: [{}]", userId, refreshToken, clientIp);
 			throw new IllegalJwtException(JWT_ILLEGAL,"* 로그아웃 - refreshToken 삭제 실패. 도용된 RefreshToken.");
+		}
+	}
+	
+	/** AUTH 로그아웃
+	 * @param accessToken
+	 * @param refreshToken
+	 * @param clientIp
+	 * 
+	 * @throws TimeOutJwtException {@link JwtProvider#getSignJwtRemainingTime}, {@link JwtProvider#validateRefreshToken} 시간 초과
+	 * @throws ValidateJwtException {@link JwtProvider#getSignJwtRemainingTime}, {@link JwtProvider#validateRefreshToken} JWT 파싱 실패
+	 * 
+	 * @throws RedisSetException {@link TokenProvider#addAccessJwtBlacklist} Redis 저장 중 오류
+	 * 
+     * @throws DecryptException {@link JwtProvider#validateRefreshToken} 복호화 실패
+     * 
+     * @throws IllegalJwtException(@link #signOutLocal)
+	 */
+	@Transactional
+	public void signOutAuth(String authToken, String clientIp) {
+		log.debug("* AUTH 로그아웃 요청.");
+		
+//		authToken 블랙리스트 등록
+		try {
+			long ttl = jwtProvider.getAuthTokenRemainingTime(authToken);
+			tokenProvider.addTokenBlacklist(authToken, ttl, "SIGNOUT");
+		} catch (TimeOutJwtException e) {
+			log.debug("* 이미 만료된 AuthToken.");
 		}
 	}
 	

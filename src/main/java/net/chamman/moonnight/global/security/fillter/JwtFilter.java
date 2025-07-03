@@ -4,11 +4,13 @@ import static net.chamman.moonnight.global.exception.HttpStatusCode.JWT_ILLEGAL;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -63,10 +65,29 @@ public class JwtFilter extends AbstractAccessTokenFilter<CustomUserDetails> {
 	
 	@Override
 	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-		String uri = request.getRequestURI();
-		// API 경로 패턴
-		boolean isApiPrivateRoute = uri.startsWith("/api/") && uri.contains("/private/");
-		return !(isApiPrivateRoute);
+		AntPathMatcher matcher = new AntPathMatcher();
+		String PRIVATE_PATTERN = "/api/**/private/**";
+		Set<String> SKIP_PATHS = Set.of(
+		        "/api/spem/private/auth",
+		        "/api/estimate/private/auth",
+		        "/api/spem/private/auth/**",
+		        "/api/estimate/private/auth/**"
+		);
+		
+	    String uri = request.getRequestURI();
+	    boolean skipResult = false;
+	    for (String pattern : SKIP_PATHS) {
+	        if (matcher.match(pattern, uri)) {
+	        	skipResult = true; 
+	        }
+	    }
+	    // 1) /api/**/private/** 패턴과 일치하고
+	    // 2) 예외 리스트에 없으면 → 필터 적용
+	    boolean mustFilter = matcher.match(PRIVATE_PATTERN, uri) && !skipResult;
+
+	    // shouldNotFilter가 true면 **필터를 건너뜀**이므로
+	    // mustFilter를 뒤집어서 반환
+	    return !mustFilter;
 	}
 	
 }

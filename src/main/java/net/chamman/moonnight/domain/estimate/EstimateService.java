@@ -5,6 +5,7 @@ import static net.chamman.moonnight.global.exception.HttpStatusCode.ESTIMATE_NOT
 import static net.chamman.moonnight.global.exception.HttpStatusCode.ESTIMATE_STATUS_DELETE;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -24,6 +25,8 @@ import net.chamman.moonnight.global.exception.NoSuchDataException;
 import net.chamman.moonnight.global.exception.StatusDeleteException;
 import net.chamman.moonnight.global.exception.infra.s3.S3UploadException;
 import net.chamman.moonnight.global.interceptor.IpAddressContextHolder;
+import net.chamman.moonnight.global.util.LogMaskingUtil;
+import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 import net.chamman.moonnight.infra.naver.sms.GuidanceService;
 import net.chamman.moonnight.infra.s3.AwsS3Service;
 
@@ -69,7 +72,14 @@ public class EstimateService {
 			estimate.setRequestIp(requestIp);
 			estimateRepository.save(estimate);
 			
-			guidanceService.sendEstimateInfoSms(estimate.getPhone(), obfuscator.encode(estimate.getEstimateId())+"");
+			// 견적 신청 성공 안내 발송
+			String phone = estimate.getPhone();
+			String email = estimate.getEmail();
+			if(!phone.isBlank()) {
+				guidanceService.sendEstimateInfoSms(phone, obfuscator.encode(estimate.getEstimateId())+"");
+			} else if(!email.isBlank()) {
+				guidanceService.sendEstimateInfoEmail(email, obfuscator.encode(estimate.getEstimateId())+"");
+			}
 			
 			return EstimateResponseDto.fromEntity(estimate, obfuscator);
 		} catch (Exception e) {
@@ -131,8 +141,8 @@ public class EstimateService {
 	 * @param phone
 	 * @return 견적서 리스트
 	 */
-	public List<EstimateResponseDto> getAllEstimateByAuthPhone(String phone) {
-		return estimateRepository.findByPhone(phone)
+	public List<EstimateResponseDto> getAllEstimateByAuth(String recipient) {
+		return estimateRepository.findByEmailOrPhone(recipient)
 				.stream()
 				.filter(e->e.getEstimateStatus()!=EstimateStatus.DELETE)
 				.map(e->EstimateResponseDto.fromEntity(e, obfuscator))
@@ -149,24 +159,10 @@ public class EstimateService {
 	 * 
 	 * @return 견적서
 	 */
-	public EstimateResponseDto getEstimateByEstimateIdAndAuthPhone(int encodedEstimateId, String phone) {
+	public EstimateResponseDto getEstimateByEstimateIdAndAuthRecipient(int encodedEstimateId, String recipient) {
 		
-		Estimate estimate = getAuthorizedEstimate(encodedEstimateId, phone);
+		Estimate estimate = getAuthorizedEstimate(encodedEstimateId, recipient);
 		
-		return EstimateResponseDto.fromEntity(estimate, obfuscator);
-	}
-	
-	/** jwt없이 휴대폰번호 + 난수화된 견적서 ID 통해 조회
-	 * @param encodedEstimateId
-	 * @param phone
-	 * @return 견적서
-	 * 
-	 * @throws NoSuchDataException {@link #getAuthorizedEstimate(int, String)} 찾을 수 없는 견적서
-	 * @throws ForbiddenException {@link #getAuthorizedEstimate(int, String)} 견적서 조회 권한 이상
-	 * @throws StatusDeleteException {@link #getAuthorizedEstimate(int, String)} 이미 삭제된 견적서
-	 */
-	public EstimateResponseDto getEstimateByEstimateIdAndPhone(int encodedEstimateId, String phone) {
-		Estimate estimate = getAuthorizedEstimate(encodedEstimateId, phone);
 		return EstimateResponseDto.fromEntity(estimate, obfuscator);
 	}
 	
@@ -203,9 +199,9 @@ public class EstimateService {
 	 * 
 	 * @throws S3UploadException {@link #setNewEstimateAndSave} AWS S3에 파일 업로드 중 오류 발생 시.
 	 */
-	public EstimateResponseDto updateEstimateByAuthPhone(int encodedEstimateId, EstimateRequestDto estimateRequestDto, List<MultipartFile> images, String phone) {
+	public EstimateResponseDto updateEstimateByAuthRecipient(int encodedEstimateId, EstimateRequestDto estimateRequestDto, List<MultipartFile> images, String recipient) {
 
-		Estimate estimate = getAuthorizedEstimate(encodedEstimateId, phone);
+		Estimate estimate = getAuthorizedEstimate(encodedEstimateId, recipient);
 
 		Estimate updatedEstimate = setNewEstimateAndSave(estimate, estimateRequestDto, images);
 
@@ -233,8 +229,8 @@ public class EstimateService {
 	 * @throws StatusDeleteException {@link #getAuthorizedEstimate(int, String)} 이미 삭제된 견적서
 	 */
 	@Transactional
-	public void deleteEstimateByAuth(int encodedEstimateId, String phone) {
-		Estimate estimate = getAuthorizedEstimate(encodedEstimateId, phone);
+	public void deleteEstimateByAuthRecipient(int encodedEstimateId, String recipient) {
+		Estimate estimate = getAuthorizedEstimate(encodedEstimateId, recipient);
 		estimate.setEstimateStatus(EstimateStatus.DELETE);
 	}
 	
@@ -249,12 +245,22 @@ public class EstimateService {
 	@Transactional
 	private Estimate setNewEstimateAndSave(Estimate estimate, EstimateRequestDto estimateRequestDto, List<MultipartFile> images) {
 		
-		List<String> oldImagesPath = estimate.getImagesPath();
+		List<String> imagesPath = (estimate.getImagesPath() != null) ? estimate.getImagesPath(): new ArrayList<>();
+		List<String> deletedImagesPath = estimateRequestDto.imagesPath();
 		List<String> newImagesPath = null;
 		
-//		1. 새로운 이미지 S3 등록
+		if(deletedImagesPath != null && !deletedImagesPath.isEmpty()) {
+			imagesPath.removeAll(deletedImagesPath);
+		}
+		
+//		1. 기존 이미지 수정 및 새로운 이미지 S3 등록
 		if (images != null && !images.isEmpty()) {
-			newImagesPath = awsS3Service.uploadEstimateImages(images, estimateRequestDto.phone());
+			newImagesPath = awsS3Service.uploadEstimateImages(images, estimate.getEstimateId()+"");
+			if(imagesPath!=null) {
+				imagesPath.addAll(newImagesPath);
+			} else {
+				imagesPath=newImagesPath;
+			}
 		}
 		
 //		2. 견적서 DB 업데이트
@@ -267,7 +273,7 @@ public class EstimateService {
 			estimate.setMainAddress(estimateRequestDto.mainAddress());
 			estimate.setDetailAddress(estimateRequestDto.detailAddress());
 			estimate.setContent(estimateRequestDto.content());
-			estimate.setImagesPath(newImagesPath);
+			estimate.setImagesPath(imagesPath);
 			estimateRepository.save(estimate);
 		} catch (Exception e) {
 //			3. 견적서 DB 업데이트 실패시 S3 등록했던 새로운 이미지 삭제
@@ -284,11 +290,11 @@ public class EstimateService {
 	        throw e;
 		}
 //		4. 기존 이미지 S3 삭제
-		if (oldImagesPath!= null && !oldImagesPath.isEmpty()) {
+		if (deletedImagesPath!= null && !deletedImagesPath.isEmpty()) {
 			try {
-				awsS3Service.deleteEstimateImages(oldImagesPath);
+				awsS3Service.deleteEstimateImages(deletedImagesPath);
 			} catch (Exception s3DeleteEx) {
-                log.error("견적서 업데이트 중. 기존 S3 이미지 삭제 중 오류 발생! 삭제 대상 경로: {}. 에러: {}", oldImagesPath, s3DeleteEx.getMessage(), s3DeleteEx);
+                log.error("견적서 업데이트 중. 기존 S3 이미지 삭제 중 오류 발생! 삭제 대상 경로: {}. 에러: {}", deletedImagesPath, s3DeleteEx.getMessage(), s3DeleteEx);
                 guidanceService.sendAdminAlert("견적서 업데이트 중. 기존 S3 이미지 삭제 중 오류 발생");
 			}
 		}
@@ -318,19 +324,25 @@ public class EstimateService {
 	
 	/** 견적서 조회 및 검증
 	 * @param encodedEstimateId
-	 * @param phone
+	 * @param recipient
 	 * @return 견적서 엔티티
 	 * 
 	 * @throws NoSuchDataException {@link #getEstimateById} 찾을 수 없는 견적서
 	 * @throws StatusDeleteException {@link #getEstimateById} 삭제된 견적서
 	 * @throws ForbiddenException {@link #getAuthorizedEstimate(int, String)} 견적서 조회 권한 이상
 	 */
-	private Estimate getAuthorizedEstimate(int encodedEstimateId, String phone) {
+	private Estimate getAuthorizedEstimate(int encodedEstimateId, String recipient) {
 		
 		Estimate estimate = getEstimateById(encodedEstimateId);
-		
-		if (!Objects.equals(estimate.getPhone(), phone)) {
-			throw new ForbiddenException(AUTHORIZATION_FAILED,"견적서 조회 권한 이상. estimate.getUser().getPhone(): "+estimate.getUser().getPhone()+"!= phone: "+phone);
+		String phone = estimate.getPhone();
+		String email = estimate.getEmail();
+		if (!Objects.equals(phone, recipient) && !Objects.equals(email, recipient)) {
+			log.warn("견적서 조회 권한 이상. phone: {}, email: {}, recipient: {}",
+					LogMaskingUtil.maskPhone(phone, MaskLevel.MEDIUM),
+					LogMaskingUtil.maskEmail(email, MaskLevel.MEDIUM),
+					LogMaskingUtil.maskRecipient(recipient, MaskLevel.MEDIUM)
+					);
+			throw new ForbiddenException(AUTHORIZATION_FAILED,"견적서 조회 권한 이상.");
 		}
 		
 		return estimate;

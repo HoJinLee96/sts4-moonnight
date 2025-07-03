@@ -163,15 +163,15 @@ public class TokenProvider {
 	 * 
 	 * @throws RedisSetException {@link #addAccessJwtBlacklist} Redis 저장 중 오류
 	 */
-	public void addAccessTokenBlacklist(String accessToken, long ttl, String result) {
-		log.debug("* AccessToken 블랙리스트에 저장. AccessToken: [{}], ttl: [{}], Result: [{}]",
-				LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM),
+	public void addTokenBlacklist(String token, long ttl, String result) {
+		log.debug("* Token 블랙리스트에 저장. Token: [{}], ttl: [{}], Result: [{}]",
+				LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM),
 				ttl, result);
 
 		try {
-			redisTemplate.opsForValue().set(TokenType.JWT_BLACKLIST.getPrefix()+ accessToken, result, Duration.ofMillis(ttl));
+			redisTemplate.opsForValue().set(TokenType.JWT_BLACKLIST.getPrefix()+ token, result, Duration.ofMillis(ttl));
 		} catch (Exception e) {
-			throw new RedisSetException(TOKEN_SET_FIAL,"AccessToken BlackList Redis 저장 중 오류. " + e.getMessage(), e);
+			throw new RedisSetException(TOKEN_SET_FIAL,"Token BlackList Redis 저장 중 오류. " + e.getMessage(), e);
 		}
 	}
 	
@@ -179,10 +179,10 @@ public class TokenProvider {
 	 * @param accessToken
 	 * @return Redis 조회 value 또는 null
 	 */
-	public String getBlackListValue(String accessToken) {
-		log.debug("* 블랙리스트 조회. AccessToken: [{}]",LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM));
+	public String getBlackListValue(String token) {
+		log.debug("* 블랙리스트 조회. Token: [{}]",LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
 		
-		return redisTemplate.opsForValue().get(TokenType.JWT_BLACKLIST.getPrefix()+ accessToken);
+		return redisTemplate.opsForValue().get(TokenType.JWT_BLACKLIST.getPrefix()+ token);
 	}
 	
 	/** Redis에 토큰 존재 여부 확인

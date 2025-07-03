@@ -8,6 +8,9 @@ import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.chamman.moonnight.infra.naver.mail.MailRecipientPayload;
+import net.chamman.moonnight.infra.naver.mail.NaverMailClient;
+import net.chamman.moonnight.infra.naver.mail.NaverMailPayload;
 
 @Service
 @RequiredArgsConstructor
@@ -16,9 +19,12 @@ import lombok.extern.slf4j.Slf4j;
 public class GuidanceService {
 	
 	private final NaverSmsClient naverSmsClient;
+	private final NaverMailClient naverMailClient;
 	
 	@Value("${naver-sms.senderPhone}")
 	private String senderPhone;
+	@Value("${naver-email.senderEmail}")
+	private String senderEmail;
 	@Value("${naver-sms.adminPhone}")
 	private String adminPhone;
 	
@@ -51,6 +57,38 @@ public class GuidanceService {
 			}
 		} catch (Exception e) {
 			log.error("안내 문자 발송 실패. phone: {}, e: {}", recipientPhone, e);
+		}
+	}
+	
+	/** 견적 신청 확인 이메일 안내
+	 * @param recipientPhone
+	 * @param estimateId
+	 */
+	public void sendEstimateInfoEmail(String recipientEmail, String estimateId) {
+		String body = "[ 견적 번호 : " + estimateId + " ]\n"+
+				"달밤청소 문의 주셔서 감사합니다.\n"+
+				"빠른 시일 내에 연락 드리겠습니다.";
+		
+		MailRecipientPayload mailRecipientPayload = new MailRecipientPayload(recipientEmail,recipientEmail,"R");
+		List<MailRecipientPayload> mails = List.of(mailRecipientPayload);
+
+		NaverMailPayload naverMailPayload = NaverMailPayload.builder()
+				.senderAddress(senderEmail)
+				.title("달밤청소 견적신청 안내")
+				.body(body)
+				.recipients(mails)
+				.individual(true)
+				.advertising(false)
+				.build();
+		
+		try {
+			int statusCode = naverMailClient.sendMail(naverMailPayload);
+
+			if((statusCode/100)!=2) {
+				log.error("안내 이메일 발송 실패. statusCode: {}, email: {}", statusCode, recipientEmail);
+			}
+		} catch (Exception e) {
+			log.error("안내 이메일 발송 실패. email: {}, e: {}", recipientEmail, e);
 		}
 	}
 	

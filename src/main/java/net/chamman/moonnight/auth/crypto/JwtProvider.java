@@ -38,7 +38,7 @@ public class JwtProvider {
 	private final AesProvider aesProvider;
 	private final Key signAccessHmacShaKey;
 	private final Key signRefreshHmacShaKey;
-	private final Key authPhoneHmacShaKey;
+	private final Key authHmacShaKey;
 	
 	private final long expiration14Days = 1000 * 60 * 60 * 24 * 14; // 14
 	private final long expiration1Hour = 1000 * 60 * 60; // 1시간
@@ -48,12 +48,12 @@ public class JwtProvider {
 			@Autowired AesProvider aesProvider,
 			@Value("${jwt.sign.access.secretKey}") String signAccessSecretKey,
 			@Value("${jwt.sign.refresh.secretKey}") String signRefreshSecretKey,
-			@Value("${jwt.auth.phone.secretKey}") String authPhoneSecretKey
+			@Value("${jwt.auth.secretKey}") String authHmacShaKey
 			) {
 		this.aesProvider = aesProvider;
 		this.signAccessHmacShaKey = Keys.hmacShaKeyFor(signAccessSecretKey.getBytes(StandardCharsets.UTF_8));
 		this.signRefreshHmacShaKey = Keys.hmacShaKeyFor(signRefreshSecretKey.getBytes(StandardCharsets.UTF_8));
-		this.authPhoneHmacShaKey = Keys.hmacShaKeyFor(authPhoneSecretKey.getBytes(StandardCharsets.UTF_8));
+		this.authHmacShaKey = Keys.hmacShaKeyFor(authHmacShaKey.getBytes(StandardCharsets.UTF_8));
 	}
 	
 	/**
@@ -124,17 +124,17 @@ public class JwtProvider {
 		}
 	}
 	
-	/** 휴대폰 인증 로그인 토큰 생성
+	/** 휴대폰,이메일 인증 로그인 토큰 생성
 	 * @param verificationId
 	 * @param claims
 	 * @return 휴대폰 인증 로그인 토큰
 	 * 
-	 * @throws CreateJwtException {@link #createVerifyPhoneToken} 토큰 생성 실패
+	 * @throws CreateJwtException {@link #createAuthToken} 토큰 생성 실패
 	 */
-	public String createAuthPhoneToken(String verificationId, String phone) {
-		log.debug("* AuthPhoneToken 발행. VerificationId: [{}], Phone: [{}]", 
+	public String createAuthToken(String verificationId, String recipient) {
+		log.debug("* AuthToken 발행. VerificationId: [{}], recipient: [{}]", 
 				LogMaskingUtil.maskId(verificationId, MaskLevel.MEDIUM),
-				LogMaskingUtil.maskPhone(phone, MaskLevel.MEDIUM)
+				LogMaskingUtil.maskRecipient(recipient, MaskLevel.MEDIUM)
 				);
 		
 		try {
@@ -143,13 +143,13 @@ public class JwtProvider {
 					.setSubject(aesProvider.encrypt(verificationId)) 
 					.setIssuedAt(new Date())
 					.setExpiration(new Date(System.currentTimeMillis() + expiration30Minute))
-					.signWith(authPhoneHmacShaKey, SignatureAlgorithm.HS256)
-					.claim("phone", phone)
+					.signWith(authHmacShaKey, SignatureAlgorithm.HS256)
+					.claim("recipient", aesProvider.encrypt(recipient))
 					.claim("roles",List.of("RULE_AUTH"))
 					.compact();
 			
 		} catch (Exception e) {
-			throw new CreateJwtException(JWT_CREATE_FIAL,"AuthPhoneToken 생성 실패. "+e.getMessage(),e);
+			throw new CreateJwtException(JWT_CREATE_FIAL,"AuthToken 생성 실패. "+e.getMessage(),e);
 		}
 	}
 	
@@ -205,32 +205,32 @@ public class JwtProvider {
 		}
 	}
 	
-	/** 액세스 토큰 검증
+	/** 휴대폰,이메일 auth 토큰 검증
 	 * @param token
 	 * @return 복호화된 유저 정보
 	 * 
-	 * @throws TimeOutJwtException {@link #validateAccessToken} 시간 초과
-	 * @throws ValidateJwtException {@link #validateAccessToken} JWT 파싱 실패
+	 * @throws TimeOutJwtException {@link #validateAuthToken} 시간 초과
+	 * @throws ValidateJwtException {@link #validateAuthToken} JWT 파싱 실패
 	 */
-	public Map<String, Object> validateAuthPhoneToken(String token) {
-		log.debug("* AuthPhoneToken 검증. AuthPhoneToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
+	public Map<String, Object> validateAuthToken(String token) {
+		log.debug("* AuthToken 검증. AuthToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
 		
 		try {
 			Claims claims = Jwts.parserBuilder()
-					.setSigningKey(authPhoneHmacShaKey)
+					.setSigningKey(authHmacShaKey)
 					.build()
 					.parseClaimsJws(token)
 					.getBody();
 			
 			return getDecryptedClaims(claims);
 		} catch (ExpiredJwtException e) {
-			throw new TimeOutJwtException(JWT_EXPIRED, "AuthPhoneToken 시간 만료. "+e.getMessage(), e);
+			throw new TimeOutJwtException(JWT_EXPIRED, "AuthToken 시간 만료. "+e.getMessage(), e);
 		} catch (Exception e) {
-			throw new ValidateJwtException(JWT_VALIDATE_FIAL, "AuthPhoneToken 검증 중 익셉션 발생. "+e.getMessage(), e);
+			throw new ValidateJwtException(JWT_VALIDATE_FIAL, "AuthToken 검증 중 익셉션 발생. "+e.getMessage(), e);
 		}
 	}
 	
-	/** 액세스 토큰 남은 시간 조회
+	/** AccessToken 남은 시간 조회
 	 * @param token
 	 * @return 토큰 남은시간
 	 *  
@@ -238,7 +238,7 @@ public class JwtProvider {
 	 * @throws ValidateJwtException {@link #getSignJwtRemainingTime} JWT 파싱 실패
 	 */
 	public long getAccessTokenRemainingTime(String accessToken) {
-		log.debug("* 토큰 유효시간 검증. Token: [{}]", LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM));
+		log.debug("* AccessToken 토큰 유효시간 검증. Token: [{}]", LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM));
 
 		try {
 			Claims claims = Jwts.parserBuilder()
@@ -250,7 +250,33 @@ public class JwtProvider {
 			Date expiration = claims.getExpiration();
 			return expiration.getTime() - System.currentTimeMillis();
 		} catch (ExpiredJwtException e) {
-			throw new TimeOutJwtException(JWT_EXPIRED,"토큰 만료. "+e.getMessage(),e);
+			throw new TimeOutJwtException(JWT_EXPIRED,"이미 만료된 토큰. "+e.getMessage());
+		} catch (Exception e) {
+			throw new ValidateJwtException(JWT_VALIDATE_FIAL,"토큰 검증 중 익셉션 발생. "+e.getMessage(),e);
+		}
+	}
+	
+	/** AuthToken 남은 시간 조회
+	 * @param token
+	 * @return 토큰 남은시간
+	 *  
+	 * @throws TimeOutJwtException {@link #getSignJwtRemainingTime} 시간 초과
+	 * @throws ValidateJwtException {@link #getSignJwtRemainingTime} JWT 파싱 실패
+	 */
+	public long getAuthTokenRemainingTime(String authToken) {
+		log.debug("* AuthToken 토큰 유효시간 검증. Token: [{}]", LogMaskingUtil.maskToken(authToken, MaskLevel.MEDIUM));
+
+		try {
+			Claims claims = Jwts.parserBuilder()
+					.setSigningKey(authHmacShaKey)
+					.build()
+					.parseClaimsJws(authToken)
+					.getBody();
+			
+			Date expiration = claims.getExpiration();
+			return expiration.getTime() - System.currentTimeMillis();
+		} catch (ExpiredJwtException e) {
+			throw new TimeOutJwtException(JWT_EXPIRED,"이미 만료된 토큰. "+e.getMessage());
 		} catch (Exception e) {
 			throw new ValidateJwtException(JWT_VALIDATE_FIAL,"토큰 검증 중 익셉션 발생. "+e.getMessage(),e);
 		}

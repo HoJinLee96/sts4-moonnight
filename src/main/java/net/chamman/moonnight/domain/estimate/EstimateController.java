@@ -7,6 +7,7 @@ import static net.chamman.moonnight.global.exception.HttpStatusCode.READ_SUCCESS
 import static net.chamman.moonnight.global.exception.HttpStatusCode.UPDATE_SUCCESS;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -18,13 +19,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.annotation.MultipartConfig;
@@ -34,8 +33,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.verification.RateLimiterStore;
 import net.chamman.moonnight.global.annotation.ImageConstraint;
-import net.chamman.moonnight.global.annotation.ValidId;
-import net.chamman.moonnight.global.annotation.ValidPhone;
+import net.chamman.moonnight.global.security.principal.AuthDetails;
 import net.chamman.moonnight.global.security.principal.CustomUserDetails;
 import net.chamman.moonnight.global.util.ApiResponseDto;
 import net.chamman.moonnight.global.util.ApiResponseFactory;
@@ -51,33 +49,26 @@ public class EstimateController {
 	private final RateLimiterStore rateLimiter;
 	private final ApiResponseFactory apiResponseFactory;
 
-//  견적서 등록
 	@Operation(summary = "견적서 등록", description = "견적서 등록")
 	@PostMapping("/public/register")
 	public ResponseEntity<ApiResponseDto<EstimateResponseDto>> registerEstimate(
 			@AuthenticationPrincipal CustomUserDetails userDetails,
 			@Valid @RequestPart EstimateRequestDto estimateRequestDto,
-			@Valid @ImageConstraint @RequestPart List<MultipartFile> images,
-			@RequestHeader(required = false, value = "X-Client-Type") String clientType, 
-			HttpServletRequest request,
-			RedirectAttributes redirectAttributes) throws IOException {
+			@Valid @ImageConstraint @RequestPart(required = false) List<MultipartFile> images,
+			HttpServletRequest request ) throws IOException, URISyntaxException {
 
 		log.debug("* estimateRequestDto: {}", estimateRequestDto.toString());
-		images.forEach(path -> log.debug("* image: {}", path.getName()));
+		if(images != null) {
+			images.forEach(path -> log.debug("* image: {}", path.getName()));
+		}
 
 		String clientIp = (String) request.getAttribute("clientIp");
 		rateLimiter.isAllowedByIp(clientIp);
-		boolean isMobileApp = clientType != null && clientType.contains("mobile");
 
 		int userId = userDetails != null ? userDetails.getUserId() : 0;
 		EstimateResponseDto estimateResponseDto = estimateService.registerEstimate(estimateRequestDto, images, userId);
 
-		if (!isMobileApp) {
-			redirectAttributes.addFlashAttribute("estimate", estimateResponseDto);
-		}
-
-		return ResponseEntity.status(HttpStatus.OK)
-				.body(apiResponseFactory.success(CREATE_SUCCESS, estimateResponseDto));
+		return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(CREATE_SUCCESS, estimateResponseDto));
 	}
 
 //  유저 견적서 전체 조회
@@ -108,13 +99,13 @@ public class EstimateController {
 		return ResponseEntity.ok(apiResponseFactory.success(READ_SUCCESS, estimateResponseDto));
 	}
 
-//  인증된 전화번호로 견적서 전체 조회
+//  AUTH 토큰 통해 견적서 전체 조회
 	@PreAuthorize("hasRole('AUTH')")
 	@GetMapping("/private/auth")
-	public ResponseEntity<ApiResponseDto<List<EstimateResponseDto>>> getAllEstimateByAuthPhone(
-			@AuthenticationPrincipal CustomUserDetails userDetails) {
+	public ResponseEntity<ApiResponseDto<List<EstimateResponseDto>>> getAllEstimateByAuth(
+			@AuthenticationPrincipal AuthDetails authDetails) {
 
-		List<EstimateResponseDto> list = estimateService.getAllEstimateByAuthPhone(userDetails.getUsername());
+		List<EstimateResponseDto> list = estimateService.getAllEstimateByAuth(authDetails.getRecipient());
 
 		if (list == null || list.isEmpty() || list.size() == 0) {
 			return ResponseEntity.ok(apiResponseFactory.success(READ_SUCCESS_NO_DATA, null));
@@ -123,27 +114,27 @@ public class EstimateController {
 		return ResponseEntity.ok(apiResponseFactory.success(READ_SUCCESS, list));
 	}
 
-//  인증된 전화번호로 견적서 단건 조회
+//  AUTH 토큰 통해 견적서 단건 조회
 	@PreAuthorize("hasRole('AUTH')")
 	@GetMapping("/auth/{estimateId}")
-	public ResponseEntity<ApiResponseDto<EstimateResponseDto>> getEstimateByAuthPhone(
-			@AuthenticationPrincipal CustomUserDetails userDetails,
+	public ResponseEntity<ApiResponseDto<EstimateResponseDto>> getEstimateByAuth(
+			@AuthenticationPrincipal AuthDetails authDetails,
 			@PathVariable("estimateId") int encodedEstimateId) {
 
-		EstimateResponseDto estimateResponseDto = estimateService.getEstimateByEstimateIdAndPhone(encodedEstimateId,
-				userDetails.getUsername());
+		EstimateResponseDto estimateResponseDto = estimateService.getEstimateByEstimateIdAndAuthRecipient(encodedEstimateId,
+				authDetails.getRecipient());
 
 		return ResponseEntity.ok(apiResponseFactory.success(READ_SUCCESS, estimateResponseDto));
 	}
 
 //  비회원 견적서 조회
 	@PostMapping("/public/guest")
-	public ResponseEntity<?> getEstimateByEstimateIdAndPhone(
-			@ValidId @RequestParam int encodedEstimateId,
-			@ValidPhone @RequestParam String phone) {
+	public ResponseEntity<?> getEstimateByGuest(
+			@RequestParam("estimateId") int encodedEstimateId,
+			@RequestParam String recipient) {
 
-		EstimateResponseDto estimateResponseDto = estimateService.getEstimateByEstimateIdAndPhone(encodedEstimateId,
-				phone);
+		EstimateResponseDto estimateResponseDto = estimateService.getEstimateByEstimateIdAndAuthRecipient(encodedEstimateId,
+				recipient);
 
 		return ResponseEntity.ok(apiResponseFactory.success(READ_SUCCESS, estimateResponseDto));
 	}
@@ -151,32 +142,33 @@ public class EstimateController {
 //  유저 견적서 수정
 	@PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
 	@PatchMapping("/private/update/{estimateId}")
-	public ResponseEntity<ApiResponseDto<Void>> updateEstimateByUser(
-			@AuthenticationPrincipal CustomUserDetails userDetails,
-			@PathVariable("estimateId") int encodedEstimateId,
-			@Valid @RequestPart("estimate") EstimateRequestDto estimateRequestDto,
-			@ImageConstraint @RequestPart("images") List<MultipartFile> images, HttpServletRequest request)
-			throws IOException {
-
-		estimateService.updateMyEstimate(encodedEstimateId, estimateRequestDto, images, userDetails.getUserId());
-
-		return ResponseEntity.ok(apiResponseFactory.success(UPDATE_SUCCESS));
-	}
-
-//  인증된 전화번호로 견적서 수정
-	@PreAuthorize("hasRole('AUTH')")
-	@PatchMapping("/private/auth/update/{estimateId}")
-	public ResponseEntity<ApiResponseDto<Void>> updateEstimateByAuthPhone(
+	public ResponseEntity<ApiResponseDto<EstimateResponseDto>> updateEstimateByUser(
 			@AuthenticationPrincipal CustomUserDetails userDetails,
 			@PathVariable("estimateId") int encodedEstimateId,
 			@Valid @RequestPart EstimateRequestDto estimateRequestDto,
-			@ImageConstraint @RequestPart("images") List<MultipartFile> images, HttpServletRequest request)
+			@ImageConstraint @RequestPart(value = "images", required = false) List<MultipartFile> images, HttpServletRequest request)
 			throws IOException {
 
-		estimateService.updateEstimateByAuthPhone(encodedEstimateId, estimateRequestDto, images,
-				userDetails.getUsername());
+		EstimateResponseDto estimateResponseDto = estimateService.updateMyEstimate(encodedEstimateId, estimateRequestDto, images, userDetails.getUserId());
 
-		return ResponseEntity.ok(apiResponseFactory.success(UPDATE_SUCCESS));
+		return ResponseEntity.ok(apiResponseFactory.success(UPDATE_SUCCESS, estimateResponseDto));
+	}
+
+//  AUTH 토큰 통해 견적서 수정
+	@PreAuthorize("hasRole('AUTH')")
+	@PatchMapping("/private/auth/update/{estimateId}")
+	public ResponseEntity<ApiResponseDto<EstimateResponseDto>> updateEstimateByAuth(
+			@AuthenticationPrincipal AuthDetails authDetails,
+			@PathVariable("estimateId") int encodedEstimateId,
+			@Valid @RequestPart EstimateRequestDto estimateRequestDto,
+			@ImageConstraint @RequestPart(value = "images", required = false) List<MultipartFile> images,
+			HttpServletRequest request)
+			throws IOException {
+		
+		EstimateResponseDto estimateResponseDto = estimateService.updateEstimateByAuthRecipient(encodedEstimateId, estimateRequestDto, images,
+				authDetails.getRecipient());
+
+		return ResponseEntity.ok(apiResponseFactory.success(UPDATE_SUCCESS, estimateResponseDto));
 	}
 
 //  사용자 견적서 삭제
@@ -191,14 +183,14 @@ public class EstimateController {
 		return ResponseEntity.ok(apiResponseFactory.success(DELETE_SUCCESS));
 	}
 
-//  인증된 전화번호로 견적서 삭제
+//  AUTH 토큰 통해 견적서 삭제
 	@PreAuthorize("hasRole('AUTH') ")
 	@DeleteMapping("/private/auth/{estimateId}")
-	public ResponseEntity<ApiResponseDto<Void>> deleteEstimateByAuthPhone(
-			@AuthenticationPrincipal CustomUserDetails userDetails,
+	public ResponseEntity<ApiResponseDto<Void>> deleteEstimateByAuth(
+			@AuthenticationPrincipal AuthDetails authDetails,
 			@PathVariable("estimateId") int encodedEstimateId) {
 
-		estimateService.deleteEstimateByAuth(encodedEstimateId, userDetails.getUsername());
+		estimateService.deleteEstimateByAuthRecipient(encodedEstimateId, authDetails.getRecipient());
 
 		return ResponseEntity.ok(apiResponseFactory.success(DELETE_SUCCESS));
 	}
