@@ -1,117 +1,66 @@
-export function formatEmail(email, message) {
-	const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-	const isValid = emailPattern.test(email);
+// /js/format.js (최종 업데이트 버전)
 
-	if (message) {
-		message.style.color = isValid ? 'green' : 'red';
-		message.innerText = isValid ? " " : "올바른 이메일 형식을 입력 해주세요.";
-	}
-	return isValid;
-}
+/**
+ * input 요소에 실시간으로 전화번호 형식(010-1234-5678)을 적용합니다.
+ * @param {HTMLInputElement} inputElement - 형식을 적용할 input 요소
+ */
+export function initPhoneFormatting(inputElement) {
+	if (!inputElement) return;
 
+	inputElement.addEventListener('input', (e) => {
+		const rawValue = e.target.value.replace(/\D/g, '').substring(0, 12);
+		const length = rawValue.length;
 
-export function formatPasswords(password, message, confirmMessage) {
-	var passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
-	if (message) {
-		message.innerText = ' ';
-	}
-	if (confirmMessage) {
-		confirmMessage.innerText = ' ';
-	}
-	const isValid = passwordPattern.test(password);
+		let formattedValue = '';
 
-	if (message) {
-		message.style.color = isValid ? 'green' : 'red';
-		message.innerText = isValid ? "유효한 비밀번호 입니다." : "최소 8자 이상이며, 영어, 숫자, 특수기호를 포함해야 합니다.";
-	}
-	return isValid;
-}
-
-
-
-export function formatName(name, message) {
-
-	// 정규 표현식: 공백 또는 특수기호
-	var regex = /[!@#$%^&*(),.?":{}|<>\s]/;
-	if (message) {
-		message.innerText = "";
-	}
-
-	if (name === "" || regex.test(name)) {
-		if (message) {
-			message.style.color = 'red';
-			message.innerText = "이름에 공백 또는 특수기호를 포함 시킬 수 없습니다.";
-		}
-		return false;
-	} else {
-		if (message) {
-			message.innerText = "";
-		}
-		return true;
-	}
-
-}
-
-export function formatBirth(input, message) {
-
-	var regex = /[^0-9]/g; //숫자가 아닌 문자
-	input.value = input.value.replace(regex, '');
-
-	if (input.value.length > 8) {
-		input.value = input.value.substring(0, 8);
-	}
-	var birth = input.value;
-	if (birth === "" || regex.test(birth) || birth.length !== 8 || !validDate(birth)) {
-		if (message) {
-			message.style.color = 'red';
-			message.innerText = "올바른 생년월일 입력 해주세요.";
-		}
-		return false;
-	} else {
-		if (message) {
-			message.innerText = "";
-		}
-		return true;
-	}
-}
-
-
-
-export function formatPhoneNumber(input, message) {
-	let value = input.value.replace(/[^0-9]/g, ''); // 숫자 이외의 문자를 제거합니다.
-	let formattedValue = value;
-
-	// 앞 세 자리를 "010"으로 고정합니다.
-	if (value.startsWith('010')) {
-		value = value.slice(3); // 앞 세 자리("010")를 잘라냅니다.
-	}
-
-	if (value.length <= 4) {
-		formattedValue = '010-' + value; // 4자리 이하의 숫자만 있을 경우
-	} else if (value.length <= 7) {
-		formattedValue = '010-' + value.slice(0, 4) + '-' + value.slice(4); // 5~7자리의 경우
-	} else {
-		formattedValue = '010-' + value.slice(0, 4) + '-'
-			+ value.slice(4, 8); // 8자리 이상의 경우
-	}
-
-	input.value = formattedValue;
-	if (message) {
-		if (value.length < 8) {
-			message.style.color = 'red';
-			message.innerText = "올바른 휴대폰 번호를 입력 해주세요.";
+		// 길이에 따라 하이픈(-)을 추가합니다.
+		if (length < 4) {
+			formattedValue = rawValue;
+		} else if (length < 8) {
+			formattedValue = `${rawValue.substring(0, 3)}-${rawValue.substring(3)}`;
+		} else if (length < 12) {
+			formattedValue = `${rawValue.substring(0, 3)}-${rawValue.substring(3, 7)}-${rawValue.substring(7)}`;
 		} else {
-			message.innerText = "";
+			formattedValue = `${rawValue.substring(0, 4)}-${rawValue.substring(4, 8)}-${rawValue.substring(8)}`;
 		}
-	}
 
-	var regex = /^\d{3,4}-\d{3,4}-\d{4}$/;
-	return regex.test(formattedValue);
+		if (rawValue.startsWith('02')) {
+			if (length < 3) {
+				formattedValue = rawValue;
+			} else if (length < 7) { 
+				formattedValue = `${rawValue.substring(0, 2)}-${rawValue.substring(2)}`;
+			} else if (length < 10) {
+				formattedValue = `${rawValue.substring(0, 2)}-${rawValue.substring(2, 5)}-${rawValue.substring(5)}`;
+			} else if (length < 11) {
+				formattedValue = `${rawValue.substring(0, 2)}-${rawValue.substring(2, 6)}-${rawValue.substring(6)}`;
+			}
+		}
+
+		e.target.value = formattedValue;
+	});
 }
 
-export function formatVerifyCode(input) {
-	input.value = input.value.replace(/[^0-9]/g, '');
-	if (input.value.length > 6) {
-		input.value = input.value.substring(0, 6);
-	}
+/**
+ * input 요소에 실시간으로 생년월일 형식(YYYYMMDD)을 적용합니다.
+ * @param {HTMLInputElement} inputElement - 형식을 적용할 input 요소
+ */
+export function initBirthFormatting(inputElement) {
+	if (!inputElement) return;
+
+	inputElement.addEventListener('input', (e) => {
+		// 숫자 이외의 문자를 제거하고, 최대 8자리로 제한합니다.
+		e.target.value = e.target.value.replace(/\D/g, '').substring(0, 8);
+	});
+}
+
+/**
+ * input 요소에 실시간으로 인증번호 형식(6자리 숫자)을 적용합니다.
+ * @param {HTMLInputElement} inputElement - 형식을 적용할 input 요소
+ */
+export function initVerificationCodeFormatting(inputElement) {
+	if (!inputElement) return;
+
+	inputElement.addEventListener('input', (e) => {
+		e.target.value = e.target.value.replace(/\D/g, '').substring(0, 6);
+	});
 }

@@ -44,11 +44,6 @@ export function initAddressSearch(config) {
 				// 팝업이 닫혔으니, 상태 변수를 다시 null로 만들어줌
 				// 이렇게 해야 다음에 다시 '주소 찾기' 버튼을 눌렀을 때 새 팝업을 열 수 있음
 				currentPostcodePopup = null;
-			},
-
-			// (선택) 팝업 창의 테마나 옵션을 설정할 수 있음
-			theme: {
-				// ... 테마 설정
 			}
 		});
 

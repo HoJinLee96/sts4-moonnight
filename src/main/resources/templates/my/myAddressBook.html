@@ -1,167 +1,190 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{main/base}">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{main/base}">
+
 <head>
-<title>주소록</title>
-<th:block th:replace="~{my/mypageSidebar :: sidebarStyles}"></th:block>
-<style type="text/css">
-	/*myAddressBook.css*/
-p{
-	margin: 0px;
-}
-.contentTitle{
-	padding-bottom : 15px;
-	border-bottom: 4px solid #20367a;
-}
-.address{
-	display: flex;
-	border: 2px solid #afafaf;
-	border-radius: 10px;
-	padding: 15px 15px;
-	margin-top: 10px;
-}
-.sortedAddress{
-	width: 100vw;
-    min-width: 500px;
-    max-width: 899px;
-}
-.buttonDiv{
-	display: flex;
-	gap: 3px;
-	align-items: center;
-}
-.buttonDiv button{
-	width: 50px;
-	color: #20367a;
-	background: white;
-	border: 1px solid #20367a;
-	border-radius: 10px;
-	cursor: pointer;
-	padding: 5px 10px;
-	height: 30px;
-}
-.buttonDiv button:hover{
-	background: #20367a;
-	border: 1px solid white;
-	color: white;
-}
-.addressNickname{
-    min-width: 500px;
-    max-width: 799px;
-}
-.sortedAddressText{
-    min-width: 500px;
-    max-width: 799px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
+	<title>주소록</title>
+	<th:block th:replace="~{my/mypageSidebar :: sidebarStyles}"></th:block>
+	<style type="text/css">
+		/*myAddressBook.css*/
+		p {
+			margin: 0px;
+		}
 
-.overlay {
-	position: fixed;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	background-color: rgba(0, 0, 0, 0.5);
-	display: none;
-	justify-content: center;
-	align-items: center;
-	z-index: 1000;
-}
+		.contentTitle {
+			padding-bottom: 15px;
+			border-bottom: 4px solid #20367a;
+		}
 
-.popContent {
-	width: 500px;
-	height: 650px;
-	background-color: white;
-	padding: 40px 30px;
-	border-radius: 10px;
-	box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-	margin: 0px auto;
-	margin-top: 150px;
-	position: relative;
-}
+		.address {
+			display: flex;
+			border: 2px solid #afafaf;
+			border-radius: 10px;
+			padding: 15px 15px;
+			margin-top: 10px;
+		}
 
-.closeBtn {
-	position:absolute;
-	top:5px;
-	left:15px;
-	color:#aaa;
-	font-size:34px;
-	font-weight:bold;
-	margin-bottom: 10px;
-	cursor: pointer;
-}
-.close:hover {
-	color:#20367a;
-}
-.name, .postcode, .mainAddress, .detailAddress{
-	display:block;
-	background: none;
-	border: none;
-	border-bottom: 2px solid #aaa;
-	font-size: 16px;
-	width: 500px;
-	padding: 10px 5px;
-	outline: none;
-	transition: border-bottom-color 0.3s;
-}
-.name{
-	margin-bottom: 30px;
-}
-.name:focus{
-	border-bottom: 2px solid #20367a;
-}
-.postcode{
-	width: 100px !important;
-}
-.postcode, .mainAddress{
-	height:43px;
-	cursor: text;
-	margin-bottom: 10px;
-	text-align: left;
-}
-#detailAddress{
-	height: 43px;
-}
-#detailAddress:focus{
-	border-bottom: 2px solid #20367a;
-}
-.iframe p{
-	color: #8b8b8b;
-}
+		.sortedAddress {
+			width: 100vw;
+			min-width: 500px;
+			max-width: 899px;
+		}
 
-.addAddress{
-	position:relative;
-	border: 2px solid #afafaf;
-	border-radius: 10px;
-	border-style:dotted;
-	padding: 15px 15px;
-	margin-top: 10px;
-	height: 42px;
-	cursor: pointer;
-	text-align: center;
-	line-height: 40px;
-}
-.plusButton{
-	position: absolute;
-	color:#aaa;
-	font-size:24px;
-	top: 30%;
-	left: 50%;
-}
-#emptyDiv{
-	padding-top: 10px;
-}
-</style>
+		.buttonDiv {
+			display: flex;
+			gap: 3px;
+			align-items: center;
+		}
+
+		.buttonDiv button {
+			width: 50px;
+			color: #20367a;
+			background: white;
+			border: 1px solid #20367a;
+			border-radius: 10px;
+			cursor: pointer;
+			padding: 5px 10px;
+			height: 30px;
+		}
+
+		.buttonDiv button:hover {
+			background: #20367a;
+			border: 1px solid white;
+			color: white;
+		}
+
+		.addressNickname {
+			min-width: 500px;
+			max-width: 799px;
+		}
+
+		.sortedAddressText {
+			min-width: 500px;
+			max-width: 799px;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.overlay {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background-color: rgba(0, 0, 0, 0.5);
+			display: none;
+			justify-content: center;
+			align-items: center;
+			z-index: 1000;
+		}
+
+		.popContent {
+			width: 500px;
+			height: 650px;
+			background-color: white;
+			padding: 40px 30px;
+			border-radius: 10px;
+			box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+			margin: 0px auto;
+			margin-top: 150px;
+			position: relative;
+		}
+
+		.closeBtn {
+			position: absolute;
+			top: 5px;
+			left: 15px;
+			color: #aaa;
+			font-size: 34px;
+			font-weight: bold;
+			margin-bottom: 10px;
+			cursor: pointer;
+		}
+
+		.close:hover {
+			color: #20367a;
+		}
+
+		.name,
+		.postcode,
+		.mainAddress,
+		.detailAddress {
+			display: block;
+			background: none;
+			border: none;
+			border-bottom: 2px solid #aaa;
+			font-size: 16px;
+			width: 500px;
+			padding: 10px 5px;
+			outline: none;
+			transition: border-bottom-color 0.3s;
+		}
+
+		.name {
+			margin-bottom: 30px;
+		}
+
+		.name:focus {
+			border-bottom: 2px solid #20367a;
+		}
+
+		.postcode {
+			width: 100px !important;
+		}
+
+		.postcode,
+		.mainAddress {
+			height: 43px;
+			cursor: text;
+			margin-bottom: 10px;
+			text-align: left;
+		}
+
+		#detailAddress {
+			height: 43px;
+		}
+
+		#detailAddress:focus {
+			border-bottom: 2px solid #20367a;
+		}
+
+		.iframe p {
+			color: #8b8b8b;
+		}
+
+		.addAddress {
+			position: relative;
+			border: 2px solid #afafaf;
+			border-radius: 10px;
+			border-style: dotted;
+			padding: 15px 15px;
+			margin-top: 10px;
+			height: 42px;
+			cursor: pointer;
+			text-align: center;
+			line-height: 40px;
+		}
+
+		.plusButton {
+			position: absolute;
+			color: #aaa;
+			font-size: 24px;
+			top: 30%;
+			left: 50%;
+		}
+
+		#emptyDiv {
+			padding-top: 10px;
+		}
+	</style>
 </head>
 
-<div layout:fragment="content">
+<main layout:fragment="content">
 	<div class="container">
 		<div th:replace="~{my/mypageSidebar :: sidebarFragment}"></div>
 		<div class="content">
-			<p class="headerFont contentTitle">주소록</p>
+			<h2 class="contentTitle">주소록</h2>
 
 			<div id="emptyDiv" th:if="${#lists.isEmpty(addressList)}">
 				<p>등록된 주소가 없습니다.</p>
@@ -188,240 +211,241 @@ p{
 						th:data-address-id="${addr.addressId}">삭제</button>
 				</div>
 			</div>
-			<div th:if="${addressList == null or #lists.size(addressList) < 5}" class="addAddress"
-				id="addAddressBtn">
+			<div th:if="${addressList == null or #lists.size(addressList) < 5}" class="addAddress" id="addAddressBtn">
 				+
 			</div>
 		</div>
 	</div>
+</main>
+<th:block layout:fragment="script">
 
 	<th:block th:replace="~{my/mypageSidebar :: sidebarScripts}"></th:block>
 	<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-	
+
 	<script type="module" th:inline="javascript">
-	    import { registerAddress, updateAddress, updatePrimary , deleteAddress} from '/js/address.js';
-		import { searchAddress } from '/js/daumAddressSearch4.js';
+		import {registerAddress, updateAddress, updatePrimary, deleteAddress} from '/js/address.js';
+		import {searchAddress} from '/js/daumAddressSearch4.js';
 
-	      document.addEventListener("DOMContentLoaded", () => {
-	          const contentDiv = document.querySelector('.content');
+		document.addEventListener("DOMContentLoaded", () => {
+			const contentDiv = document.querySelector('.content');
 
-	          contentDiv.addEventListener('click', (e) => {
-	              const target = e.target;
-	              const addressId = target.dataset.addressId;
+			contentDiv.addEventListener('click', (e) => {
+				const target = e.target;
+				const addressId = target.dataset.addressId;
 
-	              if (target.classList.contains('choiceButton')) {
-	                  if(confirm("이 주소를 대표 배송지로 설정하시겠습니까?")) {
-	                      handleSetPrimary(addressId);
-	                  }
-	              } else if (target.classList.contains('updateButton')) {
-	                  const addressData = {
-	                      addressId: target.dataset.addressId,
-	                      name: target.dataset.name,
-	                      postcode: target.dataset.postcode,
-	                      mainAddress: target.dataset.mainAddress,
-	                      detailAddress: target.dataset.detailAddress
-	                  };
-	                  showAddressModal(addressData);
-	              } else if (target.classList.contains('deleteButton')) {
-	                  if(confirm("정말로 이 주소를 삭제하시겠습니까?")) {
-	                      handleDelete(addressId);
-	                  }
-	              } else if (target.id === 'addAddressBtn') {
-	                  showAddressModal(null);
-	              }
-	          });
-	      });
-
-			// 대표 주소 설정 처리
-			async function handleSetPrimary(addressId) {
-				await updatePrimary(
-					addressId,
-					() => {
-						alert("대표 주소로 설정 되었습니다.");
-						location.reload();
-					},
-					(error) => {
-						alert(error.message);
-						console.error('대표 주소 설정 실패 (API). code: ', error.code);
+				if (target.classList.contains('choiceButton')) {
+					if (confirm("이 주소를 대표 배송지로 설정하시겠습니까?")) {
+						handleSetPrimary(addressId);
 					}
-				);
-			}
-
-	      // 주소 삭제 처리
-			async function handleDelete(addressId) {
-				await deleteAddress(
-					addressId,
-					() => {
-						alert("주소가 삭제되었습니다.");
-						location.reload();
-					},
-					(error) => {
-						alert(error.message);
-						console.error('주소 삭제 실패 (API). code: ', error.code);
+				} else if (target.classList.contains('updateButton')) {
+					const addressData = {
+						addressId: target.dataset.addressId,
+						name: target.dataset.name,
+						postcode: target.dataset.postcode,
+						mainAddress: target.dataset.mainAddress,
+						detailAddress: target.dataset.detailAddress
+					};
+					showAddressModal(addressData);
+				} else if (target.classList.contains('deleteButton')) {
+					if (confirm("정말로 이 주소를 삭제하시겠습니까?")) {
+						handleDelete(addressId);
 					}
-				);
-			}
+				} else if (target.id === 'addAddressBtn') {
+					showAddressModal(null);
+				}
+			});
+		});
 
-		  function showAddressModal(addressData) {
-		      // --- 1. 기본 설정 및 변수 선언 ---
-		      const isUpdate = addressData != null;
-		      const title = isUpdate ? "주소 수정" : "새 주소 추가";
+		// 대표 주소 설정 처리
+		async function handleSetPrimary(addressId) {
+			await updatePrimary(
+				addressId,
+				() => {
+					alert("대표 주소로 설정 되었습니다.");
+					location.reload();
+				},
+				(error) => {
+					alert(error.message);
+					console.error('대표 주소 설정 실패 (API). code: ', error.code);
+				}
+			);
+		}
 
-		      // --- 2. HTML 요소 동적 생성 ---
+		// 주소 삭제 처리
+		async function handleDelete(addressId) {
+			await deleteAddress(
+				addressId,
+				() => {
+					alert("주소가 삭제되었습니다.");
+					location.reload();
+				},
+				(error) => {
+					alert(error.message);
+					console.error('주소 삭제 실패 (API). code: ', error.code);
+				}
+			);
+		}
 
-		      // 오버레이 (배경)
-		      const overlay = document.createElement('div');
-		      overlay.className = 'overlay';
-		      overlay.style.display = 'flex'; // 바로 표시되도록 설정
+		function showAddressModal(addressData) {
+			// --- 1. 기본 설정 및 변수 선언 ---
+			const isUpdate = addressData != null;
+			const title = isUpdate ? "주소 수정" : "새 주소 추가";
 
-		      // 모달 컨텐츠
-		      const popContent = document.createElement('div');
-		      popContent.className = 'popContent';
+			// --- 2. HTML 요소 동적 생성 ---
 
-		      // 닫기 버튼
-		      const closeBtn = document.createElement('span');
-		      closeBtn.className = 'closeBtn';
-		      closeBtn.innerHTML = '&times;';
+			// 오버레이 (배경)
+			const overlay = document.createElement('div');
+			overlay.className = 'overlay';
+			overlay.style.display = 'flex'; // 바로 표시되도록 설정
 
-		      // 제목
-		      const head = document.createElement('h3');
-		      head.textContent = title;
+			// 모달 컨텐츠
+			const popContent = document.createElement('div');
+			popContent.className = 'popContent';
 
-		      // 폼 요소
-		      const formContainer = document.createElement('div');
-		      formContainer.className = 'iframe'; // 기존 CSS 재활용
+			// 닫기 버튼
+			const closeBtn = document.createElement('span');
+			closeBtn.className = 'closeBtn';
+			closeBtn.innerHTML = '&times;';
 
-		      const nameLabel = document.createElement('p');
-		      nameLabel.textContent = '이름 (별칭)';
-		      const nameInput = document.createElement('input');
-		      nameInput.type = 'text';
-		      nameInput.className = 'name';
-		      nameInput.id = 'modal_name'; // ID 중복을 피하기 위해 prefix 추가
-		      nameInput.maxLength = 20;
-		      nameInput.placeholder = '받는 분 이름 또는 별칭';
-		      nameInput.value = isUpdate ? addressData.name : '';
+			// 제목
+			const head = document.createElement('h3');
+			head.textContent = title;
 
-		      const addressLabel = document.createElement('p');
-		      addressLabel.textContent = '주소';
-		      const postcodeWrapper = document.createElement('div'); // 우편번호 + 버튼을 묶을 div
-		      const postcodeInput = document.createElement('input');
-		      postcodeInput.className = 'postcode';
-		      postcodeInput.id = 'modal_postcode';
-		      postcodeInput.placeholder = '우편번호';
-		      postcodeInput.readOnly = true; // 클릭으로만 입력되도록 설정
-		      postcodeInput.value = isUpdate ? addressData.postcode : '';
+			// 폼 요소
+			const formContainer = document.createElement('div');
+			formContainer.className = 'iframe'; // 기존 CSS 재활용
 
-		      const searchAddrBtn = document.createElement('button');
-		      searchAddrBtn.textContent = '주소 검색';
-		      searchAddrBtn.style.marginLeft = '10px'; // 간단한 스타일
-		      
-		      postcodeWrapper.append(postcodeInput, searchAddrBtn);
-		      
-		      const mainAddressInput = document.createElement('input');
-		      mainAddressInput.className = 'mainAddress';
-		      mainAddressInput.id = 'modal_mainAddress';
-		      mainAddressInput.placeholder = '주소';
-		      mainAddressInput.readOnly = true;
-		      mainAddressInput.value = isUpdate ? addressData.mainAddress : '';
+			const nameLabel = document.createElement('p');
+			nameLabel.textContent = '이름 (별칭)';
+			const nameInput = document.createElement('input');
+			nameInput.type = 'text';
+			nameInput.className = 'name';
+			nameInput.id = 'modal_name'; // ID 중복을 피하기 위해 prefix 추가
+			nameInput.maxLength = 20;
+			nameInput.placeholder = '받는 분 이름 또는 별칭';
+			nameInput.value = isUpdate ? addressData.name : '';
 
-		      const detailAddressInput = document.createElement('input');
-		      detailAddressInput.type = 'text';
-		      detailAddressInput.className = 'detailAddress';
-		      detailAddressInput.id = 'modal_detailAddress';
-		      detailAddressInput.maxLength = 50;
-		      detailAddressInput.placeholder = '상세주소';
-		      detailAddressInput.value = isUpdate ? addressData.detailAddress : '';
-		      
-		      // 저장 버튼
-		      const submitButton = document.createElement('button');
-		      submitButton.type = 'button';
-		      submitButton.className = 'updateButton';
-		      submitButton.textContent = '저장';
+			const addressLabel = document.createElement('p');
+			addressLabel.textContent = '주소';
+			const postcodeWrapper = document.createElement('div'); // 우편번호 + 버튼을 묶을 div
+			const postcodeInput = document.createElement('input');
+			postcodeInput.className = 'postcode';
+			postcodeInput.id = 'modal_postcode';
+			postcodeInput.placeholder = '우편번호';
+			postcodeInput.readOnly = true; // 클릭으로만 입력되도록 설정
+			postcodeInput.value = isUpdate ? addressData.postcode : '';
 
-		      // --- 3. 요소들을 조립하여 모달 구성 ---
-		      formContainer.append(closeBtn, nameLabel, nameInput, addressLabel, postcodeWrapper, mainAddressInput, detailAddressInput, submitButton);
-		      popContent.append(head, formContainer);
-		      overlay.append(popContent);
-		      document.body.append(overlay);
-		      
-		      // --- 4. 이벤트 핸들러 등록 ---
+			const searchAddrBtn = document.createElement('button');
+			searchAddrBtn.textContent = '주소 검색';
+			searchAddrBtn.style.marginLeft = '10px'; // 간단한 스타일
 
-		      // 닫기 기능
-		      const closeModal = () => {
-		          document.body.removeChild(overlay);
-		      };
-		      closeBtn.addEventListener('click', closeModal);
-		      overlay.addEventListener('click', (e) => {
-		          if (e.target === overlay) { // 배경 클릭 시에만 닫기
-		              closeModal();
-		          }
-		      });
+			postcodeWrapper.append(postcodeInput, searchAddrBtn);
 
-		      // Daum 주소 검색 API 호출
-		      const openDaumPostcode = () => {
-		          new daum.Postcode({
-		              oncomplete: function(data) {
-		                  // 콜백 함수에서 모달 안의 input 값을 채움
-		                  document.getElementById('modal_postcode').value = data.zonecode;
-		                  document.getElementById('modal_mainAddress').value = data.roadAddress;
-		                  document.getElementById('modal_detailAddress').focus();
-		              }
-		          }).open();
-		      };
-		      postcodeWrapper.addEventListener('click', openDaumPostcode);
-		      mainAddressInput.addEventListener('click', openDaumPostcode);
-		      
-		      // 저장 버튼 클릭 이벤트
-		      submitButton.addEventListener('click', async () => {
-		          if (!nameInput.value.trim() || !postcodeInput.value.trim() || !mainAddressInput.value.trim()) {
-		              alert('이름과 주소를 모두 입력해주세요.');
-		              return;
-		          }
+			const mainAddressInput = document.createElement('input');
+			mainAddressInput.className = 'mainAddress';
+			mainAddressInput.id = 'modal_mainAddress';
+			mainAddressInput.placeholder = '주소';
+			mainAddressInput.readOnly = true;
+			mainAddressInput.value = isUpdate ? addressData.mainAddress : '';
 
-				  const dataToSend = {
-					  name: document.getElementById('modal_name').value,
-					  postcode: document.getElementById('modal_postcode').value,
-					  mainAddress: document.getElementById('modal_mainAddress').value,
-					  detailAddress: document.getElementById('modal_detailAddress').value,
-				  };
-				
-				  try {
-					  if (isUpdate) {
-						  await updateAddress(
-							  addressData.addressId,
-							  dataToSend,
-							  (json) => {
-								  alert('주소가 성공적으로 수정되었습니다.');
-								  closeModal();
-								  location.reload();
-							  },
-							  (error) => {
+			const detailAddressInput = document.createElement('input');
+			detailAddressInput.type = 'text';
+			detailAddressInput.className = 'detailAddress';
+			detailAddressInput.id = 'modal_detailAddress';
+			detailAddressInput.maxLength = 50;
+			detailAddressInput.placeholder = '상세주소';
+			detailAddressInput.value = isUpdate ? addressData.detailAddress : '';
+
+			// 저장 버튼
+			const submitButton = document.createElement('button');
+			submitButton.type = 'button';
+			submitButton.className = 'updateButton';
+			submitButton.textContent = '저장';
+
+			// --- 3. 요소들을 조립하여 모달 구성 ---
+			formContainer.append(closeBtn, nameLabel, nameInput, addressLabel, postcodeWrapper, mainAddressInput, detailAddressInput, submitButton);
+			popContent.append(head, formContainer);
+			overlay.append(popContent);
+			document.body.append(overlay);
+
+			// --- 4. 이벤트 핸들러 등록 ---
+
+			// 닫기 기능
+			const closeModal = () => {
+				document.body.removeChild(overlay);
+			};
+			closeBtn.addEventListener('click', closeModal);
+			overlay.addEventListener('click', (e) => {
+				if (e.target === overlay) { // 배경 클릭 시에만 닫기
+					closeModal();
+				}
+			});
+
+			// Daum 주소 검색 API 호출
+			const openDaumPostcode = () => {
+				new daum.Postcode({
+					oncomplete: function (data) {
+						// 콜백 함수에서 모달 안의 input 값을 채움
+						document.getElementById('modal_postcode').value = data.zonecode;
+						document.getElementById('modal_mainAddress').value = data.roadAddress;
+						document.getElementById('modal_detailAddress').focus();
+					}
+				}).open();
+			};
+			postcodeWrapper.addEventListener('click', openDaumPostcode);
+			mainAddressInput.addEventListener('click', openDaumPostcode);
+
+			// 저장 버튼 클릭 이벤트
+			submitButton.addEventListener('click', async () => {
+				if (!nameInput.value.trim() || !postcodeInput.value.trim() || !mainAddressInput.value.trim()) {
+					alert('이름과 주소를 모두 입력해주세요.');
+					return;
+				}
+
+				const dataToSend = {
+					name: document.getElementById('modal_name').value,
+					postcode: document.getElementById('modal_postcode').value,
+					mainAddress: document.getElementById('modal_mainAddress').value,
+					detailAddress: document.getElementById('modal_detailAddress').value,
+				};
+
+				try {
+					if (isUpdate) {
+						await updateAddress(
+							addressData.addressId,
+							dataToSend,
+							(json) => {
+								alert('주소가 성공적으로 수정되었습니다.');
+								closeModal();
+								location.reload();
+							},
+							(error) => {
 								alert(error.message);
-								  console.error('주소 수정 실패 (API). code: ', error.code);
-							  }
-						  );
-					  } else {
-						  await registerAddress(
-							  dataToSend,
-							  (json) => {
-								  alert('새 주소가 등록되었습니다.');
-								  closeModal();
-								  location.reload(); 
-							  },
-							  (error) => {
-								  alert(error.message);
-								  console.error('주소 등록 실패 (API). code: ', error.code);
-							  }
-						  );
-					  }
-				  } catch (error) {
-		              console.error('주소 저장 실패:', error);
-		              alert('오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
-		          }
-		      });
-		  }
-		  
-	  </script>
-	  
-</div>
+								console.error('주소 수정 실패 (API). code: ', error.code);
+							}
+						);
+					} else {
+						await registerAddress(
+							dataToSend,
+							(json) => {
+								alert('새 주소가 등록되었습니다.');
+								closeModal();
+								location.reload();
+							},
+							(error) => {
+								alert(error.message);
+								console.error('주소 등록 실패 (API). code: ', error.code);
+							}
+						);
+					}
+				} catch (error) {
+					console.error('주소 저장 실패:', error);
+					alert('오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+				}
+			});
+		}
+
+	</script>
+</th:block>
+
 </html>

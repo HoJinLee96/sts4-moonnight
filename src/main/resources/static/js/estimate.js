@@ -1,38 +1,49 @@
 import { validate, ValidationError } from '/js/validate.js';
 
 /**
- * 견적서 폼의 유효성을 검사하는 함수
- * @param {object} estimateData - 견적서 데이터 객체
- * @param {File[]} imageFiles - 첨부된 이미지 파일 목록
+ * 견적서 FormData의 유효성을 검사하는 비동기 함수
+ * @param {FormData} formData - 서버로 보낼 FormData 객체
  */
-function validateEstimate(estimateData, imageFiles) {
-	
-	validate('name',estimateData.name);
-	if (!estimateData.emailAgree && !estimateData.phoneAgree) {
-		const error = new Error('최소 하나 이상의 수신 방법을 인증해주세요.'); 
-		error.code = 400;
-		error.type = "VALIDATION";
-		throw error;
-	}
-	if(estimateData.phoneAgree){
-		validate('phone',estimateData.phone);
-	}else{
-		validate('email',estimateData.email);
-	}
-	
-	if (!estimateData.postcode || !estimateData.mainAddress || !estimateData.detailAddress) {
-		const error = new Error('이름, 연락처, 주소를 입력해 주세요.'); 
-		error.code = 400;
-		error.type = "VALIDATION";
-		throw error;
+async function validateFormData(formData) {
+	// 1. FormData에서 DTO와 파일들을 추출
+	const dtoBlob = formData.get('estimateRequestDto'); // 백엔드와 맞춘 DTO 키
+	const imageFiles = formData.getAll('images');      // 백엔드와 맞춘 파일 키
+
+	if (!dtoBlob) {
+		throw new ValidationError('견적 정보가 누락되었습니다.');
 	}
 
-	if (imageFiles && imageFiles.length > 10) {
-		const error = new Error('이미지는 최대 10장까지 업로드할 수 있습니다.'); 
-		error.code = 400;
-		error.type = "VALIDATION";
-		throw error;
+	// 2. Blob을 JavaScript 객체로 변환
+	const dto = JSON.parse(await dtoBlob.text());
+
+	// 3. validate.js의 validate 함수를 사용하여 각 필드 검증
+	validate('name', dto.name);
+	
+	if (!dto.phoneAgree && !dto.emailAgree) {
+		throw new ValidationError('최소 하나 이상의 수신 방법을 인증해주세요.');
 	}
+
+	// 동의한 항목에 대해서만 유효성 검사 실행
+	if (dto.phoneAgree) {
+		validate('phone', dto.phone);
+	}
+	if (dto.emailAgree) {
+		validate('email', dto.email);
+	}
+	
+	// 주소 유효성 검사
+	validate('address', dto.mainAddress);
+    validate('address', dto.detailAddress);
+
+
+	// 4. 이미지 개수 검증
+	// (수정의 경우) DTO에 포함된 기존 이미지 경로와 새로 첨부된 파일 수를 합산
+	const totalImageCount = (dto.imagesPath ? dto.imagesPath.length : 0) + imageFiles.length;
+	if (totalImageCount > 10) {
+		throw new ValidationError('이미지는 최대 10장까지 업로드할 수 있습니다.');
+	}
+
+	console.log('견적서 데이터 유효성 검사 통과!');
 }
 
 /**
@@ -41,28 +52,10 @@ function validateEstimate(estimateData, imageFiles) {
  * @param {File[]} imageFiles - 사용자가 선택한 이미지 파일의 배열
  * @returns {Promise<object>} 성공 시 서버로부터 받은 데이터
  */
-export async function registerEstimate(estimateDto, imageFiles) {
-	validateEstimate(estimateDto, imageFiles);
-
-	// 1. FormData 객체 생성
-	const formData = new FormData();
-
-	// 2. DTO 객체를 JSON 문자열로 변환 후 Blob으로 만들어 FormData에 추가
-    //    @RequestPart("estimate")에 해당함
-	formData.append(
-		'estimateRequestDto', 
-		new Blob([JSON.stringify(estimateDto)], { type: "application/json" })
-	);
-
-	// 3. 이미지 파일들을 FormData에 추가
-    //    @RequestPart("images")에 해당함
-	if (imageFiles && imageFiles.length > 0) {
-		imageFiles.forEach(file => {
-			formData.append('images', file);
-		});
-	}
-
-	// 4. 요청 전송
+export async function registerEstimate(formData) {
+	
+	await validateFormData(formData);
+	
 	const response = await fetch("/api/estimate/public/register", {
 		method: "POST",
 		body: formData
@@ -99,7 +92,7 @@ export async function getMyAllEstimate() {
 }
 
 /**
- * 특정 견적서를 조회합니다.
+ * 나의 특정 견적서를 조회합니다.
 * @param {number} estimateId - 조회할 견적서의 ID
  */
 export async function getEstimate(estimateId) {
@@ -118,32 +111,77 @@ export async function getEstimate(estimateId) {
 }
 
 /**
- * 견적서를 수정 합니다.
- * @param {number} estimateId - 수정할 견적서의 ID
+ * AUTH TOKEN 통해 견적서 목록을 가져옵니다.
+ * @returns {Promise<object>} 견적서 목록 데이터
  */
-export async function updateEstimate(estimateId, estimateDto, imageFiles) {
-	validateEstimate(estimateDto, imageFiles);
-
-	// 1. FormData 객체 생성
-	const formData = new FormData();
-
-	// 2. DTO 객체를 JSON 문자열로 변환 후 Blob으로 만들어 FormData에 추가
-	//    @RequestPart("estimate")에 해당함
-	formData.append(
-		'estimate', 
-		new Blob([JSON.stringify(estimateDto)], { type: "application/json" })
-	);
-
-	// 3. 이미지 파일들을 FormData에 추가
-	//    @RequestPart("images")에 해당함
-	if (imageFiles && imageFiles.length > 0) {
-		imageFiles.forEach(file => {
-			formData.append('images', file);
-		});
+export async function getAllEstimateByAuth() {
+	const response = await fetch("/api/estimate/private/auth", {
+		method: "GET"
+	});
+	if (response.ok) {
+		return await response.json();
+	} else {
+		const json = await response.json();
+		const error = new Error(json.message || '서버 요청에 실패했습니다.'); 
+		error.code = json.code;
+		error.type = "SERVER";
+		throw error;
 	}
+}
+
+/**
+ * AUTH TOKEN 통해 특정 견적서를 조회합니다.
+* @param {number} estimateId - 조회할 견적서의 ID
+ */
+export async function getEstimateByAuth(estimateId) {
+	const response = await fetch(`/api/estimate/private/auth/${estimateId}`, {
+		method: "GET"
+	});
+	if (response.ok) {
+		return await response.json();
+	} else {
+		const json = await response.json();
+		const error = new Error(json.message || '서버 요청에 실패했습니다.'); 
+		error.code = json.code;
+		error.type = "SERVER";
+		throw error;
+	}
+}
+
+/**
+ * 견적 번호와 인증 정보통해 견적서를 조회합니다.
+ */
+export async function getEstimateByGuest(estimateId, recipient) {
+	const body = new URLSearchParams({
+	  estimateId,
+	  recipient
+	});
+
+	const response = await fetch('/api/estimate/public/guest', {
+		method: "POST",
+		headers: {'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'},
+		body: body
+	});
+	if (response.ok) {
+		return await response.json();
+	} else {
+		const json = await response.json();
+		const error = new Error(json.message || '서버 요청에 실패했습니다.'); 
+		error.code = json.code;
+		error.type = "SERVER";
+		throw error;
+	}
+}
+
+/**
+ * 로그인 유저 견적서를 수정 합니다.
+ */
+export async function updateEstimateByUser(estimateId, formData) {
+	
+	await validateFormData(formData);
 
 	const response = await fetch(`/api/estimate/private/update/${estimateId}`, {
-		method: "Patch", 
+		method: "PATCH", 
 		body: formData
 	});
 
@@ -158,13 +196,58 @@ export async function updateEstimate(estimateId, estimateDto, imageFiles) {
 	}
 }
 
+/**
+ * AUTH TOKEN 통해 견적서를 수정 합니다.
+ * @param {string} estimateId - 수정할 견적서의 ID
+ * @param {FormData} formData - imageHandler가 만들어준 완성된 FormData 객체
+ */
+export async function updateEstimateByAuth(estimateId, formData) {
+	
+	await validateFormData(formData);
+
+    const response = await fetch(`/api/estimate/private/auth/update/${estimateId}`, {
+        method: "PATCH", // 또는 PUT
+        headers: {},
+        body: formData // 전달받은 formData를 그대로 body에 넣는다.
+    });
+
+    if (response.ok) {
+        return await response.json();
+    } else {
+        const json = await response.json();
+        const error = new Error(json.message || '서버 요청에 실패했습니다.'); 
+        error.code = json.code;
+        error.type = "SERVER";
+        throw error;
+    }
+}
+
+
 
 /**
- * 특정 견적서를 삭제합니다.
+ * 로그인 유저 견적서를 삭제합니다.
  * @param {number} estimateId - 삭제할 견적서의 ID
  */
-export async function deleteEstimate(estimateId) {
+export async function deleteEstimateByUser(estimateId) {
 	const response = await fetch(`/api/estimate/private/${estimateId}`, {
+		method: "DELETE", 
+	});
+
+	if (!response.ok) {
+		const json = await response.json();
+		const error = new Error(json.message || '서버 요청에 실패했습니다.'); 
+		error.code = json.code;
+		error.type = "SERVER";
+		throw error;
+	}
+}
+
+/**
+ * AUTH TOKEN 통해 견적서를 삭제합니다.
+ * @param {number} estimateId - 삭제할 견적서의 ID
+ */
+export async function deleteEstimateByAuth(estimateId) {
+	const response = await fetch(`/api/estimate/private/auth/${estimateId}`, {
 		method: "DELETE", 
 	});
 

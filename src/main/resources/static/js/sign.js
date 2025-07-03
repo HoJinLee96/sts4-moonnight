@@ -1,22 +1,12 @@
-import { formatEmail, formatPasswords, formatName, formatBirth, formatPhoneNumber } from '/js/format.js';
+import { validate, ValidationError } from '/js/validate.js';
 
 /**
  * 로그인
  */
 export async function signIn(signInDto, rememberEmail, encodedRedirect) {
 
-	if (!formatEmail(signInDto.email)) {
-		const error = new Error('이메일 형식이 올바르지 않습니다.');
-		error.code = 400;
-		error.type = "VALIDATION";
-		throw error;
-	}
-	if (!formatPasswords(signInDto.password)) {
-		const error = new Error('비밀번호 형식이 올바르지 않습니다.');
-		error.code = 400;
-		error.type = "VALIDATION";
-		throw error;
-	}
+	validate('email', signInDto.email);
+	validate('password', signInDto.password);
 
 	let apiUrl = "/api/sign/public/in/local";
 
@@ -56,7 +46,7 @@ export async function signOut() {
 	const response = await fetch("/api/sign/private/out/local", {
 		method: "POST"
 	});
-	if (response.ok){
+	if (response.ok) {
 		return;
 	} else {
 		const json = await response.json();
@@ -73,20 +63,10 @@ export async function signOut() {
  */
 export async function signUpStep1(email, password, confirmPassword) {
 
-	if (!formatEmail(email)) {
-		const error = new Error('이메일 형식이 올바르지 않습니다.');
-		error.code = 400;
-		error.type = "VALIDATION";
-		throw error;
-	}
-	if (!formatPasswords(password)) {
-		const error = new Error('비밀번호 형식이 올바르지 않습니다.');
-		error.code = 400;
-		error.type = "VALIDATION";
-		throw error;
-	}
-	if (!validateConfirmPasswords(password, confirmPassword)) {
-		const error = new Error('두 비밀번호가 일치하지 않습니다.');
+	validate('email', email);
+	validate('password', password);
+	if (!password !== confirmPassword) {
+		const error = new ValidationError('두 비밀번호가 일치하지 않습니다.');
 		error.code = 400;
 		error.type = "VALIDATION";
 		throw error;
@@ -116,54 +96,19 @@ export async function signUpStep1(email, password, confirmPassword) {
 /**
  * 회원가입 2차
  */
-export async function signUpStep2(signUpStep2Dto,
-	name,
-	birthInput,
-	phoneInput,
-	postcode,
-	mainAddress,
-	detailAddress,
-	agreeToTerms,
-	marketingReceivedStatus) {
+export async function signUpStep2(signUpRequestDto) {
 
-	if (!formatName(name)) {
-		errorHandler({ type: "VALIDATION", message: "이름 형식이 올바르지 않습니다." });
-		return;
-	}
-	if (!formatBirth(birthInput)) {
-		errorHandler({ type: "VALIDATION", message: "생년월일 형식이 올바르지 않습니다." });
-		return;
-	}
-	if (!formatPhoneNumber(phoneInput)) {
-		errorHandler({ type: "VALIDATION", message: "휴대폰 형식이 올바르지 않습니다." });
-		return;
-	}
-	if (postcode === "" || mainAddress === "") {
-		errorHandler({ type: "VALIDATION", message: "주소 형식이 올바르지 않습니다." });
-		return;
-	}
-	if (agreeToTerms === false) {
-		errorHandler({ type: "VALIDATION", message: "개인정보 저장 동의는 필수 입니다." });
-		return;
-	}
-
-	const body = {
-		name: name,
-		birth: birthInput.value,
-		phone: phoneInput.value,
-		postcode: postcode,
-		mainAddress: mainAddress,
-		detailAddress: detailAddress,
-		marketingReceivedStatus: marketingReceivedStatus
-	};
-
-
+	validate('name', signUpRequestDto.name);
+	validate('birth', signUpRequestDto.birth);
+	validate('phone', signUpRequestDto.phone);
+	validate('address', signUpRequestDto.postcode);
+	
 	const response = await fetch("/api/sign/public/up/second", {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
 		},
-		body: JSON.stringify(body)
+		body: JSON.stringify(signUpRequestDto)
 	});
 
 	if (response.ok) {
@@ -187,11 +132,57 @@ export function loginWithKakao(encodedRedirect) {
 	window.location.href = kakaoAuthUrl;
 }
 
-export  function loginWithNaver(encodedRedirect) {
+export function loginWithNaver(encodedRedirect) {
 
 	let naverAuthUrl = `/oauth2/authorization/naver`;
 	if (encodedRedirect) {
 		naverAuthUrl += '?redirect=' + encodedRedirect;
 	}
 	window.location.href = naverAuthUrl;
+}
+
+export async function signInAuthPhone() {
+	const response = await fetch("/api/sign/public/in/auth/sms", {
+		method: "POST"
+	});
+	if (response.ok) {
+		return await response.json();
+	} else {
+		const json = await response.json();
+		const error = new Error(json.message || '서버 요청에 실패했습니다.');
+		error.code = json.code;
+		error.type = "SERVER";
+		throw error;
+	}
+}
+
+export async function signInAuthEmail() {
+	const response = await fetch("/api/sign/public/in/auth/email", {
+		method: "POST"
+	});
+	if (response.ok) {
+		return await response.json();
+	} else {
+		const json = await response.json();
+		const error = new Error(json.message || '서버 요청에 실패했습니다.');
+		error.code = json.code;
+		error.type = "SERVER";
+		throw error;
+	}
+}
+
+
+export async function signOutAuth() {
+	const response = await fetch("/api/sign/public/out/auth", {
+		method: "POST"
+	});
+	if (response.ok) {
+		return await response.json();
+	} else {
+		const json = await response.json();
+		const error = new Error(json.message || '서버 요청에 실패했습니다.');
+		error.code = json.code;
+		error.type = "SERVER";
+		throw error;
+	}
 }
