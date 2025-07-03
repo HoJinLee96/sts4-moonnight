@@ -736,7 +736,7 @@
 			// --- 2. 상태 관리 변수 ---
 			let currentStep = 0;
 			let currentAuthType;
-			let isVerified = true;
+			let isVerified = false;
 			let selectedFiles = [];
 
 
@@ -1133,10 +1133,11 @@
 
 					showSuccessView(json.data);
 				} catch (error) {
-					submitBtn.disabled = false;
-					submitBtn.textContent = '견적 제출';
 					console.error('견적 제출 실패:', error);
 					alert(error.message);
+				} finally {
+					submitBtn.disabled = false;
+					submitBtn.textContent = '견적 제출';
 				}
 			});
 

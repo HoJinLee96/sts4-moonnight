@@ -139,7 +139,7 @@ export function openEditModal(estimateData, config) {
 				}
 				renderAuthSection(type); // UI 다시 그리기
 			});
-			return; s
+			return;
 		}
 
 		// 2. 미인증 상태의 UI 그리기
@@ -157,7 +157,7 @@ export function openEditModal(estimateData, config) {
 		// 3. '인증번호 발송' 버튼에 이벤트 리스너 추가
 		const sendBtn = section.querySelector(`#send-code-${type}-btn`);
 		const valueInput = section.querySelector(`#edit-${type}`);
-		if ('${type} === phone') {
+		if (type === 'phone') {
 			initPhoneFormatting(valueInput);
 		}
 		sendBtn.addEventListener('click', async () => {

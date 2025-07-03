@@ -65,7 +65,7 @@ export async function signUpStep1(email, password, confirmPassword) {
 
 	validate('email', email);
 	validate('password', password);
-	if (!password.equals(confirmPassword)) {
+	if (!password !== confirmPassword) {
 		const error = new ValidationError('두 비밀번호가 일치하지 않습니다.');
 		error.code = 400;
 		error.type = "VALIDATION";
