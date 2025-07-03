@@ -2,18 +2,20 @@ package net.chamman.moonnight.global.security.principal;
 
 import java.util.Collection;
 import java.util.List;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @SuppressWarnings("serial")
 @Getter
 @AllArgsConstructor
-public class AuthPhoneDetails implements UserDetails{
+public class AuthDetails implements UserDetails{
 	
 	private final int verificationId;
-	private final String phone;
+	private final String recipient;
 	private final List<GrantedAuthority> authorities;
 	
 	@Override

@@ -44,10 +44,10 @@ public class Estimate {
 	@Column(name = "name", length = 20, nullable = false)
 	private String name;
 	
-	@Column(name = "phone", length = 20, nullable = false)
+	@Column(name = "phone", length = 20)
 	private String phone;
 	
-	@Column(name = "email", length = 50, nullable = false)
+	@Column(name = "email", length = 50)
 	private String email;
 	
 	@Column(name = "email_agree")

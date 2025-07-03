@@ -1,7 +1,5 @@
 package net.chamman.moonnight.infra.s3;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -26,10 +24,9 @@ public class AwsS3Service {
 	 * @return 업로드 성공 시 각 이미지의 S3 URL {@link List}. 업로드 실패 시 S3UploadException 발생.
 	 * @throws S3UploadException {@link AwsS3Client#uploadFiles(List, String)} AWS S3에 파일 업로드 중 오류 발생 시.
 	 */
-	public List<String> uploadEstimateImages(List<MultipartFile> images, String phone) {
+	public List<String> uploadEstimateImages(List<MultipartFile> images, String estimateId) {
 		
-		String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-		String keyPrefix = "estimateImages/" + timestamp + "/" + phone + "/";
+		String keyPrefix = "estimateImages/" + estimateId + "/";
 		
 		return awsS3Client.uploadFiles(images, keyPrefix);
 	}

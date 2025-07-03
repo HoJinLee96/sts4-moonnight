@@ -165,6 +165,7 @@ public class SilentAuthenticationFilter extends AbstractAccessTokenFilter<Custom
 				|| matcher.match("/openapi.yaml", uri)
 				|| matcher.match("/.well-known/**", uri)
 				|| matcher.match("/favicon.ico", uri)
+				|| matcher.match("/jpg/**", uri)
 				|| matcher.match("/api/*/private/**", uri);
 	}
 	

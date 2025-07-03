@@ -34,8 +34,8 @@ import net.chamman.moonnight.global.annotation.ClientSpecific;
 import net.chamman.moonnight.global.annotation.Redirect;
 import net.chamman.moonnight.global.annotation.ValidEmail;
 import net.chamman.moonnight.global.annotation.ValidPassword;
-import net.chamman.moonnight.global.annotation.ValidPhone;
 import net.chamman.moonnight.global.exception.IllegalRequestException;
+import net.chamman.moonnight.global.security.principal.AuthDetails;
 import net.chamman.moonnight.global.security.principal.CustomUserDetails;
 import net.chamman.moonnight.global.util.ApiResponseDto;
 import net.chamman.moonnight.global.util.ApiResponseFactory;
@@ -63,7 +63,7 @@ public class SignController {
 		
 		String clientIp = (String) req.getAttribute("clientIp");
 		boolean isMobileApp = userAgent != null && userAgent.contains("mobile");
-		log.debug("*LOCAL 로그인 요청. Email: [{}], Client IP: [{}], User-Agent: [{}]",
+		log.debug("* LOCAL 로그인 요청. Email: [{}], Client IP: [{}], User-Agent: [{}]",
 				LogMaskingUtil.maskEmail(signInRequestDto.email(), MaskLevel.MEDIUM),
 				clientIp,
 				isMobileApp?"mobile":"web");
@@ -80,34 +80,55 @@ public class SignController {
 		}
 	}
 	
-	@Operation(summary = "AUTH 로그인", description = "휴대폰 인증 통해 로그인 토큰 발급")
+	@Operation(summary = "AUTH 로그인", description = "휴대폰 인증 통해 Auth JWT 발급")
 	@SecurityRequirement(name = "X-Verification-Phone-Token")
 	@PostMapping("/public/in/auth/sms")
-	public ResponseEntity<ApiResponseDto<Map<String,String>>> signInAuthSms(
+	public ResponseEntity<ApiResponseDto<Map<String,String>>> signInAuthBySms(
 			@RequestHeader(required = false, value = "X-Client-Type") String userAgent,
 			@ClientSpecific("X-Verification-Phone-Token") String verificationPhoneToken,
-			@ValidPhone @RequestParam String phone,
-			@RequestParam String name,
-			@Redirect(required = false) String redirect,
 			HttpServletRequest request, HttpServletResponse res) {
 		
 		String clientIp = (String) request.getAttribute("clientIp");
 		boolean isMobileApp = userAgent != null && userAgent.contains("mobile");
-		log.debug("*AUTH SMS 로그인 요청. Phone: [{}], Name: [{}], VerificationToken: [{}], Client IP: [{}], User-Agent: [{}]",
-				LogMaskingUtil.maskPhone(phone, MaskLevel.MEDIUM),
-				LogMaskingUtil.maskName(name, MaskLevel.MEDIUM),
+		log.debug("* AUTH SMS 로그인 요청. VerificationToken: [{}], Client IP: [{}], User-Agent: [{}]",
 				LogMaskingUtil.maskToken(verificationPhoneToken, MaskLevel.MEDIUM),
 				clientIp,
 				isMobileApp?"mobile":"web");
 
-		String authPhoneToken = signService.signInAuthSms(verificationPhoneToken, phone, name, clientIp);
+		String authToken = signService.signInAuthBySms(verificationPhoneToken, clientIp);
 		
 		if (isMobileApp) {
-			return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(SUCCESS, Map.of("X-Auth-Phone-Token",authPhoneToken)));
+			return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(SUCCESS, Map.of("X-Auth-Token",authToken)));
 		} else {
-			CookieUtil.addCookie(res, "X-Auth-Phone-Token", authPhoneToken,Duration.ofMinutes(30));
+			CookieUtil.addCookie(res, "X-Auth-Token", authToken, Duration.ofMinutes(30));
+			
+		    return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(SUCCESS_NO_DATA, null));
+		}
+	}
+	
+	@Operation(summary = "AUTH 로그인", description = "이메일 인증 통해 Auth JWT 발급")
+	@SecurityRequirement(name = "X-Verification-Email-Token")
+	@PostMapping("/public/in/auth/email")
+	public ResponseEntity<ApiResponseDto<Map<String,String>>> signInAuthByEmail(
+			@RequestHeader(required = false, value = "X-Client-Type") String userAgent,
+			@ClientSpecific("X-Verification-Email-Token") String verificationEmailToken,
+			HttpServletRequest request, HttpServletResponse res) {
+		
+		String clientIp = (String) request.getAttribute("clientIp");
+		boolean isMobileApp = userAgent != null && userAgent.contains("mobile");
+		log.debug("* AUTH Email 로그인 요청. VerificationToken: [{}], Client IP: [{}], User-Agent: [{}]",
+				LogMaskingUtil.maskToken(verificationEmailToken, MaskLevel.MEDIUM),
+				clientIp,
+				isMobileApp?"mobile":"web");
 
-		    return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(SUCCESS, Map.of("redirect", redirect)));
+		String authToken = signService.signInAuthByEmail(verificationEmailToken, clientIp);
+		
+		if (isMobileApp) {
+			return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(SUCCESS, Map.of("X-Auth-Token",authToken)));
+		} else {
+			CookieUtil.addCookie(res, "X-Auth-Token", authToken, Duration.ofMinutes(30));
+
+		    return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(SUCCESS_NO_DATA, null));
 		}
 	}
 	
@@ -125,7 +146,7 @@ public class SignController {
 		
 		String clientIp = (String) req.getAttribute("clientIp");
 		boolean isMobileApp = userAgent != null && userAgent.contains("MyMobileApp");
-		log.debug("*LOCAL 로그아웃 요청. User ID: [{}], AccessToken: [{}], Client IP: [{}], User-Agent: [{}]",
+		log.debug("* LOCAL 로그아웃 요청. User ID: [{}], AccessToken: [{}], Client IP: [{}], User-Agent: [{}]",
 				user != null ? user.getUserId() : "anonymous",
 				LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM),
 				clientIp,
@@ -137,6 +158,33 @@ public class SignController {
 		if(!isMobileApp) {
 			CookieUtil.addCookie(res, "X-Access-Token", "", Duration.ZERO);
 			CookieUtil.addCookie(res, "X-Refresh-Token", "",Duration.ZERO);
+		}
+		
+		return ResponseEntity.ok(apiResponseFactory.success(SUCCESS));
+	}
+	
+	@Operation(summary = "Auth 로그아웃", description = "로그아웃")
+	@SecurityRequirement(name = "X-Auth-Token")
+	@PreAuthorize("hasRole('Auth')")
+	@PostMapping("/public/out/auth")
+	public ResponseEntity<ApiResponseDto<Void>> signOutAuth(
+			@AuthenticationPrincipal AuthDetails authDetails,
+			@RequestHeader(required = false, value = "X-Client-Type") String userAgent,
+			@ClientSpecific(value = "X-Auth-Token") String authToken,
+			HttpServletRequest req, HttpServletResponse res) {
+		
+		String clientIp = (String) req.getAttribute("clientIp");
+		boolean isMobileApp = userAgent != null && userAgent.contains("MyMobileApp");
+		log.debug("* AUTH 로그아웃 요청. AuthToken: [{}], Client IP: [{}], User-Agent: [{}]",
+				LogMaskingUtil.maskToken(authToken, MaskLevel.MEDIUM),
+				clientIp,
+				isMobileApp?"mobile":"web"
+				);
+		
+		signService.signOutAuth(authToken, clientIp);
+		
+		if(!isMobileApp) {
+			CookieUtil.addCookie(res, "X-Auth-Token", "", Duration.ZERO);
 		}
 		
 		return ResponseEntity.ok(apiResponseFactory.success(SUCCESS));
@@ -155,7 +203,7 @@ public class SignController {
 		
 		String clientIp = (String) request.getAttribute("clientIp");
 		boolean isMobileApp = userAgent != null && userAgent.contains("MyMobileApp");
-		log.debug("*LOCAL 회원가입 1차 요청. Email: [{}], VerificationEmailToken: [{}], Client IP: [{}], User-Agent: [{}]",
+		log.debug("* LOCAL 회원가입 1차 요청. Email: [{}], VerificationEmailToken: [{}], Client IP: [{}], User-Agent: [{}]",
 				LogMaskingUtil.maskEmail(email, MaskLevel.MEDIUM),
 				LogMaskingUtil.maskToken(verificationEmailToken, MaskLevel.MEDIUM),
 				clientIp,
@@ -199,7 +247,7 @@ public class SignController {
 		
 		String clientIp = (String) request.getAttribute("clientIp");
 		boolean isMobileApp = userAgent != null && userAgent.contains("MyMobileApp");
-		log.debug("*LOCAL 회원가입 2차 요청. AccessSignUpToken: [{}], VerificationPhoneToken: [{}], Client IP: [{}], User-Agent: [{}]",
+		log.debug("* LOCAL 회원가입 2차 요청. AccessSignUpToken: [{}], VerificationPhoneToken: [{}], Client IP: [{}], User-Agent: [{}]",
 				LogMaskingUtil.maskToken(accessSignUpToken, MaskLevel.MEDIUM),
 				LogMaskingUtil.maskToken(verificationPhoneToken, MaskLevel.MEDIUM),
 				clientIp,
