@@ -146,36 +146,7 @@
 			padding-top: 20px;
 		}
 
-		/* 기존 버튼 스타일 재사용 및 확장 */
-		.btn {
-			padding: 12px 25px;
-			border: none;
-			border-radius: var(--base-border-radius, 5px);
-			font-size: 16px;
-			font-weight: bold;
-			cursor: pointer;
-			transition: all 0.3s;
-		}
-
-		.btn--primary {
-			background-color: var(--main-color, #20367a);
-			color: white;
-		}
-
-		.btn--primary:hover {
-			opacity: 0.9;
-		}
-
-		.btn--secondary {
-			background-color: #e9ecef;
-			color: #495057;
-		}
-
-		.btn--secondary:hover {
-			background-color: #dee2e6;
-		}
-
-		/* 애니메이션 */
+				/* 애니메이션 */
 		@keyframes fadeIn {
 			from {
 				opacity: 0;
@@ -646,10 +617,10 @@
 				</div>
 
 				<div class="form-navigation">
-					<button type="button" class="btn btn--secondary" id="prevBtn">이전</button>
+					<button type="button" class="btn btn-secondary" id="prevBtn">이전</button>
 					<div class="emptyDiv"></div>
-					<button type="button" class="btn btn--primary" id="nextBtn">다음</button>
-					<button type="submit" class="btn btn--primary" id="submitBtn" style="display:none;" disabled>견적
+					<button type="button" class="btn btn-primary-mini" id="nextBtn">다음</button>
+					<button type="submit" class="btn btn-primary-mini" id="submitBtn" style="display:none;" disabled>견적
 						제출</button>
 				</div>
 			</form>
@@ -1016,13 +987,11 @@
 
 						// 2. authType에 따라 입력 필드와 API 경로를 결정
 						if (currentAuthType === 'phone') {
-							console.log('서버에 인증번호 발송 요청!');
 							targetInput = phoneInput;
 							targetInput.disabled = true;
 							const json = await sendSms(phoneInput.value);
 							alert(json.message);
 						} else {
-							console.log('서버에 인증번호 발송 요청!');
 							targetInput = emailInput;
 							targetInput.disabled = true;
 							const json = await sendEmail(emailInput.value);
@@ -1036,7 +1005,6 @@
 							verifyBtn.disabled = true;
 						});
 					} catch (error) {
-						console.log(error);
 						alert(error.message);
 						btn.textContent = '인증번호 발송';
 						targetInput.disabled = false;
@@ -1073,7 +1041,6 @@
 					isVerified = true;
 
 				} catch (error) {
-					console.log(error);
 					verifyBtn.disabled = false;
 					verifyBtn.textContent = '인증하기';
 					alert(error.message);
@@ -1123,7 +1090,6 @@
 					cleaningService: cleaningServiceSelect.value,
 					content: contentTextArea.value
 				};
-				console.log(estimateDto);
 
 				const formData = imageHandler.buildFormData(estimateDto);
 

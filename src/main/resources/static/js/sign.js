@@ -50,7 +50,6 @@ export async function signOut() {
 		return;
 	} else {
 		const json = await response.json();
-		console.log(json);
 		const error = new Error(json.message || '서버 요청에 실패했습니다.');
 		error.code = json.code;
 		error.type = "SERVER";
@@ -65,7 +64,7 @@ export async function signUpStep1(email, password, confirmPassword) {
 
 	validate('email', email);
 	validate('password', password);
-	if (!password !== confirmPassword) {
+	if (password !== confirmPassword) {
 		const error = new ValidationError('두 비밀번호가 일치하지 않습니다.');
 		error.code = 400;
 		error.type = "VALIDATION";
@@ -84,7 +83,6 @@ export async function signUpStep1(email, password, confirmPassword) {
 		return await response.json();
 	} else {
 		const json = await response.json();
-		console.log(json);
 		const error = new Error(json.message || '서버 요청에 실패했습니다.');
 		error.code = json.code;
 		error.type = "SERVER";
@@ -102,6 +100,7 @@ export async function signUpStep2(signUpRequestDto) {
 	validate('birth', signUpRequestDto.birth);
 	validate('phone', signUpRequestDto.phone);
 	validate('address', signUpRequestDto.postcode);
+	validate('address', signUpRequestDto.detailAddress);
 	
 	const response = await fetch("/api/sign/public/up/second", {
 		method: "POST",
@@ -115,7 +114,6 @@ export async function signUpStep2(signUpRequestDto) {
 		return await response.json();
 	} else {
 		const json = await response.json();
-		console.log(json);
 		const error = new Error(json.message || '서버 요청에 실패했습니다.');
 		error.code = json.code;
 		error.type = "SERVER";

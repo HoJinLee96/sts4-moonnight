@@ -10,7 +10,7 @@
 			--main-color: #20367a;
 			--main-text-color: #333;
 			--main-text-color-light: white;
-			/* 흰색 텍스트용 변수 추가 */
+			--main-text-color-gray: #3b3b3b;
 			--border-color: #efefef;
 			--error-color: red;
 			--base-border-radius: 5px;
@@ -20,16 +20,83 @@
 			--layout-min-height: 650px;
 		}
 
+		/* body는 이제 여백과 기본 폰트 설정만 담당 */
+		body {
+			margin: 0;
+			padding: 0;
+			font-size: var(--font-size-base);
+			color: var(--main-text-color);
+		}
+
+		/* main이 페이지의 전체적인 너비와 중앙 정렬을 모두 책임짐 */
 		main {
 			min-height: var(--layout-min-height);
 			min-width: var(--layout-min-width);
 			max-width: var(--layout-max-width);
 			margin: 0 auto;
 		}
+
 		.container {
-			display: flex;
-			padding-top: 50px;
-			justify-content: center;
+			padding: 50px 0px;
+			min-height: 1080px;
+		}
+	</style>
+	<style>
+		/* 공용 버튼 스타일 */
+		.btn {
+			padding: 12px 20px;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			font-size: 16px;
+			font-weight: bold;
+			transition: all 0.2s ease;
+			flex-shrink: 0;
+			/* 버튼 크기 줄어들지 않도록 */
+		}
+
+		.btn:disabled {
+			background-color: #ccc;
+			cursor: not-allowed;
+		}
+
+		.btn-primary {
+			background-color: #20367a;
+			color: white;
+			width: 100%;
+			/* 버튼 너비를 폼과 맞춤 */
+		}
+
+		.btn-primary:hover:not(:disabled) {
+			background-color: #182a5e;
+		}
+
+		.btn-primary-mini {
+			background-color: #20367a;
+			color: white !important;
+		}
+
+		.btn-primary-mini:hover:not(:disabled) {
+			background-color: #182a5e;
+		}
+
+		.btn-secondary {
+			background-color: #e9ecef;
+			color: #495057;
+			border: 1px solid #dee2e6;
+		}
+
+		.btn-secondary:hover:not(:disabled) {
+			background-color: #c7cacc;
+		}
+		
+		.btn-tertiary {
+			background-color: var(--border-color);
+			color: var(--main-text-color-gray);
+		}
+		
+		.btn-tertiary:hover:not(:disabled) {
+			background-color: #e2e2e2;
 		}
 	</style>
 	<th:block th:replace="~{main/header :: headerCss}" />

@@ -11,7 +11,7 @@ import net.chamman.moonnight.domain.user.User.UserStatus;
 public record SignUpRequestDto(
     
     @NotBlank(message = "{validation.user.name.required}")
-    @Pattern(regexp = "^[가-힣a-zA-Z\\s]+$", message = "{validation.user.name.invalid}")
+    @Pattern(regexp = "^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9 ]+$", message = "{validation.user.name.invalid}")
     @Size(min = 2, max = 20, message = "{validation.user.name.length}")
     String name,
     

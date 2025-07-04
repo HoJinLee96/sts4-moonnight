@@ -2,8 +2,8 @@ import { validate } from '/js/validate.js';
 
 // ======= 휴대폰 유효성 + 중복 검사 =======
 export async function validatePhone(phone) {
-	
-	validate('phone',phone);
+
+	validate('phone', phone);
 
 	const response = await fetch("/api/local/user/public/exist/phone", {
 		method: "POST",
@@ -15,10 +15,17 @@ export async function validatePhone(phone) {
 		return await response.json();
 	} else {
 		const json = await response.json();
-		const error = new Error(json.message || '서버 요청에 실패했습니다.');
-		error.code = json.code;
-		error.type = "SERVER";
-		throw error;
+		if (json.code == '4532') {
+			const error = new Error('이미 가입되어 있는 휴대폰 입니다.');
+			error.code = json.code;
+			error.type = "SERVER";
+			throw error;
+		} else {
+			const error = new Error(json.message || '서버 요청에 실패했습니다.');
+			error.code = json.code;
+			error.type = "SERVER";
+			throw error;
+		}
 	}
 
 }
@@ -27,7 +34,7 @@ export async function validatePhone(phone) {
 // ======= 휴대폰 인증번호 발송 =======
 export async function sendSms(phone) {
 
-	validate('phone',phone);
+	validate('phone', phone);
 
 	const response = await fetch("/api/verify/public/sms", {
 		method: "POST",
@@ -49,9 +56,9 @@ export async function sendSms(phone) {
 
 // ======= 휴대폰 인증번호 검증 =======
 export async function verifySmsCode(phone, code) {
-	
-	validate('phone',phone);
-	validate('code',code);
+
+	validate('phone', phone);
+	validate('code', code);
 
 	const body = {
 		phone: phone,

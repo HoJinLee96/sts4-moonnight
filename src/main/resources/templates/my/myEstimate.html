@@ -64,54 +64,6 @@
 			flex-grow: 1;
 		}
 
-		/* 버튼 스타일 */
-		.btn {
-			padding: 12px 20px;
-			border: none;
-			border-radius: 5px;
-			cursor: pointer;
-			font-size: 16px;
-			font-weight: bold;
-			transition: all 0.2s ease;
-			flex-shrink: 0;
-			/* 버튼 크기 줄어들지 않도록 */
-		}
-
-		.btn:disabled {
-			background-color: #ccc;
-			cursor: not-allowed;
-		}
-
-		.btn-primary {
-			background-color: #20367a;
-			color: white;
-			width: 100%;
-			/* 버튼 너비를 폼과 맞춤 */
-		}
-
-		.btn-primary:hover:not(:disabled) {
-			background-color: #182a5e;
-		}
-
-		.btn-primary-mini {
-			background-color: #20367a;
-			color: white !important;
-		}
-
-		.btn-primary-mini:hover:not(:disabled) {
-			background-color: #182a5e;
-		}
-
-
-		.btn-secondary {
-			background-color: #6c757d;
-			color: white;
-		}
-
-		.btn-secondary:hover:not(:disabled) {
-			background-color: #5a6268;
-		}
-
 		.timer {
 			color: red;
 			font-weight: bold;
@@ -511,8 +463,8 @@
 	                        <span class="service">${est.cleaningService}</span>
 	                    </div>
 	                    <div class="estimate-actions">
-	                        <button type="button" class="btn btn-edit" data-id="${est.estimateId}">수정</button>
-	                        <button type="button" class="btn btn-danger btn-delete" data-id="${est.estimateId}">삭제</button>
+	                        <button type="button" class="btn btn-primary-mini btn-edit" data-id="${est.estimateId}">수정</button>
+	                        <button type="button" class="btn btn-delete" data-id="${est.estimateId}">삭제</button>
 	                    </div>
 	                `;
 					container.appendChild(item);

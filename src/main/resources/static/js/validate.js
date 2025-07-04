@@ -28,12 +28,13 @@ const validationRules = {
 		invalidMessage: '올바른 인증코드 형식이 아닙니다. (예: 012345)'
 	},
 	name: {
-		pattern: /^[가-힣a-zA-Z0-9 ]+$/,
+		pattern: /^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9 ]+$/,
 		emptyMessage: '이름을 입력해주세요.',
 		invalidMessage: '이름에는 특수기호 또는 줄바꿈을 포함할 수 없습니다.'
 	},
 	birth: {
 		validator: (value) => isValidDate(value),
+		pattern: /^\d{8}$/,
 		emptyMessage: '생년월일을 입력해주세요.',
 		invalidMessage: '올바른 생년월일 8자리를 입력해주세요. (예: 19960101)'
 	},
@@ -51,7 +52,6 @@ const validationRules = {
  */
 export function validate(type, value) {
 	const rule = validationRules[type];
-
 	if (!rule) {
 		throw new ValidationError(`'${type}'에 대한 유효성 검사 규칙이 정의되지 않았습니다.`);
 	}
@@ -67,8 +67,10 @@ export function validate(type, value) {
 
 	// 2. 정규식 패턴 검사
 	if (!rule.pattern.test(value)) {
-		console.log("검증값: " + value);
 		throw new ValidationError(rule.invalidMessage);
+	}
+	if(rule.validator){
+		rule.validator(value);
 	}
 }
 
@@ -77,7 +79,11 @@ function isValidDate(dateString) {
 	const year = parseInt(dateString.substring(0, 4), 10);
 	const month = parseInt(dateString.substring(4, 6), 10);
 	const day = parseInt(dateString.substring(6, 8), 10);
-
+	if(year<1900){
+		throw new ValidationError('1900년 이후로 입력해주세요.');
+	}
 	const date = new Date(year, month - 1, day);
-	return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+	if(date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day){
+		throw new ValidationError('올바른 생년월일 8자리를 입력해주세요. (예: 19960101)');
+	}
 }

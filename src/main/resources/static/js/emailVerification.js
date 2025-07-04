@@ -1,14 +1,9 @@
 import { validate } from '/js/validate.js';
 
 // ======= 이메일 유효성 + 중복 검사 =======
-export async function validateEmail(successHandler, errorHandler) {
-	const email = document.getElementById("userEmail").value;
+export async function checkEmailDuplication(email) {
 
-	// 1차 형식 검증
-	if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-		errorHandler(404);
-		return;
-	}
+	validate('email', email);
 
 	const response = await fetch("/api/local/user/public/exist/email", {
 		method: "POST",
@@ -16,12 +11,20 @@ export async function validateEmail(successHandler, errorHandler) {
 		body: new URLSearchParams({ email })
 	});
 
-
 	if (response.ok) {
-		// 200 → 중복 없음
-		successHandler();
 	} else {
-		errorHandler(response.status);
+		const json = await response.json();
+		if (json.code == '4531') {
+			const error = new Error('이미 가입되어 있는 이메일 입니다.');
+			error.code = json.code;
+			error.type = "SERVER";
+			throw error;
+		} else {
+			const error = new Error(json.message || '서버 요청에 실패했습니다.');
+			error.code = json.code;
+			error.type = "SERVER";
+			throw error;
+		}
 	}
 
 }

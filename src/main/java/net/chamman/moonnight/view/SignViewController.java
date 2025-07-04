@@ -49,7 +49,7 @@ public class SignViewController {
 	}
 	
 	@GetMapping("/signup2")
-	public String showJoin2(@ClientSpecific(required = true, value = "X-Access-SignUp-Token") String accessSignUpToken) {
+	public String showJoin2(@ClientSpecific(required = false, value = "X-Access-SignUp-Token") String accessSignUpToken) {
 		if (accessSignUpToken == null || accessSignUpToken.isBlank()) {
 			return "redirect:/signup1";
 		}
