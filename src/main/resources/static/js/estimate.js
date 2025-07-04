@@ -43,7 +43,6 @@ async function validateFormData(formData) {
 		throw new ValidationError('이미지는 최대 10장까지 업로드할 수 있습니다.');
 	}
 
-	console.log('견적서 데이터 유효성 검사 통과!');
 }
 
 /**

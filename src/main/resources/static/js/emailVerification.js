@@ -12,10 +12,19 @@ export async function checkEmailDuplication(email) {
 	});
 
 	if (response.ok) {
-		// 200 → 중복 없음
 	} else {
-		const error = new Error('이미 가입되어 있는 이메일 입니다.');
-		throw error;
+		const json = await response.json();
+		if (json.code == '4531') {
+			const error = new Error('이미 가입되어 있는 이메일 입니다.');
+			error.code = json.code;
+			error.type = "SERVER";
+			throw error;
+		} else {
+			const error = new Error(json.message || '서버 요청에 실패했습니다.');
+			error.code = json.code;
+			error.type = "SERVER";
+			throw error;
+		}
 	}
 
 }

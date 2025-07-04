@@ -50,7 +50,6 @@ export async function signOut() {
 		return;
 	} else {
 		const json = await response.json();
-		console.log(json);
 		const error = new Error(json.message || '서버 요청에 실패했습니다.');
 		error.code = json.code;
 		error.type = "SERVER";
@@ -84,7 +83,6 @@ export async function signUpStep1(email, password, confirmPassword) {
 		return await response.json();
 	} else {
 		const json = await response.json();
-		console.log(json);
 		const error = new Error(json.message || '서버 요청에 실패했습니다.');
 		error.code = json.code;
 		error.type = "SERVER";
@@ -116,7 +114,6 @@ export async function signUpStep2(signUpRequestDto) {
 		return await response.json();
 	} else {
 		const json = await response.json();
-		console.log(json);
 		const error = new Error(json.message || '서버 요청에 실패했습니다.');
 		error.code = json.code;
 		error.type = "SERVER";

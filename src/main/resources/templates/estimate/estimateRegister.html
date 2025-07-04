@@ -987,13 +987,11 @@
 
 						// 2. authType에 따라 입력 필드와 API 경로를 결정
 						if (currentAuthType === 'phone') {
-							console.log('서버에 인증번호 발송 요청!');
 							targetInput = phoneInput;
 							targetInput.disabled = true;
 							const json = await sendSms(phoneInput.value);
 							alert(json.message);
 						} else {
-							console.log('서버에 인증번호 발송 요청!');
 							targetInput = emailInput;
 							targetInput.disabled = true;
 							const json = await sendEmail(emailInput.value);
@@ -1007,7 +1005,6 @@
 							verifyBtn.disabled = true;
 						});
 					} catch (error) {
-						console.log(error);
 						alert(error.message);
 						btn.textContent = '인증번호 발송';
 						targetInput.disabled = false;
@@ -1044,7 +1041,6 @@
 					isVerified = true;
 
 				} catch (error) {
-					console.log(error);
 					verifyBtn.disabled = false;
 					verifyBtn.textContent = '인증하기';
 					alert(error.message);
@@ -1094,7 +1090,6 @@
 					cleaningService: cleaningServiceSelect.value,
 					content: contentTextArea.value
 				};
-				console.log(estimateDto);
 
 				const formData = imageHandler.buildFormData(estimateDto);
 
