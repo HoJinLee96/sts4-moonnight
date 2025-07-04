@@ -1,86 +1,93 @@
 <style th:fragment="footerCss">
-	/* --- CSS 변수 (기존 :root에 추가) --- */
 	:root {
-	    /* ... 기존 변수들 ... */
-	    --footer-bg-color: #f8f9fa; /* 푸터 배경색 */
-	    --text-color-muted: #868e96; /* 저채도 텍스트 색 */
-	    --text-color-light-muted: #bababa; /* 더 밝은 저채도 텍스트 색 */
+		--footer-bg-color: #f8f9fa;
+		--text-color-muted: #868e96;
+		--text-color-light-muted: #bababa;
 	}
 
 	/* --- Footer --- */
 	.footer {
-	    width: 100%;
-	    min-height: 250px; /* 내부 콘텐츠에 따라 높이 조절 */
-	    margin-top: 100px;
-	    padding: 40px 0; /* 상하 패딩 */
-	    background-color: var(--footer-bg-color);
-	    border-top: 1px solid var(--border-color);
-	    box-sizing: border-box;
+		min-width: var(--layout-min-width);
+		max-width: var(--layout-max-width);
+		min-height: 250px;
+		/* 내부 콘텐츠에 따라 높이 조절 */
+		margin-top: 100px;
+		padding: 40px 20px;
+		/* 상하 패딩 */
+		background-color: var(--footer-bg-color);
+		border-top: 1px solid var(--border-color);
+		box-sizing: border-box;
+		margin: 0 auto;
+
 	}
 
 	.footer__content {
-	    display: flex;
-	    justify-content: space-between;
-	    align-items: flex-start; /* 상단 정렬 */
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		/* 상단 정렬 */
 	}
 
 	/* Footer Info & Nav */
 	.footer__info {
-	    /* flex-grow: 1; 자동으로 남은 공간 차지 */
+		/* flex-grow: 1; 자동으로 남은 공간 차지 */
 	}
 
 	.footer__nav {
-	    display: flex;
-	    gap: 20px; /* ★ li에 margin을 주는 것보다 gap이 더 깔끔함 */
-	    list-style: none;
-	    margin: 0 0 20px 0;
-	    padding: 0;
+		display: flex;
+		gap: 20px;
+		/* ★ li에 margin을 주는 것보다 gap이 더 깔끔함 */
+		list-style: none;
+		margin: 0 0 20px 0;
+		padding: 0;
 	}
 
 	.footer__nav a {
-	    text-decoration: none;
-	    color: var(--text-color-muted);
-	    font-weight: bold;
-	    transition: color 0.2s;
+		text-decoration: none;
+		color: var(--text-color-muted);
+		font-weight: bold;
+		transition: color 0.2s;
 	}
 
 	.footer__nav a:hover {
-	    color: var(--main-text-color);
+		color: var(--main-text-color);
 	}
 
 	.footer__details {
-	    font-size: 14px;
-	    color: var(--text-color-light-muted);
-	    line-height: 1.6; /* 줄간격 조절 */
+		font-size: 14px;
+		color: var(--text-color-light-muted);
+		line-height: 1.6;
+		/* 줄간격 조절 */
 	}
 
 	/* Footer SNS */
 	.footer__sns {
-	    /* margin-left: auto; 가 없어도 justify-content로 정렬됨 */
+		/* margin-left: auto; 가 없어도 justify-content로 정렬됨 */
 	}
 
 	.sns-list {
-	    display: flex;
-	    gap: 15px;
-	    list-style: none;
-	    margin: 0;
-	    padding: 0;
+		display: flex;
+		gap: 15px;
+		list-style: none;
+		margin: 0;
+		padding: 0;
 	}
 
 	.sns-list img {
-	    width: 32px; /* 아이콘 크기 */
-	    height: 32px;
-	    opacity: 0.7;
-	    transition: opacity 0.2s;
+		width: 32px;
+		/* 아이콘 크기 */
+		height: 32px;
+		opacity: 0.7;
+		transition: opacity 0.2s;
 	}
 
 	.sns-list a:hover img {
-	    opacity: 1;
+		opacity: 1;
 	}
 </style>
 <footer class="footer" th:fragment="footerFragment">
 	<div class="content-wrapper footer__content">
-		
+
 		<div class="footer__info">
 			<ul class="footer__nav">
 				<li><a href="#">회사소개</a></li>
@@ -104,4 +111,3 @@
 
 	</div>
 </footer>
-

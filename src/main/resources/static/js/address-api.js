@@ -114,8 +114,7 @@ function showFeedbackTooltip(targetElement, message) {
 
 	// 버튼 바로 위에 중앙 정렬되도록 위치 설정
 	tooltip.style.left = `${targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2)}px`;
-	tooltip.style.top = `${targetRect.top - tooltipRect.height - 10}px`; // 버튼 위 10px 여백
-
+	tooltip.style.top = `${targetRect.top + window.scrollY - tooltipRect.height - 10}px`; // 버튼 위 10px 여백
 	// 4. 'show' 클래스를 추가해서 나타나는 애니메이션 실행
 	//   - setTimeout을 살짝 주는 이유는, DOM에 추가된 후 애니메이션이 적용되도록 하기 위함
 	setTimeout(() => {

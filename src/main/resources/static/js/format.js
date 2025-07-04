@@ -48,7 +48,6 @@ export function initBirthFormatting(inputElement) {
 	if (!inputElement) return;
 
 	inputElement.addEventListener('input', (e) => {
-		// 숫자 이외의 문자를 제거하고, 최대 8자리로 제한합니다.
 		e.target.value = e.target.value.replace(/\D/g, '').substring(0, 8);
 	});
 }

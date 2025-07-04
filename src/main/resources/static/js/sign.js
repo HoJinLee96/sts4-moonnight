@@ -65,7 +65,7 @@ export async function signUpStep1(email, password, confirmPassword) {
 
 	validate('email', email);
 	validate('password', password);
-	if (!password !== confirmPassword) {
+	if (password !== confirmPassword) {
 		const error = new ValidationError('두 비밀번호가 일치하지 않습니다.');
 		error.code = 400;
 		error.type = "VALIDATION";
@@ -102,6 +102,7 @@ export async function signUpStep2(signUpRequestDto) {
 	validate('birth', signUpRequestDto.birth);
 	validate('phone', signUpRequestDto.phone);
 	validate('address', signUpRequestDto.postcode);
+	validate('address', signUpRequestDto.detailAddress);
 	
 	const response = await fetch("/api/sign/public/up/second", {
 		method: "POST",

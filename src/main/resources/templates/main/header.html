@@ -1,43 +1,20 @@
 <style th:fragment="headerCss">
-	body {
-		margin: 0;
-		padding: 0;
-		font-size: var(--font-size-base);
-		color: var(--main-text-color);
-		min-width: var(--layout-min-width);
-		/* 스크롤바가 생겨도 레이아웃이 깨지지 않도록 body에 최소 너비 설정 */
-	}
-
-	/* --- ★★★ 핵심: 레이아웃 래퍼(Wrapper) ★★★ --- */
-	.content-wrapper {
-		min-width: var(--layout-min-width);
-		max-width: var(--layout-max-width);
-		margin: 0 auto;
-		/* 좌우 마진을 auto로 주어 중앙 정렬 */
-		padding: 0 5vw;
-		/* 좌우 여백을 vw로 주어 반응형 대응 */
-		box-sizing: border-box;
-	}
-
-
 	/* --- Header --- */
 	header {
+		min-width: var(--layout-min-width);
 		max-width: var(--layout-max-width);
 		margin: 0 auto;
-
-		height: 125px;
-		padding-top: 8px;
-		padding-bottom: 13px;
 		position: relative;
-		/* 자식 요소의 z-index 기준점 */
-		background-image: url('/jpg/headerBackground.jpg');
-		background-size: cover;
-		background-position: center;
+		
 		color: var(--main-text-color-light);
-		/* 헤더 내 기본 텍스트 색상은 흰색 */
 	}
 
 	.header-content {
+		height: 125px;
+		background-image: url('/jpg/headerBackground.jpg');
+		background-size: cover;
+		background-position: center;
+		padding: 8px 20px 13px 20px;
 		display: flex;
 		flex-direction: column;
 		height: 100%;
@@ -104,10 +81,6 @@
 		padding-left: 20px;
 	}
 
-	/* --- Page Container --- */
-	.container {
-		min-height: 1080px;
-	}
 </style>
 <header th:fragment="headerFragment">
 	<div class="content-wrapper header-content">

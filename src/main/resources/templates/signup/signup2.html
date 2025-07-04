@@ -1,405 +1,386 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{main/base}">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{main/base}">
+
 <head>
-<title>회원가입</title>
-<style>
-/* Hide the spinner (arrow buttons) */
-input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button
-	{
-	-webkit-appearance: none;
-	margin: 0;
-}
+	<title>회원가입</title>
+	<style>
+		/* --- 전체 폼 레이아웃 --- */
+		.form-wrapper {
+			display: flex;
+			justify-content: center;
+			padding: 70px 0;
+		}
 
-input[type="number"] {
-	-moz-appearance: textfield;
-	appearance: textfield;
-}
+		.form-container {
+			width: 100%;
+			max-width: 500px;
+			padding: 40px;
+			background-color: #fff;
+			border: 1px solid var(--border-color, #efefef);
+			border-radius: 10px;
+			box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+		}
 
-.container {
-	max-width: 1200px;
-	margin: 0 auto;
-	padding-top: 70px;
-	min-height: 1600px;
-}
+		.form-container h2 {
+			margin-top: 0;
+			margin-bottom: 40px;
+			text-align: center;
+		}
 
-/* 폼 스타일 */
-#detailForm {
-	max-width: 400px;
-	margin: 0 auto;
-	padding: 60px 200px;
-	border: 1px solid #efefef;
-	border-radius: 10px;
-}
+		/* --- 범용 폼 스타일 (다른 페이지와 공유) --- */
+		.form-group {
+			margin-bottom: 10px;
+		}
 
-#detailForm label:not([for="marketingReceivedStatus"]):not([for="agreeToTerms"])
-	{
-	text-align: left;
-	display: block;
-	margin: 0px;
-	padding: 0px;
-	margin-top: 10px; /* input과의 간격을 조정 */
-	font-size: 15px;
-	font-weight: bold;
-}
+		.form-label {
+			display: block;
+			margin-bottom: 8px;
+			font-size: 15px;
+			font-weight: bold;
+		}
 
-#step1{
-	position: relative;
-}
+		.form-input {
+			width: 100%;
+			height: 45px;
+			padding: 0 12px;
+			border: 1px solid #ccc;
+			border-radius: var(--base-border-radius, 5px);
+			font-size: 16px;
+			box-sizing: border-box;
+			/* 패딩, 테두리를 너비에 포함 */
+			transition: border-color 0.3s;
+		}
 
-#verificationSmsCode, #phone {
-	width: 192px !important;
-}
+		.form-input:focus {
+			border-color: var(--main-color, #20367a);
+			outline: none;
+		}
 
-#postcode {
-	width: 108px !important;
-}
+		/* --- 버튼 스타일 (다른 페이지와 공유) --- */
+		.btn {
+			height: 45px;
+			padding: 0 20px;
+			border: none;
+			border-radius: var(--base-border-radius, 5px);
+			font-size: 15px;
+			font-weight: bold;
+			cursor: pointer;
+			transition: all 0.2s ease;
+			flex-shrink: 0;
+		}
 
-#name, #birth {
-	width: 170px !important;
-}
+		/* --- 페이지 맞춤 레이아웃 --- */
+		.form-row {
+			display: flex;
+			gap: 20px;
+			/* 이름과 생년월일 사이 간격 */
+		}
 
-#subStep1_1 {
-	margin-right: 50px;
-}
-#subStep1_2 {
-	top: 0px;
-    position: absolute;
-}
+		.form-row .form-group {
+			flex: 1;
+			/* 두 필드가 공간을 똑같이 나눠가짐 */
+		}
 
-#subStep1_1, #subStep1_2 {
-	display: inline-block;
-	width: 170px !important;
-}
+		.input-with-button {
+			display: flex;
+			gap: 10px;
+		}
 
-#subStep1_1 label, #subStep1_2 label {
-	width: 150px !important;
-	margin-top: 0px !important;
-}
+		.timer {
+			position: absolute;
+			font-size: 14px;
+			right: 0px;
+			top: 14px;
+			padding: 0 10px;
+			color: var(--error-color, red);
+			font-weight: bold;
+		}
 
-#detailForm input:not([type="checkbox"]) {
-	width: 400px;
-	height: 40px;
-	border: none;
-	border-bottom: 2px solid #ccc;
-	outline: none;
-	transition: border-bottom-color 0.3s;
-	margin-bottom: 10px;
-}
+		.checkbox-group label {
+			cursor: pointer;
+		}
 
-#detailForm input:focus {
-	border-bottom: 2px solid black;
-}
+		.checkbox-group input {
+			vertical-align: middle;
+		}
 
-#detailForm button:not(#postcode):not(#mainAddress) {
-	border: none;
-	background-color: #20367a;
-	color: white;
-	width: 190px;
-	height: 30px;
-	margin: 0px 3px;
-	border-radius: 8px;
-}
+		.form-actions {
+			text-align: center;
+			margin-top: 40px;
+			border-top: 1px solid var(--border-color, #efefef);
+			padding-top: 30px;
+		}
 
-#detailForm button:hover:not(#postcode):not(#mainAddress) {
-	border: 1px solid #20367a;
-	background-color: white;
-	color: black;
-	cursor: pointer;
-}
+		.feedback-message {
+			display: block;
+			height: 14px;
+			margin-top: 5px;
+			font-size: 14px;
+		}
 
-#buttonContainer {
-	text-align: center;
-	margin-top: 40px;
-}
+		/* --- 피드백 말풍선(Tooltip) 스타일 --- */
+		.feedback-tooltip {
+			position: absolute;
+			/* 다른 요소에 영향을 주지 않고 위치를 잡기 위해 */
+			padding: 10px 15px;
+			background-color: #333;
+			/* 어두운 배경 */
+			color: white;
+			/* 흰색 글씨 */
+			border-radius: 6px;
+			font-size: 14px;
+			z-index: 1001;
+			/* 모달보다는 위에, 다른 요소들보다도 위에 */
 
-#detailForm span {
-	display: block; /* block 요소처럼 동작하도록 설정 */
-	height: 14px;
-	margin: 0px;
-	font-size: 14px;
-}
+			/* 기본 상태는 숨김 */
+			opacity: 0;
+			visibility: hidden;
+			transform: translateY(10px);
+			/* 살짝 아래에서 시작 */
 
-#detailForm h2 {
-	margin-top: 0px;
-	margin-bottom: 50px;
-}
+			/* 부드러운 전환 효과 */
+			transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+		}
 
-#submitButton {
-	height: 40px !important;
-	width: 150px !important;
-	cursor: pointer;
-}
+		/* 말풍선을 보여줄 때 적용할 클래스 */
+		.feedback-tooltip.show {
+			opacity: 1;
+			visibility: visible;
+			transform: translateY(0);
+			/* 원래 위치로 */
+		}
 
-#marketingReceivedStatus, #agreeToTerms {
-	height: 20px;
-	width: 20px;
-}
-
-#input-wrapper {
-	position: relative;
-	display: inline-block;
-}
-
-#verificationTimeMessage {
-	position: absolute;
-	top: 40%;
-	right: 10px;
-	transform: translateY(-50%);
-	font-size: 12px;
-	color: red;
-	pointer-events: none; /* 타이머가 클릭되지 않도록 설정 */
-}
-
-#marketingReceivedStatus, #agreeToTerms {
-	position: relative;
-	top: 4px;
-}
-</style>
+		#postcode {
+			width: 100px;
+		}
+	</style>
 </head>
-<div layout:fragment="content">
-	<div class="container">
+<main layout:fragment="content">
+	<div class="form-wrapper">
+		<form id="detailForm" class="form-container">
+			<h2>2단계: 정보 입력</h2>
 
-	<form id="detailForm">
-
-			<input type="hidden" id="email"
-				value="<%= registerUserDto.getEmail() %>"> <input
-				type="hidden" id="password"
-				value="<%= registerUserDto.getPassword() %>">
-
-			<h2>2 단계 : 정보 입력</h2>
-			<div class="step active" id="step1">
-			
-				<div id="subStep1_1">
-					<label for="name">이름</label>
-					<input type="text" id="name"name="name" maxlength="20" required>
-					<span id="nameMessage"></span>
+			<div class="form-row">
+				<div class="form-group">
+					<label for="name" class="form-label">이름</label>
+					<input type="text" id="name" name="name" class="form-input" maxlength="20" required>
+					<span id="nameMessage" class="feedback-message"></span>
 				</div>
-				
-				<div id="subStep1_2">
-					<label for="birth">생년월일</label> 
-					<input type="number" id="birth"
-						name="birth" placeholder="19990101" maxlength="8" required>
-					<span id="birthMessage"></span>
+				<div class="form-group">
+					<label for="birth" class="form-label">생년월일</label>
+					<input type="text" id="birth" name="birth" class="form-input" placeholder="19960101" maxlength="8"
+						required>
+					<span id="birthMessage" class="feedback-message"></span>
 				</div>
-				
-				<label for="phone">휴대폰 번호</label>
-				<input type="text" id="phone" name="phone" required maxlength="13" value="010-">
-				<button class="sendSmsButton" id="sendSmsButton" type="button">인증번호 발송</button>
-				<span id="phoneMessage"></span> 
-				
-				<label for="verificationCode">인증번호</label>
-				<div id="input-wrapper">
-					<input type="number" id="verificationSmsCode" name="verificationSmsCode" required maxlength="6" readonly disabled>
-				<div id="verificationTimeMessage"></div>
-				</div>
-				<button class="verifySmsCodeButton" id="verifySmsCodeButton" type="button" disabled>인증번호 확인</button>
-				<span id="verificationSmsMessage"></span>
-				
-				<label for="mainAddress">주소</label>
-				<input type="text" id="postcode" name="postcode"
-					onclick="searchAddress()" placeholder="우편번호"> 
-					<input
-					type="text" id="mainAddress" name="mainAddress"
-					onclick="searchAddress()" placeholder="주소"> <input
-					type="text" id="detailAddress" name="detailAddress"
-					autocomplete="off" required placeholder="상세주소"> 
-				<span id="addressMessage"></span> 
-				
-				<input type="checkbox" id="agreeToTerms" name="agreeToTerms" required> 
-				<label for="agreeToTerms">개인정보 저장 동의 (필수)</label> <br>
-				<input type="checkbox" id="marketingReceivedStatus" name="marketingReceivedStatus">
-				<label for="marketingReceivedStatus">마케팅 정보 사용 동의 (선택)</label> 
 			</div>
-			
-			<div id="buttonContainer">
-				<button type="button" id="submitButton">회원가입</button>
+
+			<div class="form-group">
+				<label for="phone" class="form-label">휴대폰 번호</label>
+				<div class="input-with-button">
+					<input type="text" id="phone" name="phone" class="form-input" required maxlength="14">
+					<button class="btn btn-secondary" id="sendSmsButton" type="button">인증번호 발송</button>
+				</div>
+				<span id="phoneMessage" class="feedback-message"></span>
+			</div>
+
+			<div class="form-group">
+				<label class="form-label" for="verificationSmsCode">인증번호</label>
+				<div class="input-with-button">
+					<div style="position: relative;">
+						<input type="text" id="verificationSmsCode" name="verificationSmsCode" class="form-input"
+							required maxlength="6" disabled>
+						<span id="verificationTimeMessage" class="timer"></span>
+					</div>
+					<button class="btn btn-secondary" id="verifySmsCodeButton" type="button" disabled>인증번호 확인</button>
+				</div>
+				<span id="verificationSmsMessage" class="feedback-message"></span>
+			</div>
+
+			<div class="form-group">
+				<label for="mainAddress" class="form-label">주소</label>
+				<div class="input-with-button" style="margin-bottom: 8px;">
+					<input type="text" id="postcode" name="postcode" class="form-input" placeholder="우편번호" readonly>
+					<button type="button" class="btn btn-secondary" id="address-search-btn">주소 찾기</button>
+				</div>
+				<input type="text" id="mainAddress" name="mainAddress" class="form-input" placeholder="주소" readonly
+					style="margin-bottom: 8px;">
+				<input type="text" id="detailAddress" name="detailAddress" class="form-input" autocomplete="off"
+					required placeholder="상세주소">
+				<span id="addressMessage" class="feedback-message"></span>
+			</div>
+
+			<div class="form-group checkbox-group">
+				<input type="checkbox" id="agreeToTerms" name="agreeToTerms" required>
+				<label for="agreeToTerms">개인정보 저장 동의 (필수)</label>
+			</div>
+			<div class="form-group checkbox-group">
+				<input type="checkbox" id="marketingReceivedStatus" name="marketingReceivedStatus">
+				<label for="marketingReceivedStatus">마케팅 정보 사용 동의 (선택)</label>
+			</div>
+
+			<div class="form-actions">
+				<button type="button" id="submitButton" class="btn btn-primary">회원가입</button>
 			</div>
 		</form>
-
 	</div>
+</main>
 
-<!-- 주소 검색 api -->
-<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<th:block layout:fragment="script">
 
-<script type="module">
-import {
-	validatePhone,
-	sendSms,
-	verifySmsCode,
-	startVerificationTimer
-} from '/js/smsVerification.js';
-import { searchAddress } from '/js/daumAddressSearch4.js';
+	<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 
-document.getElementById("sendSmsButton").addEventListener("click", () => {
-	var reqPhone = document.getElementById("phone").value;
-	var message = document.getElementById("phoneMessage");
+	<script th:inline="javascript" type="module">
+		// --- 1. 모듈 임포트 ---
+		import {initPhoneFormatting, initBirthFormatting, initVerificationCodeFormatting} from '/js/format.js';
+		import {validate, ValidationError} from '/js/validate.js';
+		import {sendSms, verifySmsCode, validatePhone as checkPhoneDuplication} from '/js/smsVerification.js';
+		import {signUpStep2} from '/js/sign.js';
+		import {initAddressSearch} from '/js/address-api.js';
+		import {startCountdown, stopCountdown} from '/js/timer.js';
 
-    validatePhone(
-		reqPhone,
-		() => {
-        	sendSms(
-			reqPhone,
-          	() => {
-				alert("인증번호 발송 완료");
-				message.style.color = 'green';
-				message.innerText = "인증번호 발송 완료";
-				document.getElementById("phone").setAttribute("readonly",true);
-				document.getElementById("phone").setAttribute("disabled",true);
-				document.getElementById("sendSmsButton").innerText = "인증번호 재발송";
-				document.getElementById("verificationSmsCode").removeAttribute("readonly");
-				document.getElementById("verificationSmsCode").removeAttribute("disabled");
-				document.getElementById("verifySmsCodeButton").removeAttribute("disabled");
-            startVerificationTimer(() => {
-              document.getElementById("verificationMailMessage").innerText = "시간 초과. 다시 인증해주세요.";
-            });
-          },
-          (status) => {
-            const msg = status === 429 ? "잠시 후 다시 시도해주세요." : "서버 오류 발생";
-            document.getElementById("emailMessage").innerText = msg;
-          }
-        );
-      },
-      (status) => {
-		let msg;
-		if(status === 404){
-			msg = "휴대폰 번호를 확인해 주세요.";
-		}else if(status === 409){
-			msg = "이미 가입된 휴대폰 번호 입니다.";
-		}else{
-			msg = "서버 오류 발생";
-		}
-		message.style.color = 'red';
-		message.innerText = msg;
-	  }
-    );
-  });
+		document.addEventListener("DOMContentLoaded", () => {
 
-document.getElementById("verifySmsCodeButton").addEventListener("click", () => {
+			// --- 2. DOM 요소 가져오기 ---
+			const nameInput = document.getElementById("name");
+			const birthInput = document.getElementById("birth");
+			const phoneInput = document.getElementById("phone");
+			const sendSmsButton = document.getElementById("sendSmsButton");
+			const verificationSmsCodeInput = document.getElementById("verificationSmsCode");
+			const verifySmsCodeButton = document.getElementById("verifySmsCodeButton");
+			const timerDisplay = document.getElementById("verificationTimeMessage");
+			const postcode = document.getElementById("postcode");
+			const mainAddress = document.getElementById("mainAddress");
+			const detailAddress = document.getElementById("detailAddress");
+			const addressSearchBtn = document.getElementById("address-search-btn");
+			const agreeToTermsCheckbox = document.getElementById("agreeToTerms");
+			const marketingReceivedStatusCheckbox = document.getElementById("marketingReceivedStatus");
+			const submitButton = document.getElementById("submitButton");
 
-	var message = document.getElementById("verificationSmsMessage");
-	var phone = document.getElementById("phone").value;
-	var code = document.getElementById("verificationSmsCode").value;
+			// 메시지 Span 요소
+			const nameMessage = document.getElementById("nameMessage");
+			const birthMessage = document.getElementById("birthMessage");
+			const phoneMessage = document.getElementById("phoneMessage");
+			const verificationSmsMessage = document.getElementById("verificationSmsMessage");
 
-	verifySmsCode(phone,code,
-	(json)=>{
-		alert("인증 성공");
-		message.style.color = 'green';
-	    message.innerText = "인증 성공";
-	    document.getElementById("phone").setAttribute("readonly",true);
-		document.getElementById("phone").setAttribute("disabled",true);
-		document.getElementById("sendSmsButton").setAttribute("disabled", true);
-		document.getElementById("verificationSmsCode").setAttribute("readonly", true);
-		document.getElementById("verificationSmsCode").setAttribute("disabled", true);
-		document.getElementById("verifySmsCodeButton").setAttribute("disabled", true);
-	},
-	(status)=>{
-		let msg;
-		if(status === 400){
-			msg = "인증 번호를 확인해 주세요.";
-		}
-		else if(status === 401){
-			msg = "인증 번호가 일치하지 않습니다.";
-		}
-		else if(status === 408){
-			msg = "시간 초과. 다시 인증해주세요.";
-		}else if(status === 404){
-			msg = "잘못된 요청입니다.";
-		}else{
-			msg = "서버 오류 발생";
-		}
-		message.style.color = 'red';
-		message.innerText = msg;
-	});
-});
-</script>
 
-<script type="module">
-  import {
-	formatName,
-	formatBirth,
-	formatPhoneNumber,
-	formatVerifyCode,
+			let isVerified = false;
 
-  } from '/js/format.js';
+			// --- 3. 이벤트 리스너 등록 ---
 
-document.getElementById("name").addEventListener("input", (e)=> {
-	var message = document.getElementById("nameMessage");
-	formatName(e.target.value,message);
-});
+			// [이벤트] 인증번호 발송 버튼
+			sendSmsButton.addEventListener('click', async () => {
+				sendSmsButton.disabled = true;
+				phoneMessage.textContent = '';
 
-document.getElementById("birth").addEventListener("input", (e)=> {
-	var message = document.getElementById("birthMessage");
-	if(e.target.value.length===8){
-		formatBirth(e.target,message);
-	}
-	formatBirth(e.target);
-});
-document.getElementById("birth").addEventListener("blur", (e)=> {
-	var message = document.getElementById("birthMessage");
-	formatBirth(e.target,message);
-});
+				try {
+					const phone = phoneInput.value;
+					validate('phone', phone); // 클라이언트 유효성 검사
+					await checkPhoneDuplication(phone); // 휴대폰 중복 검사 API
+					await sendSms(phone); // 인증번호 발송 API
 
-document.getElementById("phone").addEventListener("input", (e)=> {
-	if(e.target.value.length>=13){
-		var message = document.getElementById("phoneMessage");
-		formatPhoneNumber(e.target,message);
-	}
-	formatPhoneNumber(e.target);
-});
-document.getElementById("phone").addEventListener("focus", (e)=> {
-	formatPhoneNumber(e.target);
-});
-document.getElementById("phone").addEventListener("blur", (e)=> {
-	var message = document.getElementById("phoneMessage");
-	formatPhoneNumber(e.target,message);
-});
+					alert('인증번호가 발송되었습니다.');
+					phoneMessage.style.color = 'green';
+					phoneMessage.textContent = '인증번호가 발송되었습니다.';
+					phoneInput.readOnly = true;
+					sendSmsButton.textContent = '재전송';
+					verificationSmsCodeInput.disabled = false;
+					verifySmsCodeButton.disabled = false;
 
-document.getElementById("verificationSmsCode").addEventListener("input", (e)=> {
-	formatVerifyCode(e.target);
-});
+					startCountdown(180, timerDisplay, () => {
+						verificationSmsMessage.textContent = "시간이 초과되었습니다.";
+						verifySmsCodeButton.disabled = true;
+					});
+				} catch (error) {
+					phoneMessage.style.color = 'red';
+					phoneMessage.textContent = error.message;
+				} finally {
+					sendSmsButton.disabled = false;
+				}
+			});
 
-</script>
+			// [이벤트] 인증번호 확인 버튼
+			verifySmsCodeButton.addEventListener('click', async () => {
+				verifySmsCodeButton.disabled = true;
+				verificationSmsMessage.textContent = '';
 
-<script type="module">
-  import {
-	signUpStep2
-  } from '/js/sign.js';
+				try {
+					const phone = phoneInput.value;
+					const code = verificationSmsCodeInput.value;
+					validate('code', code);
+					await verifySmsCode(phone, code);
+					isVerified = true;
+					alert('인증에 성공했습니다.');
+					verificationSmsMessage.style.color = 'green';
+					verificationSmsMessage.textContent = '인증되었습니다.';
+					stopCountdown(timerDisplay);
 
-document.getElementById("submitButton").addEventListener("click", (e)=> {
-	e.preventDefault();
-	const name = document.getElementById("name").value;
-	const birthInput = document.getElementById("birth");
-	const phoneInput = document.getElementById("phone");
-	const postcode = document.getElementById("postcode").value;
-	const mainAddress = document.getElementById("mainAddress").value;
-	const detailAddress = document.getElementById("detailAddress").value;
-	const agreeToTerms = document.getElementById("agreeToTerms").checked;
-	const marketingReceivedStatus = document.getElementById("marketingReceivedStatus").checked;
+					// 성공 후 UI 고정
+					phoneInput.disabled = true;
+					sendSmsButton.disabled = true;
+					verifySmsCodeButton.textContent = '인증 완료';
+					verificationSmsCodeInput.disabled = true;
 
-	signUpStep2(name,birthInput,phoneInput,postcode,mainAddress,detailAddress,agreeToTerms,marketingReceivedStatus,
-	(json)=>{
-		alert(json.data+"님 환영합니다!");
-		location.replace("/signin");
-	},
-	(error)=>{
-		if (error.type === "VALIDATION") {
-	    	alert(error.message);
-	  	} else if (error.type === "SERVER") {
-			if(error.status === 401){
-	    	alert("잘못된 요청입니다.");
-			} else if(error.status === 409){
-	    	alert("이미 가입되어 있는 이메일 입니다.");
-			}  else if(error.status === 500){
-	    	alert("서버 오류. 잠시후 다시 시도해 주세요.");
-			}else{
-	    	alert("회원가입 실패.\n서버 오류 코드: " + error.status + "\n내용: "+error.message);
-			}
-		}
-	});
-});
+				} catch (error) {
+					verificationSmsMessage.style.color = 'red';
+					verificationSmsMessage.innerText = error.message;
+					verifySmsCodeButton.disabled = false;
+					alert(error.message);
+				}
+			});
 
-</script>
-</div>
+			// [이벤트] 주소 찾기 버튼
+			initAddressSearch({
+				triggerBtnId: 'address-search-btn',
+				postcodeId: 'postcode',
+				mainAddressId: 'mainAddress',
+				detailAddressId: 'detailAddress'
+			});
+
+			// [이벤트] 최종 회원가입 버튼
+			submitButton.addEventListener('click', async (e) => {
+				e.preventDefault();
+				submitButton.disabled = true;
+
+				try {
+
+					if (!isVerified) {
+						throw new ValidationError('휴대폰 인증은 필수입니다.');
+					}
+					if (!agreeToTermsCheckbox.checked) {
+						throw new ValidationError('개인정보 저장 동의는 필수입니다.');
+					}
+
+					const dto = {
+						name: nameInput.value,
+						birth: birthInput.value,
+						phone: phoneInput.value,
+						postcode: postcode.value,
+						mainAddress: mainAddress.value,
+						detailAddress: detailAddress.value,
+						marketingReceivedStatus: marketingReceivedStatusCheckbox.value ? true : false,
+					};
+
+					await signUpStep2(dto);
+
+					alert("환영합니다! 회원가입이 완료되었습니다.");
+					location.replace("/signin");
+
+				} catch (error) {
+					alert(error.message);
+				} finally {
+					submitButton.disabled = false;
+				}
+			});
+
+
+			// --- 4. 포맷팅 초기화 ---
+			initPhoneFormatting(phoneInput);
+			initBirthFormatting(birthInput);
+			initVerificationCodeFormatting(verificationSmsCodeInput);
+
+		});
+	</script>
+</th:block>
+
 </html>
