@@ -2,7 +2,9 @@ package net.chamman.moonnight.domain.user;
 
 import java.time.LocalDateTime;
 import org.hibernate.annotations.Generated; 
-import org.hibernate.generator.EventType;  
+import org.hibernate.generator.EventType;
+import org.hibernate.validator.constraints.UniqueElements;
+
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -69,7 +71,7 @@ public class User {
 	
 	
 	public static enum UserProvider {
-		LOCAL, NAVER, KAKAO
+		LOCAL, OAUTH
 	}
 	
 	public static enum UserStatus {

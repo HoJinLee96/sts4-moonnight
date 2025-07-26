@@ -52,7 +52,7 @@
 			font-weight: bold;
 			transition: all 0.2s ease;
 			flex-shrink: 0;
-			/* 버튼 크기 줄어들지 않도록 */
+			text-decoration: none;
 		}
 
 		.btn:disabled {
@@ -97,6 +97,17 @@
 		
 		.btn-tertiary:hover:not(:disabled) {
 			background-color: #e2e2e2;
+		}
+		
+		.btn-outline {
+			background-color: white;
+			color: #20367a;
+			border: 1px solid #20367a;
+		}
+
+		.btn-outline:hover {
+			background-color: #20367a;
+			color: white;
 		}
 	</style>
 	<th:block th:replace="~{main/header :: headerCss}" />

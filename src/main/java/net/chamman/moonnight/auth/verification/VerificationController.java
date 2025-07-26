@@ -27,6 +27,7 @@ import net.chamman.moonnight.global.annotation.ValidEmail;
 import net.chamman.moonnight.global.annotation.ValidPhone;
 import net.chamman.moonnight.global.util.ApiResponseDto;
 import net.chamman.moonnight.global.util.ApiResponseFactory;
+import net.chamman.moonnight.rate.limiter.impl.RedisRateLimiter;
 
 @Tag(name = "VerificationController", description = "인증 관련 API")
 @RestController
@@ -35,7 +36,7 @@ import net.chamman.moonnight.global.util.ApiResponseFactory;
 public class VerificationController {
 	
 	private final VerificationService verificationService;
-	private final RateLimiterStore rateLimiter;
+	private final RedisRateLimiter rateLimiter;
 	private final ApiResponseFactory apiResponseFactory;
 	
 	@Operation(summary = "휴대폰 문자 인증번호 검사", description = "휴대폰 문자 인증번호 검사")
@@ -49,7 +50,6 @@ public class VerificationController {
 		boolean isMobileApp = userAgent != null && userAgent.contains("mobile");
 		
 		String clientIp = (String) request.getAttribute("clientIp");
-		rateLimiter.isAllowedByIp(clientIp);
 		
 		String token = verificationService.compareSms(
 				verificationId,
@@ -86,7 +86,6 @@ public class VerificationController {
 		boolean isMobileApp = userAgent != null && userAgent.contains("mobile");
 		
 		String clientIp = (String) request.getAttribute("clientIp");
-		rateLimiter.isAllowedByIp(clientIp);
 		
 		String token = verificationService.compareEmail(
 				verificationId,
@@ -122,8 +121,6 @@ public class VerificationController {
 		boolean isMobileApp = userAgent != null && userAgent.contains("mobile");
 		
 		String clientIp = (String) request.getAttribute("clientIp");
-		rateLimiter.isAllowedByPhone(phone);
-		rateLimiter.isAllowedByIp(clientIp);
 		
 		String encodingVerificationId = verificationService.sendSmsVerificationCode(phone, clientIp)+"";
 		
@@ -155,8 +152,6 @@ public class VerificationController {
 		boolean isMobileApp = userAgent != null && userAgent.contains("mobile");
 		
 		String clientIp = (String) request.getAttribute("clientIp");
-		rateLimiter.isAllowedByEmail(email);
-		rateLimiter.isAllowedByIp(clientIp);
 		
 		String encodingVerificationId = verificationService.sendEmailVerificationCode(email, clientIp)+"";
 		

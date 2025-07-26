@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import net.chamman.moonnight.domain.comment.dto.CommentRequestDto;
+import net.chamman.moonnight.domain.comment.dto.CommentResponseDto;
 import net.chamman.moonnight.global.security.principal.CustomUserDetails;
 import net.chamman.moonnight.global.util.ApiResponseDto;
 import net.chamman.moonnight.global.util.ApiResponseFactory;

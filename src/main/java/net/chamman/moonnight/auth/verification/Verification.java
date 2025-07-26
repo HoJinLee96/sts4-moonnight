@@ -29,8 +29,8 @@ public class Verification {
 	@Column(name = "verification_id")
 	private int verificationId;
 	
-	@Column(name = "request_ip", length = 50, nullable = false)
-	private String requestIp;
+	@Column(name = "client_ip", length = 50, nullable = false)
+	private String clientIp;
 	
 	@Column(name = "recipient", length = 50, nullable = false)
 	private String recipient; 

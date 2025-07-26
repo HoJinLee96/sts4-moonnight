@@ -146,7 +146,7 @@
 			padding-top: 20px;
 		}
 
-				/* 애니메이션 */
+		/* 애니메이션 */
 		@keyframes fadeIn {
 			from {
 				opacity: 0;
@@ -183,7 +183,7 @@
 
 		.timer {
 			display: flex;
-			width: 40px;
+			width: 35px;
 			align-items: center;
 			justify-content: center;
 			padding: 0 15px;
@@ -399,8 +399,9 @@
 		/* --- 등록 완료 화면 스타일 --- */
 		.success-container {
 			text-align: center;
-			padding: 50px 20px;
+			padding: 100px 20px;
 			animation: fadeIn 0.5s;
+			min-height: 1080px;
 		}
 
 		.success-container h1 {
@@ -489,6 +490,16 @@
 		.btn-home:hover {
 			opacity: 0.9;
 		}
+
+		a {
+			text-decoration: none;
+		}
+
+		.lastBtnDiv {
+			display: flex;
+			justify-content: center;
+			gap: 20px;
+		}
 	</style>
 </head>
 
@@ -511,14 +522,14 @@
 						<label for="cleaningService" class="form-label">청소 서비스<span class="required">＊</span></label>
 						<select id="cleaningService" name="cleaningService" class="form-select" required>
 							<option value="">서비스를 선택하세요</option>
-							<option value="신축">신축 입주 청소</option>
-							<option value="이사">이사 입주 청소</option>
-							<option value="거주">거주 청소</option>
-							<option value="리모델링">리모델링 청소</option>
-							<option value="준공">준공 청소</option>
-							<option value="상가">상가 청소</option>
-							<option value="오피스">오피스 청소</option>
-							<option value="기타">기타 청소</option>
+							<option value="신축청소">신축 청소</option>
+							<option value="입주청소">입주 청소</option>
+							<option value="거주청소">거주 청소</option>
+							<option value="리모델링청소">리모델링 청소</option>
+							<option value="준공청소">준공 청소</option>
+							<option value="상가청소">상가 청소</option>
+							<option value="오피스청소">오피스 청소</option>
+							<option value="기타청소">기타 청소</option>
 						</select>
 					</div>
 				</div>
@@ -540,7 +551,7 @@
 							<label for="phone" class="form-label">휴대폰 번호<span class="required">＊</span></label>
 							<div class="input-with-button">
 								<input type="tel" id="phone" name="phone" class="form-input" th:value="${user?.phone}">
-								<button type="button" class="btn btn--secondary btn-send-code"
+								<button type="button" class="btn btn-primary-mini btn-send-code"
 									data-auth-type="phone">인증번호 발송</button>
 							</div>
 						</div>
@@ -552,7 +563,7 @@
 							<div class="input-with-button">
 								<input type="email" id="email" name="email" class="form-input"
 									placeholder="name@example.com" th:value="${user?.email}">
-								<button type="button" class="btn btn--secondary btn-send-code"
+								<button type="button" class="btn btn-primary-mini btn-send-code"
 									data-auth-type="email">인증번호 발송</button>
 							</div>
 						</div>
@@ -580,8 +591,8 @@
 					<div class="form-group address-group">
 						<input type="text" id="postcode" name="postcode" class="form-input" placeholder="우편번호" readonly
 							th:value="${primaryAddress?.postcode}">
-						<button type="button" class="btn btn--primary" id="address-search-btn">주소 찾기</button>
-						<button type="button" class="btn btn--secondary" id="address-book-btn"
+						<button type="button" class="btn btn-primary-mini" id="address-search-btn">주소 찾기</button>
+						<button type="button" class="btn btn-secondary" id="address-book-btn"
 							th:if="${addressList != null and not #lists.isEmpty(addressList)}">주소록</button>
 					</div>
 					<div class="form-group">
@@ -938,9 +949,9 @@
 			                            </li>
 			                        </ul>
 			                    </div>
-			                    <div>
-			                    <a href="/estimate/search" class="btn btn--secondary">견적 조회</a>
-			                    <a href="/" class="btn btn--primary">홈으로 돌아가기</a>
+			                    <div class="lastBtnDiv">
+			                    <a href="/estimate/search" class="btn btn-secondary">견적 조회</a>
+			                    <a href="/" class="btn btn-primary-mini">홈으로 돌아가기</a>
 								</div>
 			                </div>
 			            `;

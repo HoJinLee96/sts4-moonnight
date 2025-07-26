@@ -31,6 +31,7 @@ export async function registerSimpleEstimate(simpleEstimateDto) {
 
 	const response = await fetch("/api/spem/public/register", {
 		method: "POST",
+		headers: {"Content-Type": "application/json"},
 		body: JSON.stringify(simpleEstimateDto)
 	});
 

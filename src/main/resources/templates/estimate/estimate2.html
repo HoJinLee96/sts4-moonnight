@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
 	layout:decorate="~{main/base}">
+
 <head>
 	<title>청소 견적 문의</title>
 	<style type="text/css">
@@ -238,14 +239,14 @@
 							<td>
 								<select id="cleaningService" name="cleaningService">
 									<option value="">선택</option>
-									<option value="신축">신축 입주 청소</option>
-									<option value="이사">이사 입주 청소</option>
-									<option value="거주">거주 청소</option>
-									<option value="리모델링">리모델링 청소</option>
-									<option value="준공">준공 청소</option>
-									<option value="상가">상가 청소</option>
-									<option value="오피스">오피스 청소</option>
-									<option value="기타">기타 청소</option>
+									<option value="신축청소">신축 청소</option>
+									<option value="입주청소">입주 청소</option>
+									<option value="거주청소">거주 청소</option>
+									<option value="리모델링청소">리모델링 청소</option>
+									<option value="준공청소">준공 청소</option>
+									<option value="상가청소">상가 청소</option>
+									<option value="오피스청소">오피스 청소</option>
+									<option value="기타청소">기타 청소</option>
 								</select>
 							</td>
 						</tr>
@@ -345,7 +346,7 @@
 			});
 
 		</script>
-		
+
 		<script type="module">
 			// 1. estimate.js에서 필요한 함수를 import
 			import {registerEstimate} from '/js/estimate.js';

@@ -14,14 +14,19 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import net.chamman.moonnight.auth.crypto.Obfuscator;
 import net.chamman.moonnight.domain.estimate.Estimate.EstimateStatus;
+import net.chamman.moonnight.domain.estimate.simple.dto.SimpleEstimateRequestDto;
+import net.chamman.moonnight.domain.estimate.simple.dto.SimpleEstimateResponseDto;
+import net.chamman.moonnight.domain.user.User;
+import net.chamman.moonnight.domain.user.UserRepository;
 import net.chamman.moonnight.global.exception.ForbiddenException;
 import net.chamman.moonnight.global.exception.NoSuchDataException;
-import net.chamman.moonnight.global.exception.StatusDeleteException;
+import net.chamman.moonnight.global.exception.status.StatusDeleteException;
 
 @Service
 @RequiredArgsConstructor
 public class SimpleEstimateService {
 	
+	private final UserRepository userRepository;
 	private final SimpleEstimateRepository spemRepository;
 	private final Obfuscator obfuscator;
 	
@@ -36,9 +41,11 @@ public class SimpleEstimateService {
 	 * @return 간편 견적서 응답 객체
 	 */
 	@Transactional
-	public SimpleEstimateResponseDto registerSpem(SimpleEstimateRequestDto pemRequestDto, String clientIp) {
+	public SimpleEstimateResponseDto registerSpem(SimpleEstimateRequestDto spemRequestDto, String clientIp, Integer userId) {
 
-		SimpleEstimate spem = pemRequestDto.toEntity(clientIp);
+		User user = userId != null ? userRepository.getReferenceById(userId) : null;
+
+		SimpleEstimate spem = spemRequestDto.toEntity(user, clientIp);
 		spemRepository.save(spem);
 
 		return SimpleEstimateResponseDto.fromEntity(spem, obfuscator);

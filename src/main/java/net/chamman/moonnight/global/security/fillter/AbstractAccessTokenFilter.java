@@ -21,11 +21,11 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import net.chamman.moonnight.auth.crypto.JwtProvider;
-import net.chamman.moonnight.auth.crypto.TokenProvider;
-import net.chamman.moonnight.auth.crypto.TokenProvider.TokenType;
 import net.chamman.moonnight.auth.sign.SignService;
 import net.chamman.moonnight.auth.sign.log.SignLogService;
+import net.chamman.moonnight.auth.token.JwtProvider;
+import net.chamman.moonnight.auth.token.TokenProvider;
+import net.chamman.moonnight.auth.token.TokenProvider.TokenType;
 import net.chamman.moonnight.global.exception.jwt.TimeOutJwtException;
 import net.chamman.moonnight.global.interceptor.CustomInterceptor;
 import net.chamman.moonnight.global.util.CookieUtil;
@@ -163,7 +163,7 @@ public abstract class AbstractAccessTokenFilter <T extends UserDetails> extends 
 	
 	protected void refresh(String refreshToken, String clientIp, HttpServletResponse res, boolean isMobileApp) {
 		log.debug("* Refresh 진행.");
-
+		
 		Map<String,String> newTokens = signService.refresh(refreshToken, clientIp);
 		// 새로운 토큰 Set Response
 		setTokenToResponse(newTokens, res, isMobileApp);

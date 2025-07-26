@@ -5,7 +5,6 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import net.chamman.moonnight.domain.address.Address;
 import net.chamman.moonnight.domain.user.User;
-import net.chamman.moonnight.domain.user.User.UserProvider;
 import net.chamman.moonnight.domain.user.User.UserStatus;
 
 public record SignUpRequestDto(
@@ -43,19 +42,19 @@ public record SignUpRequestDto(
           .name(name)
           .birth(birth)
           .phone(phone)
-          .userProvider(UserProvider.LOCAL)
           .userStatus(UserStatus.ACTIVE)
           .marketingReceivedStatus(marketingReceivedStatus)
           .build();
   }
   
-  public Address toAddressEntity() {
+  public Address toAddressEntity(User user) {
     return Address.builder()
-        .name(name)
-        .postcode(postcode)
-        .mainAddress(mainAddress)
-        .detailAddress(detailAddress)
-        .isPrimary(true)
-        .build();
+    		.user(user)
+	        .name(name)
+	        .postcode(postcode)
+	        .mainAddress(mainAddress)
+	        .detailAddress(detailAddress)
+	        .isPrimary(true)
+	        .build();
   }
 }

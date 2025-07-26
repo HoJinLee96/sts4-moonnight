@@ -102,6 +102,46 @@
 		#buttonContainer{
 			margin-top: 20px;
 		}
+		/* 수정 모달 스타일 */
+		.select-modal-overlay {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background-color: rgba(0, 0, 0, 0.6);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			z-index: 1000;
+			padding: 20px 0;
+			/* 상하 여백 추가 */
+		}
+
+		.select-modal-content {
+			background: white;
+			padding: 30px 40px;
+			border-radius: 8px;
+			width: 90%;
+			max-width: 400px;
+			/* 모달 너비 조정 */
+			position: relative;
+			max-height: 95vh;
+			/* 화면 높이의 95%로 최대 높이 제한 */
+			overflow-y: auto;
+			/* 내용이 길어지면 자동 스크롤 */
+			animation: fadeIn 0.3s;
+		}
+		.select-form{
+			display: flex;
+			justify-content: center;
+			gap: 50px;
+		}
+		.select-modal-content h3, .select-modal-content h4 {
+			margin-top: 0;
+			margin-bottom: 15px;
+			text-align: center;
+		}
 	</style>
 </head>
 <main layout:fragment="content">
@@ -128,12 +168,12 @@
 				<span id="verificationMailMessage"></span>
 			</div>
 			<div class="step" id="step3">
-				<label for="userPassword">비밀번호</label>
-				<input type="password" id="userPassword" name="userPassword" required maxlength="60"> <span
+				<label for="password">비밀번호</label>
+				<input type="password" id="password" name="password" required maxlength="60"> <span
 					id="passwordMessage"></span>
-				<label for="userConfirmPassword" style="margin-top:10px">비밀번호 확인</label>
-				<input type="password" id="userConfirmPassword" name="userConfirmPassword" required maxlength="60">
-				<span id="passwordConfirmMessage"></span>
+				<label for="confirmPassword" style="margin-top:10px">비밀번호 확인</label>
+				<input type="password" id="confirmPassword" name="confirmPassword" required maxlength="60">
+				<span id="confirmPasswordMessage"></span>
 				<div id="buttonContainer">
 					<button class="btn btn-primary" type="button" id="submitButton">가입하기</button>
 				</div>
@@ -145,9 +185,9 @@
 <th:block layout:fragment="script">
 	<script type="module">
 		// --- 1. 모듈 임포트 ---
-		import {initPhoneFormatting, initVerificationCodeFormatting} from '/js/format.js';
-		import {validate, ValidationError} from '/js/validate.js';
-		import {checkEmailDuplication, sendEmail, verifyMailCode} from '/js/emailVerification.js'; // 수정된 API 함수
+		import {initVerificationCodeFormatting} from '/js/format.js';
+		import {validate, ValidationError, validateConfirmPassword} from '/js/validate.js';
+		import {isEmailExist, sendEmail, verifyMailCode} from '/js/emailVerification.js'; // 수정된 API 함수
 		import {signUpStep1} from '/js/sign.js';
 		import {startCountdown, stopCountdown} from '/js/timer.js';
 
@@ -171,43 +211,13 @@
 
 			// Step 3
 			const step3Div = document.getElementById('step3');
-			const userPasswordInput = document.getElementById('userPassword');
-			const userConfirmPasswordInput = document.getElementById('userConfirmPassword');
+			const passwordInput = document.getElementById('password');
+			const confirmPasswordInput = document.getElementById('confirmPassword');
 			const passwordMessageSpan = document.getElementById('passwordMessage');
-			const passwordConfirmMessageSpan = document.getElementById('passwordConfirmMessage');
+			const confirmPasswordMessageSpan = document.getElementById('confirmPasswordMessage');
 			const submitButton = document.getElementById('submitButton');
 
 
-
-			function validateConfirmPassword() {
-				const password = userPasswordInput.value;
-				const confirmPassword = userConfirmPasswordInput.value;
-
-				// '비밀번호 확인' 필드가 비어있으면, 메시지도 그냥 비워준다.
-				if (confirmPassword === '') {
-					passwordConfirmMessageSpan.textContent = '';
-					return;
-				}
-
-				// 1. '비밀번호' 필드 자체가 유효한지 먼저 확인한다.
-				try {
-					validate('password', password);
-				} catch (error) {
-					// 기본 비밀번호가 유효하지 않으면, 비교를 시작조차 하지 않는다.
-					passwordConfirmMessageSpan.textContent = '유효한 비밀번호를 먼저 입력해주세요.';
-					passwordConfirmMessageSpan.style.color = 'red';
-					return;
-				}
-
-				// 2. 두 비밀번호가 일치하는지 확인한다.
-				if (password === confirmPassword) {
-					passwordConfirmMessageSpan.textContent = '비밀번호가 일치합니다.';
-					passwordConfirmMessageSpan.style.color = 'green';
-				} else {
-					passwordConfirmMessageSpan.textContent = '비밀번호가 일치하지 않습니다.';
-					passwordConfirmMessageSpan.style.color = 'red';
-				}
-			}
 
 			// --- 3. 이벤트 리스너 등록 ---
 
@@ -224,8 +234,8 @@
 					// 1. 클라이언트단 유효성 검사
 					validate('email', email);
 
-					// 2. 이메일 중복 검사 API 호출 (별도 함수로 분리했다고 가정)
-					await checkEmailDuplication(email);
+					// 2. 이메일 중복 검사 API 호출 
+					await isEmailExist(email);
 
 					// 3. 인증번호 발송 API 호출
 					await sendEmail(email);
@@ -248,10 +258,8 @@
 
 				} catch (error) {
 					alert(error.message);
-					/*
 					emailMessageSpan.style.color = 'red';
 					emailMessageSpan.innerText = error.message;
-					*/
 					userEmailInput.focus();
 					sendMailButton.textContent = '인증번호 발송';
 				} finally {
@@ -282,7 +290,7 @@
 					verificationCodeInput.disabled = true;
 					verifyMailCodeButton.disabled = true;
 					step3Div.style.display = 'block';
-					userPasswordInput.focus();
+					passwordInput.focus();
 
 				} catch (error) {
 					alert(error.message);
@@ -298,16 +306,18 @@
 			submitButton.addEventListener('click', async (e) => {
 				e.preventDefault();
 				submitButton.disabled = true;
-
 				try {
 					const email = userEmailInput.value;
-					const password = userPasswordInput.value;
-					const confirmPassword = userConfirmPasswordInput.value;
+					const password = passwordInput.value;
+					const confirmPassword = confirmPasswordInput.value;
 
-					await signUpStep1(email, password, confirmPassword); // API 호출
-
-					alert('회원가입 성공! 다음 단계로 이동합니다.');
-					location.replace("/signup2"); // 성공 시 페이지 이동
+					const json = await signUpStep1(email, password, confirmPassword); // API 호출
+					if(json.code === '2072'){
+						restorationOrNew();
+					} else {
+						alert('회원가입 성공! 다음 단계로 이동합니다.');
+						location.replace("/signup2"); // 성공 시 페이지 이동
+					}
 
 				} catch (error) {
 					// ValidationError든 서버 에러든 여기서 한 번에 처리
@@ -321,10 +331,11 @@
 
 			// --- 4. 실시간 포맷팅/유효성 검사 이벤트 리스너 ---
 			initVerificationCodeFormatting(verificationCodeInput);
+			
 			// [이벤트] '비밀번호' 입력 필드
-			userPasswordInput.addEventListener('input', () => {
+			passwordInput.addEventListener('input', () => {
 				try {
-					validate('password', userPasswordInput.value);
+					validate('password', passwordInput.value);
 					passwordMessageSpan.textContent = '사용 가능한 비밀번호입니다.';
 					passwordMessageSpan.style.color = 'green';
 				} catch (error) {
@@ -332,15 +343,39 @@
 					passwordMessageSpan.style.color = 'red';
 				}
 
-				validateConfirmPassword();
+				validateConfirmPassword(passwordInput, confirmPasswordInput, confirmPasswordMessage);
 			});
 
 			// [이벤트] '비밀번호 확인' 입력 필드
-			userConfirmPasswordInput.addEventListener('input', () => {
-				validateConfirmPassword();
+			confirmPasswordInput.addEventListener('input', () => {
+				validateConfirmPassword(passwordInput, confirmPasswordInput, confirmPasswordMessage);
 			});
 
 		});
+		
+		function restorationOrNew(){
+			const modalOverlay = document.createElement('div');
+			modalOverlay.className = 'select-modal-overlay';
+			modalOverlay.innerHTML = `
+				<div class="select-modal-content">
+					<h3>계정 선택</h3>
+					<h4>탈퇴 이후 30일이 지나지 않아 선택해 주세요.</h4>
+					<div class="select-form">
+						<button type="button" class="btn btn-secondary" id="restoration">계정 복구</button>
+						<button type="button" class="btn btn-primary-mini" id="new">신규 계정</button>
+					</div>
+
+				</div>
+			`;
+			document.body.appendChild(modalOverlay);
+			const restorationBtn = modalOverlay.querySelector('#restoration');
+			const newBtn = modalOverlay.querySelector('#new');
+
+			restorationBtn.addEventListener('click',()=>location.replace("/signup/restoration"));
+			newBtn.addEventListener('click',()=>location.replace("/signup2"));
+
+			
+		}
 	</script>
 </th:block>
 

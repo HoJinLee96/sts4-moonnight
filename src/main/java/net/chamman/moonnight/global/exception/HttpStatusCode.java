@@ -17,7 +17,7 @@ public enum HttpStatusCode {
 	DELETE_SUCCESS(200,"2003","message.success.delete"),
 	
 	// Common
-	ILLEGAL_REQUEST(400, "4000", "message.common.illegal_request"), // 입력 받은 값 이상
+	ILLEGAL_REQUEST(400, "4000", "message.common.illegal_request"), // 요청 이상
 	ILLEGAL_INPUT_VALUE(400, "4001", "message.common.illegal_input_value"), // 입력 받은 값 이상
 	REQUEST_BODY_NOT_VALID(400, "4002", "message.common.request_body_not_valid"), // body 이상
 	AUTHORIZATION_FAILED(401,"4030","message.common.authorization_failed"), // 권한 이상
@@ -28,13 +28,21 @@ public enum HttpStatusCode {
 	// User 453
 	USER_NOT_FOUND(404,"4530","message.user.not_found"),
 	USER_PASSWORD_MISMATCH(404,"4530","message.user.password_mismatch"),
+	USER_ONLT_LOCAL(401,"4010","message.user.only_local"),
+	
 	EMAIL_NOT_EXISTS(200,"2070","message.user.email_not_exists"),
 	PHONE_NOT_EXISTS(200,"2071","message.user.phone_not_exists"),
 	EMAIL_ALREADY_EXISTS(409,"4531","message.user.email_already_exists"),
 	PHONE_ALREADY_EXISTS(409,"4532","message.user.phone_already_exists"),
+	DELETED_EMAIL_EXISTS(200,"2072","message.user.deleted_email_exists"),
+	
 	USER_STATUS_STAY(403,"4533","message.user.status_stay"),
 	USER_STATUS_STOP(401,"4534","message.user.status_stop"),
 	USER_STATUS_DELETE(410,"4535","message.user.status_delete"),
+	
+	OAUTH_NOT_FOUND(404,"4530","message.user.not_found"),
+	OAUTH_STATUS_STAY(403,"4533","message.user.status_stay"),
+	OAUTH_STATUS_STOP(401,"4534","message.user.status_stop"),
 	
 	// Address 454
 	ADDRESSS_NOT_FOUND(404,"4540","message.address.not_found"),
@@ -51,6 +59,8 @@ public enum HttpStatusCode {
 	// Sign 452
 	SIGNIN_FAILED(404,"4520","message.sign.signin_failed"),
 	SIGNIN_FAILED_OUT(404,"4521","message.sign.signin_failed_out"),
+	SIGNUP_EXIST_LOCAL(302,"4522","message.sign.signup_exist_local"),
+	SIGNUP_EXIST_OAUTH(302,"4523","message.sign.signup_exist_oauth"),
 //	AUTHENTICATION_FAILED(401,"4523","message.sign.authentication_failed"),
 	
 	// JWT 457

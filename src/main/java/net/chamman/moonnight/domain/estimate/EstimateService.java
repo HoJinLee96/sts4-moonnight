@@ -18,12 +18,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.crypto.Obfuscator;
 import net.chamman.moonnight.domain.estimate.Estimate.EstimateStatus;
+import net.chamman.moonnight.domain.estimate.dto.EstimateRequestDto;
+import net.chamman.moonnight.domain.estimate.dto.EstimateResponseDto;
 import net.chamman.moonnight.domain.user.User;
 import net.chamman.moonnight.domain.user.UserRepository;
 import net.chamman.moonnight.global.exception.ForbiddenException;
 import net.chamman.moonnight.global.exception.NoSuchDataException;
-import net.chamman.moonnight.global.exception.StatusDeleteException;
 import net.chamman.moonnight.global.exception.infra.s3.S3UploadException;
+import net.chamman.moonnight.global.exception.status.StatusDeleteException;
 import net.chamman.moonnight.global.interceptor.IpAddressContextHolder;
 import net.chamman.moonnight.global.util.LogMaskingUtil;
 import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
@@ -55,10 +57,10 @@ public class EstimateService {
 	 * @return 등록된 견적서
 	 */
 	@Transactional
-	public EstimateResponseDto registerEstimate(EstimateRequestDto estimateRequestDto, List<MultipartFile> images, int userId)  {
+	public EstimateResponseDto registerEstimate(EstimateRequestDto estimateRequestDto, List<MultipartFile> images, Integer userId)  {
 		
 		List<String> imagesPath = null;
-		String requestIp = IpAddressContextHolder.getIpAddress();
+		String clientIp = IpAddressContextHolder.getIpAddress();
 		
 //		1. 이미지 S3 등록
 		if (images != null && !images.isEmpty()) {
@@ -67,9 +69,9 @@ public class EstimateService {
 		
 //		2. 견적서 DB 등록
 		try {
-			User user = userId != 0 ? userRepository.getReferenceById(userId) : null;
+			User user = userId != null ? userRepository.getReferenceById(userId) : null;
 			Estimate estimate = estimateRequestDto.toEntity(user, imagesPath);
-			estimate.setRequestIp(requestIp);
+			estimate.setClientIp(clientIp);
 			estimateRepository.save(estimate);
 			
 			// 견적 신청 성공 안내 발송
@@ -273,6 +275,7 @@ public class EstimateService {
 			estimate.setMainAddress(estimateRequestDto.mainAddress());
 			estimate.setDetailAddress(estimateRequestDto.detailAddress());
 			estimate.setContent(estimateRequestDto.content());
+			estimate.setCleaningService(estimateRequestDto.cleaningService());
 			estimate.setImagesPath(imagesPath);
 			estimateRepository.save(estimate);
 		} catch (Exception e) {

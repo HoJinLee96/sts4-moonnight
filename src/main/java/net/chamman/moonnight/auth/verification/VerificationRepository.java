@@ -65,7 +65,7 @@ public interface VerificationRepository extends JpaRepository<Verification, Inte
 	@Query(value = """
 		    SELECT 
 		        v.verification_id as verificationId,
-		        v.request_ip as requestIp,
+		        v.client_ip as clientIp,
 		        v.recipient as recipient,
 		        v.verification_code as verificationCode,
 		        v.send_status as sendStatus,

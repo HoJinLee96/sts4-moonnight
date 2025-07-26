@@ -87,3 +87,33 @@ function isValidDate(dateString) {
 		throw new ValidationError('올바른 생년월일 8자리를 입력해주세요. (예: 19960101)');
 	}
 }
+
+export function validateConfirmPassword(passwordInput, confirmPasswordInput, confirmPasswordMessage) {
+	const password = passwordInput.value;
+	const confirmPassword = confirmPasswordInput.value;
+
+	// '비밀번호 확인' 필드가 비어있으면, 메시지도 그냥 비워준다.
+	if (confirmPassword === '') {
+		confirmPasswordMessage.textContent = '';
+		return;
+	}
+
+	// 1. '비밀번호' 필드 자체가 유효한지 먼저 확인한다.
+	try {
+		validate('password', password);
+	} catch (error) {
+		// 기본 비밀번호가 유효하지 않으면, 비교를 시작조차 하지 않는다.
+		confirmPasswordMessage.textContent = '유효한 비밀번호를 먼저 입력해주세요.';
+		confirmPasswordMessage.style.color = 'red';
+		return;
+	}
+
+	// 2. 두 비밀번호가 일치하는지 확인한다.
+	if (password === confirmPassword) {
+		confirmPasswordMessage.textContent = '비밀번호가 일치합니다.';
+		confirmPasswordMessage.style.color = 'green';
+	} else {
+		confirmPasswordMessage.textContent = '비밀번호가 일치하지 않습니다.';
+		confirmPasswordMessage.style.color = 'red';
+	}
+}
