@@ -14,10 +14,10 @@ import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 @Setter
 @NoArgsConstructor
 public class CustomOAuth2User implements Encryptable<CustomOAuth2User>{
-	String oauthProviderId;
-	OAuthProvider oauthProvider;
-	String email;
-	String name;
+	private String oauthProviderId;
+	private OAuthProvider oauthProvider;
+	private String email;
+	private String name;
 	public static final TokenType TOKENTYPE = TokenType.ACCESS_SIGNUP_OAUTH;
 
 
