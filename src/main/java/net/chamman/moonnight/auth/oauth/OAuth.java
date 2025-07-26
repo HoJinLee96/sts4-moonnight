@@ -79,7 +79,7 @@ public class OAuth {
 	}
 	
 	public enum OAuthStatus {
-		ACTIVE, STAY, STOP, DELETE
+		ACTIVE, STAY, STOP
 	}
 	
 }

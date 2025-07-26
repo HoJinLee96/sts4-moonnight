@@ -18,7 +18,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import net.chamman.moonnight.auth.crypto.TokenProvider.TokenType;
+import net.chamman.moonnight.auth.token.TokenProvider.TokenType;
 import net.chamman.moonnight.domain.user.User.UserProvider;
 import net.chamman.moonnight.global.exception.jwt.IllegalJwtException;
 import net.chamman.moonnight.global.exception.jwt.TimeOutJwtException;

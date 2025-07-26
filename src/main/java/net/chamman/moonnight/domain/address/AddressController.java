@@ -24,6 +24,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import net.chamman.moonnight.domain.address.dto.AddressRequestDto;
+import net.chamman.moonnight.domain.address.dto.AddressResponseDto;
 import net.chamman.moonnight.global.security.principal.CustomUserDetails;
 import net.chamman.moonnight.global.util.ApiResponseDto;
 import net.chamman.moonnight.global.util.ApiResponseFactory;

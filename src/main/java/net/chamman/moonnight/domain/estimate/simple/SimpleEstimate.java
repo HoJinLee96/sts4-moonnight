@@ -58,8 +58,8 @@ public class SimpleEstimate {
 	@Column(name = "estimate_status", nullable = false)
 	private EstimateStatus estimateStatus;
 	
-	@Column(name = "request_ip", length = 50, nullable = false)
-	private String requestIp;
+	@Column(name = "client_ip", length = 50, nullable = false)
+	private String clientIp;
 	
 	@Generated(event = EventType.INSERT)
 	@Column(name = "created_at", updatable = false)

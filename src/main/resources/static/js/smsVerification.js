@@ -1,11 +1,11 @@
 import { validate } from '/js/validate.js';
 
 // ======= 휴대폰 유효성 + 중복 검사 =======
-export async function validatePhone(phone) {
+export async function checkPhoneDuplication(phone) {
 
 	validate('phone', phone);
 
-	const response = await fetch("/api/local/user/public/exist/phone", {
+	const response = await fetch("/api/user/public/exist/phone", {
 		method: "POST",
 		headers: { "Content-Type": "application/x-www-form-urlencoded" },
 		body: new URLSearchParams({ phone })

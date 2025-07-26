@@ -4,7 +4,7 @@ import { createImageHandler } from './imageHandler.js';
 import { sendEmail, verifyMailCode } from './emailVerification.js';
 import { sendSms, verifySmsCode } from './smsVerification.js';
 import { startCountdown, stopCountdown } from './timer.js';
-import {initPhoneFormatting, initVerificationCodeFormatting} from '/js/format.js';
+import { initPhoneFormatting, initVerificationCodeFormatting } from '/js/format.js';
 
 /**
  * 범용 견적 수정 모달을 생성하고 엽니다.
@@ -27,25 +27,27 @@ export function openEditModal(estimateData, config) {
 			        <div class="edit-modal-content">
 			            <h3>견적 수정 (#${editState.estimateId})</h3>
 			            <form id="edit-form">
-			                <div class="form-group">
-			                    <label class="form-label">이름</label>
-			                    <input type="text" class="form-input" id="edit-name" value="${editState.name}">
+							<div class="form-group-parents">
+				                <div class="form-group form-child">
+				                    <label class="form-label">이름</label>
+				                    <input type="text" class="form-input" id="edit-name" value="${editState.name}">
+				                </div>
+				                <div class="form-group form-child">
+				                    <label class="form-label">청소 서비스</label>
+				                    <select class="form-select" id="edit-cleaningService"></select>
+				                </div>
 			                </div>
-			                <div class="form-group">
-			                    <label class="form-label">청소 서비스</label>
-			                    <select class="form-select" id="edit-cleaningService"></select>
-			                </div>
-			                
-			                <div class="form-group">
-			                    <label class="form-label">휴대폰</label>
-			                    <div class="edit-auth-section" id="edit-phone-section"></div>
-			                </div>
-
-							<div class="form-group">
-			                    <label class="form-label">이메일</label>
-			                    <div class="edit-auth-section" id="edit-email-section"></div>
-			                </div>
-							
+							<div class="form-group-parents">
+				                <div class="form-group form-child">
+				                    <label class="form-label">휴대폰</label>
+				                    <div class="edit-auth-section" id="edit-phone-section"></div>
+				                </div>
+	
+								<div class="form-group form-child">
+				                    <label class="form-label">이메일</label>
+				                    <div class="edit-auth-section" id="edit-email-section"></div>
+				                </div>
+							</div>
 			                <div class="form-group">
 			                    <label class="form-label">주소</label>
 								<div class="edit-address-first-line">
@@ -84,14 +86,10 @@ export function openEditModal(estimateData, config) {
 
 	// 서비스 선택 드롭다운 채우기
 	const serviceSelect = modalOverlay.querySelector('#edit-cleaningService');
-	const services = ["신축", "이사", "거주", "리모델링", "준공", "상가", "오피스", "기타"];
+	const services = ['신축청소', '입주청소', '거주청소', '리모델링청소', '준공청소', '상가청소', '오피스청소', '기타'];
 	services.forEach(s => {
 		let option;
-		if (s === "신축" || s === "이사") {
-			option = new Option(`${s} 입주 청소`, s);
-		} else {
-			option = new Option(`${s} 청소`, s);
-		}
+		option = new Option(`${s}`, s);
 		if (s === editState.cleaningService) option.selected = true;
 		serviceSelect.add(option);
 	});
@@ -259,7 +257,6 @@ export function openEditModal(estimateData, config) {
 			// 설정으로 넘겨받은 API 함수를 호출!
 			const json = await config.updateApiFunction(editState.estimateId, formData);
 
-			alert('수정이 완료되었습니다.');
 			document.body.removeChild(modalOverlay);
 
 			// [★★핵심★★] 설정으로 넘겨받은 콜백 함수를 실행!

@@ -17,9 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.crypto.Obfuscator;
-import net.chamman.moonnight.auth.crypto.TokenProvider;
-import net.chamman.moonnight.auth.crypto.dto.VerificationEmailTokenDto;
-import net.chamman.moonnight.auth.crypto.dto.VerificationPhoneTokenDto;
+import net.chamman.moonnight.auth.token.TokenProvider;
+import net.chamman.moonnight.auth.token.dto.VerificationEmailTokenDto;
+import net.chamman.moonnight.auth.token.dto.VerificationPhoneTokenDto;
 import net.chamman.moonnight.auth.verification.Verification.VerificationBuilder;
 import net.chamman.moonnight.auth.verification.VerificationRepository.VerificationProjection;
 import net.chamman.moonnight.global.exception.NoSuchDataException;
@@ -59,14 +59,14 @@ public class VerificationService {
 	
 	/** 문자 인증번호 발송
 	 * @param recipientPhone
-	 * @param requestIp
+	 * @param clientIp
 	 * 
 	 * @throws SmsSendException {@link NaverSmsClient#sendVerificationCode}
 	 */
-	public int sendSmsVerificationCode(String recipientPhone, String requestIp) {
+	public int sendSmsVerificationCode(String recipientPhone, String clientIp) {
 		log.debug("*인증번호 문자 발송. RecipientPhone: [{}], RequestIp: [{}]",
 				LogMaskingUtil.maskPhone(recipientPhone, MaskLevel.MEDIUM),
-				requestIp
+				clientIp
 				);
 		
 		String verificationCode = generateVerificationCode();
@@ -88,7 +88,7 @@ public class VerificationService {
 				.build();
 		
 		VerificationBuilder verificationBuilder = Verification.builder()
-				.requestIp(requestIp)
+				.clientIp(clientIp)
 				.recipient(recipientPhone)
 				.verificationCode(verificationCode);
 		
@@ -96,12 +96,12 @@ public class VerificationService {
 			int sendStatus = naverSmsClient.sendSms(naverSmsPayload);
 			verificationBuilder.sendStatus(sendStatus);
 			if((sendStatus/100)!=2) {
-				log.error("인증번호 발송 요청 응답코드 실패: SendStatus: [{}], RecipientPhone: [{}] , RequestIp: [{}]", sendStatus, recipientPhone, requestIp);
+				log.error("인증번호 발송 요청 응답코드 실패: SendStatus: [{}], RecipientPhone: [{}] , RequestIp: [{}]", sendStatus, recipientPhone, clientIp);
 				verificationRepository.save(verificationBuilder.build());
 				throw new SmsSendException(SMS_SEND_FAIL, "인증번호 발송 실패: sendStatus: "+sendStatus);
 			}
 		} catch (Exception e) {
-			log.error("인증번호 발송 요청 실패: RecipientPhone: [{}] , RequestIp: [{}]", recipientPhone, requestIp, e);
+			log.error("인증번호 발송 요청 실패: RecipientPhone: [{}] , RequestIp: [{}]", recipientPhone, clientIp, e);
 			verificationBuilder.sendStatus(500);
 			verificationRepository.save(verificationBuilder.build());
 			throw e;
@@ -115,14 +115,14 @@ public class VerificationService {
 	
 	/** 이메일 인증번호 발송
 	 * @param recipientEmail
-	 * @param requestIp
+	 * @param clientIp
 	 * @throws MailSendException {@link NaverMailClient#sendMail}
 	 * @return
 	 */
-	public int sendEmailVerificationCode(String recipientEmail, String requestIp) {
+	public int sendEmailVerificationCode(String recipientEmail, String clientIp) {
 		log.debug("*인증번호 이메일 발송. RecipientEmail: [{}], RequestIp: [{}]",
 				LogMaskingUtil.maskEmail(recipientEmail, MaskLevel.MEDIUM),
-				requestIp
+				clientIp
 				);
 		
 		String verificationCode = generateVerificationCode();
@@ -143,7 +143,7 @@ public class VerificationService {
 				.build();
 		
 		VerificationBuilder verificationBuilder = Verification.builder()
-				.requestIp(requestIp)
+				.clientIp(clientIp)
 				.recipient(recipientEmail)
 				.verificationCode(verificationCode);
 		
@@ -151,12 +151,12 @@ public class VerificationService {
 			int sendStatus = naverMailClient.sendMail(naverMailPayload);
 			verificationBuilder.sendStatus(sendStatus);
 			if((sendStatus/100)!=2) {
-				log.error("인증번호 발송 요청 응답코드 실패: SendStatus: [{}], RecipientEmail: [{}] , RequestIp: [{}]", sendStatus, recipientEmail, requestIp);
+				log.error("인증번호 발송 요청 응답코드 실패: SendStatus: [{}], RecipientEmail: [{}] , RequestIp: [{}]", sendStatus, recipientEmail, clientIp);
 				Verification verification = verificationBuilder.build();
 				verificationRepository.save(verification);
 			}
 		} catch (Exception e) {
-			log.error("인증번호 발송 요청 실패: RecipientEmail: [{}] , RequestIp: [{}]", recipientEmail, requestIp, e);
+			log.error("인증번호 발송 요청 실패: RecipientEmail: [{}] , RequestIp: [{}]", recipientEmail, clientIp, e);
 			verificationBuilder.sendStatus(500);
 			Verification verification = verificationBuilder.build();
 			verificationRepository.save(verification);
@@ -173,7 +173,7 @@ public class VerificationService {
 	 * @param encodedVerificationId
 	 * @param phone
 	 * @param reqCode
-	 * @param requestIp
+	 * @param clientIp
 	 * 
 	 * @throws NoSuchDataException {@link #getVerificationAndValidate} 최근 인증 요청 없음
 	 * @throws VerificationExpiredException {@link #getVerificationAndValidate} 인증 시간 초과
@@ -187,16 +187,16 @@ public class VerificationService {
 	 * @return 휴대폰 인증 완료 토큰
 	 */
 	@Transactional
-	public String compareSms(String encodedVerificationId, String phone, String reqCode, String requestIp) {
+	public String compareSms(String encodedVerificationId, String phone, String reqCode, String clientIp) {
 		
 		int verificationId = obfuscator.decode(Integer.parseInt(encodedVerificationId));
 		
 		log.debug("*문자 인증번호 검증. VerificationId: [{}], RequestIp: [{}]",
 				LogMaskingUtil.maskId(verificationId, MaskLevel.MEDIUM),
-				requestIp
+				clientIp
 				);
 		
-		compareCode(verificationId, phone, reqCode, requestIp);
+		compareCode(verificationId, phone, reqCode, clientIp);
 		
 		return tokenProvider.createToken(new VerificationPhoneTokenDto(verificationId+"", phone), VerificationPhoneTokenDto.TOKENTYPE);
 	}
@@ -205,7 +205,7 @@ public class VerificationService {
 	 * @param encodedVerificationId
 	 * @param email
 	 * @param reqCode
-	 * @param requestIp
+	 * @param clientIp
 	 * 
 	 * @throws NoSuchDataException {@link #getVerificationAndValidate} 최근 인증 요청 없음
 	 * @throws VerificationExpiredException {@link #getVerificationAndValidate} 인증 시간 초과
@@ -219,16 +219,16 @@ public class VerificationService {
 	 * @return 이메일 인증 완료 토큰
 	 */
 	@Transactional
-	public String compareEmail(String encodedVerificationId, String email, String reqCode, String requestIp) {
+	public String compareEmail(String encodedVerificationId, String email, String reqCode, String clientIp) {
 		
 		int verificationId = obfuscator.decode(Integer.parseInt(encodedVerificationId));
 		
 		log.debug("*이메일 인증번호 검증. VerificationId: [{}], RequestIp: [{}]",
 				LogMaskingUtil.maskId(verificationId, MaskLevel.MEDIUM),
-				requestIp
+				clientIp
 				);
 		
-		compareCode(verificationId, email, reqCode, requestIp);
+		compareCode(verificationId, email, reqCode, clientIp);
 		
 		return tokenProvider.createToken(new VerificationEmailTokenDto(verificationId+"", email), VerificationEmailTokenDto.TOKENTYPE);
 	}
@@ -257,11 +257,11 @@ public class VerificationService {
 	/** 인증번호 검증
 	 * @param verification
 	 * @param reqCode
-	 * @param requestIp
+	 * @param clientIp
 	 * @throws IllegalVerificationException {@link #compareCode} 수신자 불일치
 	 * @throws MismatchCodeException {@link #compareCode} 인증 번호 불일치
 	 */
-	private void compareCode(int verificationId, String recipient, String reqCode, String requestIp) {
+	private void compareCode(int verificationId, String recipient, String reqCode, String clientIp) {
 		
 		VerificationProjection verificationProjection = verificationRepository.findVerificationWithValidity(verificationId)
 				.orElseThrow(() -> new NoSuchDataException(VERIFICATION_NOT_FOUND, "인증 요청 없음"));

@@ -65,6 +65,7 @@
 		}
 
 		.timer {
+			width: 35px;
 			color: red;
 			font-weight: bold;
 			font-size: 14px;
@@ -401,6 +402,14 @@
 		.btn-sm {
 			width: 130px;
 		}
+
+		.form-group-parents {
+			display: flex;
+			gap: 20px;
+		}
+		.form-child{
+			width: 50%;
+		}
 	</style>
 </head>
 </head>
@@ -463,8 +472,8 @@
 	                        <span class="service">${est.cleaningService}</span>
 	                    </div>
 	                    <div class="estimate-actions">
-	                        <button type="button" class="btn btn-primary-mini btn-edit" data-id="${est.estimateId}">수정</button>
-	                        <button type="button" class="btn btn-delete" data-id="${est.estimateId}">삭제</button>
+	                        <button type="button" class="btn btn-outline btn-edit" data-id="${est.estimateId}">수정</button>
+	                        <button type="button" class="btn btn-secondary btn-delete" data-id="${est.estimateId}">삭제</button>
 	                    </div>
 	                `;
 					container.appendChild(item);

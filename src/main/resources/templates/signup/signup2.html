@@ -88,6 +88,7 @@
 		}
 
 		.timer {
+			width: 35px;
 			position: absolute;
 			font-size: 14px;
 			right: 0px;
@@ -234,7 +235,7 @@
 		// --- 1. 모듈 임포트 ---
 		import {initPhoneFormatting, initBirthFormatting, initVerificationCodeFormatting} from '/js/format.js';
 		import {validate, ValidationError} from '/js/validate.js';
-		import {sendSms, verifySmsCode, validatePhone as checkPhoneDuplication} from '/js/smsVerification.js';
+		import {sendSms, verifySmsCode, checkPhoneDuplication} from '/js/smsVerification.js';
 		import {signUpStep2} from '/js/sign.js';
 		import {initAddressSearch} from '/js/address-api.js';
 		import {startCountdown, stopCountdown} from '/js/timer.js';
@@ -292,6 +293,7 @@
 						verifySmsCodeButton.disabled = true;
 					});
 				} catch (error) {
+					alert(error.message);
 					phoneMessage.style.color = 'red';
 					phoneMessage.textContent = error.message;
 				} finally {

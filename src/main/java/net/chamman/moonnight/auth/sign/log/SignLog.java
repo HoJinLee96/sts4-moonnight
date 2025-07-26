@@ -23,7 +23,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import net.chamman.moonnight.domain.user.User.UserProvider;
 
 @Entity
 @Table(name="sign_log")
@@ -38,16 +37,20 @@ public class SignLog {
 	@Column(name ="sign_log_id")
 	private int signLogId;
 	
-	@Enumerated(EnumType.STRING)
-	@Basic(fetch = FetchType.EAGER)
-	@Column(name ="user_provider", nullable = false)
-	private UserProvider userProvider;
+	@Column(name ="provider", length=20)
+	private String provider;
 	
-	@Column(name ="request_id", length=100)
-	private String requestId;
+	@Column(name ="id", length=10)
+	private String id;
 	
-	@Column(name = "request_ip", length = 50, nullable = false)
-	private String requestIp;
+	@Column(name ="email", length=50)
+	private String email;
+	
+	@Column(name ="phone", length=15)
+	private String phone;
+	
+	@Column(name = "client_ip", length = 50, nullable = false)
+	private String clientIp;
 	
 	@Enumerated(EnumType.STRING)
 	@Basic(fetch = FetchType.EAGER)
@@ -70,38 +73,35 @@ public class SignLog {
 	private LocalDateTime updatedAt;
 	
 	public enum SignResult {
-		//로그인 성공
-		LOCAL_SUCCESS,
 		
-		OAUTH_SUCCESS,
+		SIGNUP, // 회원가입
 		
-		AUTH_SUCCESS,
+		RESTORATION, // 계정 복구
 		
-		REFRESH,
+		SIGNOUT, // 로그아웃
 		
-		//일치하는 이메일 없음
-		INVALID_EMAIL,
+		SIGNIN, // 로그인
 		
-		//비밀번호 불일치
-		INVALID_PASSWORD,
+		UNLINK, // 연동 해제
+
+		DELETE, // 회원 탈퇴
 		
-		//비밀번호 업데이트
-		UPDATE_PASSWORD,
+		REFRESH,	// 리프레쉬
+
+		UPDATE_PASSWORD,	// 비밀번호 업데이트
 		
-		LOCAL_FAIL,
+		CONVERTTOLOCAL, // 통합 계정으로 변경
 		
-		OAUTH_FAIL,
+		INVALID_EMAIL,	// 일치하는 이메일 없음
 		
-		AUTH_FAIL,
+		INVALID_PASSWORD,	// 비밀번호 불일치
+		
+		REFRESH_FAIL,
 		
 		//IP 차단
 		IP_BLOCKED,
 		
-//    SERVER_ERROR,
-		
 		BLACKLIST_TOKEN,
-		
-		REFRESH_FAIL,
 		
 		// 계정이 STAY 상태 (이메일/휴대폰 인증 필요)
 		ACCOUNT_STAY,
@@ -110,7 +110,12 @@ public class SignLog {
 		ACCOUNT_STOP,
 		
 		// 계정이 DELETE 상태 (탈퇴됨)
-		ACCOUNT_DELETE;
+		ACCOUNT_DELETE,
+		
+		SERVER_ERROR
+		
+		
+		;
 		
 	}
 }

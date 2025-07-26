@@ -31,12 +31,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.chamman.moonnight.auth.verification.RateLimiterStore;
+import net.chamman.moonnight.domain.estimate.dto.EstimateRequestDto;
+import net.chamman.moonnight.domain.estimate.dto.EstimateResponseDto;
 import net.chamman.moonnight.global.annotation.ImageConstraint;
 import net.chamman.moonnight.global.security.principal.AuthDetails;
 import net.chamman.moonnight.global.security.principal.CustomUserDetails;
 import net.chamman.moonnight.global.util.ApiResponseDto;
 import net.chamman.moonnight.global.util.ApiResponseFactory;
+import net.chamman.moonnight.rate.limiter.RateLimiter;
 
 @RestController
 @RequestMapping("/api/estimate")
@@ -46,7 +48,6 @@ import net.chamman.moonnight.global.util.ApiResponseFactory;
 public class EstimateController {
 
 	private final EstimateService estimateService;
-	private final RateLimiterStore rateLimiter;
 	private final ApiResponseFactory apiResponseFactory;
 
 	@Operation(summary = "견적서 등록", description = "견적서 등록")
@@ -63,9 +64,8 @@ public class EstimateController {
 		}
 
 		String clientIp = (String) request.getAttribute("clientIp");
-		rateLimiter.isAllowedByIp(clientIp);
 
-		int userId = userDetails != null ? userDetails.getUserId() : 0;
+		Integer userId = userDetails != null ? userDetails.getUserId() : null;
 		EstimateResponseDto estimateResponseDto = estimateService.registerEstimate(estimateRequestDto, images, userId);
 
 		return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(CREATE_SUCCESS, estimateResponseDto));

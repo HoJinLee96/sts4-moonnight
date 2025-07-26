@@ -77,7 +77,7 @@ export async function updateAddress(addressId, address) {
 		headers: {
 			"Content-Type": "application/json"
 		},
-		body: JSON.stringify(dataToSend)
+		body: JSON.stringify(address)
 	});
 
 	if (response.ok) {

@@ -15,15 +15,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.chamman.moonnight.auth.crypto.JwtProvider;
-import net.chamman.moonnight.auth.crypto.TokenProvider;
-import net.chamman.moonnight.domain.address.AddressResponseDto;
+import net.chamman.moonnight.auth.token.JwtProvider;
+import net.chamman.moonnight.auth.token.TokenProvider;
 import net.chamman.moonnight.domain.address.AddressService;
-import net.chamman.moonnight.domain.estimate.EstimateResponseDto;
+import net.chamman.moonnight.domain.address.dto.AddressResponseDto;
 import net.chamman.moonnight.domain.estimate.EstimateService;
+import net.chamman.moonnight.domain.estimate.dto.EstimateResponseDto;
 import net.chamman.moonnight.domain.user.User;
-import net.chamman.moonnight.domain.user.UserResponseDto;
 import net.chamman.moonnight.domain.user.UserService;
+import net.chamman.moonnight.domain.user.dto.UserResponseDto;
 import net.chamman.moonnight.global.security.principal.CustomUserDetails;
 import net.chamman.moonnight.global.util.CookieUtil;
 
@@ -42,9 +42,9 @@ public class EstimateViewController {
 	public String showEstimate(@AuthenticationPrincipal CustomUserDetails customUserDetails, Model model) {
 
 		if (customUserDetails != null) {
-			User user = userService.getUserByUserId(customUserDetails.getUserId());
+			User user = userService.getActiveUserByUserId(customUserDetails.getUserId());
 			List<AddressResponseDto> addressList = addressService.getAddressList(customUserDetails.getUserId());
-			model.addAttribute("user", UserResponseDto.fromEntity(user));
+			model.addAttribute("user", UserResponseDto.fromEntity(user,null));
 			model.addAttribute("addressList", addressList);
 			log.debug("addressList: {}", addressList.toArray().toString());
 			if (addressList != null && !addressList.isEmpty()) {

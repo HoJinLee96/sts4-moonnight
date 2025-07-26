@@ -10,6 +10,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.sign.log.SignLog.SignResult;
+import net.chamman.moonnight.domain.user.User;
 import net.chamman.moonnight.domain.user.User.UserProvider;
 import net.chamman.moonnight.global.exception.sign.TooManySignFailException;
 
@@ -20,59 +21,23 @@ public class SignLogService {
 	
 	private final SignLogRepository signLogRepository;
 	
-	/**
-	 * @param userProvider
-	 * @param email
-	 * @param ip
-	 * @param result
-	 */
-	public void registerSignLog(UserProvider userProvider, String requestId, String requestIp, SignResult result) {
+	public void registerSignLog(SignLog signLog) {
 		try {
-			signLogRepository.save(SignLog.builder()
-					.userProvider(userProvider)
-					.requestId(requestId)
-					.requestIp(requestIp)
-					.signResult(result)
-					.build());
+			signLogRepository.save(signLog);
 		} catch (Exception e) {
 			log.error("로그인 로그 기록중 익셉션 발생.",e);
 		}
 	}
 	
-	/**
-	 * @param userProvider
-	 * @param email
-	 * @param ip
-	 * @param result
-	 */
-	public void registerSignLog(UserProvider userProvider, String requestId, String requestIp, SignResult result, String reason) {
-		try {
-			signLogRepository.save(SignLog.builder()
-					.userProvider(userProvider)
-					.requestId(requestId)
-					.requestIp(requestIp)
-					.signResult(result)
-					.reason(reason)
-					.build());
-		} catch (Exception e) {
-			log.error("로그인 로그 기록중 익셉션 발생.",e);
-		}
-
-	}
-	
-	/**
-	 * @param ip
-	 * @param result
-	 */
-	public void registerSignLog(String requestIp, SignResult result) {
-		try {
-			signLogRepository.save(SignLog.builder()
-					.requestIp(requestIp)
-					.signResult(result)
-					.build());
-		} catch (Exception e) {
-			log.error("로그인 로그 기록중 익셉션 발생.",e);
-		}
+	public void signUser(User user, SignResult signResult, String clientIp) {
+		signLogRepository.save(
+				SignLog.builder()
+				.provider(user.getUserProvider().name())
+				.id(user.getUserId()+"")
+				.email(user.getEmail())
+				.signResult(signResult)
+				.clientIp(clientIp)
+				.build());
 	}
 	
 	/** 로그인 실패 횟수 검사
@@ -80,11 +45,11 @@ public class SignLogService {
 	 * @param email
 	 * @throws TooManySignFailException {@link SignLogService#validSignFailCount}
 	 */
-	public int validSignFailCount(UserProvider userProvider, String requestId) {
+	public int validSignFailCount(UserProvider userProvider, String id) {
 		
-		int signFailCount = signLogRepository.countUnresolvedWithResults(userProvider, requestId, List.of(SignResult.INVALID_EMAIL));
+		int signFailCount = signLogRepository.countUnresolvedWithResults(userProvider.name(), id, List.of(SignResult.INVALID_PASSWORD));
 		if (signFailCount >= 10) {
-			throw new TooManySignFailException(SIGNIN_FAILED_OUT,"로그인 실패 10회 이상하였습니다. 인증을 진행해 주세요.");
+			throw new TooManySignFailException(SIGNIN_FAILED_OUT,"로그인 실패 10회");
 		}
 		return signFailCount;
 	}
@@ -95,15 +60,14 @@ public class SignLogService {
 	 * @param ip
 	 */
 	@Transactional
-	public void signFailLogResolveByUpdatePassword(UserProvider userProvider, String requestId, String requestIp) {
+	public void signFailLogResolve(String id, SignResult signResult, String clientIp) {
 		SignLog signLog = SignLog.builder()
-				.userProvider(userProvider)
-				.requestId(requestId)
-				.requestIp(requestIp)
-				.signResult(SignResult.UPDATE_PASSWORD)
+				.id(id)
+				.clientIp(clientIp)
+				.signResult(signResult)
 				.build();
 		signLogRepository.save(signLog);
-		signLogRepository.resolveUnresolvedLogs(userProvider, requestId, signLog.getSignLogId());
+		signLogRepository.resolveUnresolvedLogs(id, signLog);
 	}
 	
 }

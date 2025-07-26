@@ -153,7 +153,10 @@ public class SecurityConfig {
 
 		http.securityMatcher(SIGNIN_ONLY_URIS).csrf(AbstractHttpConfigurer::disable)
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(authenticationEntryPoint()))
+				.exceptionHandling(exceptions -> exceptions
+		                .authenticationEntryPoint(authenticationEntryPoint()) // 1. 로그인 안 한 유저 처리
+		                .accessDeniedHandler(accessDeniedHandler())       // 2. 권한 없는 유저 처리
+		            )
 				.authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
 				.addFilterBefore(silentAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -163,7 +166,7 @@ public class SecurityConfig {
 	@Bean
 	@Order(5)
 	public SecurityFilterChain nonSignFilterChain(HttpSecurity http) throws Exception {
-		log.debug("* signFilterChain() @Order(5) 필터 적용.");
+		log.debug("* nonSignFilterChain() @Order(5) 필터 적용.");
 
 		http.securityMatcher(NON_SIGNIN_ONLY_URIS).csrf(AbstractHttpConfigurer::disable)
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -297,7 +300,7 @@ public class SecurityConfig {
 				if (Arrays.stream(SIGNIN_ONLY_URIS).anyMatch(uri::startsWith)) {
 					response.sendRedirect("/signin?redirect=" + encodedUrl);
 				} else {
-					response.sendRedirect("/error");
+					response.sendRedirect("/error/400");
 				}
 			}
 		}

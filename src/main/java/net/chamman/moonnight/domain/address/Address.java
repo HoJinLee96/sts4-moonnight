@@ -19,6 +19,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import net.chamman.moonnight.domain.address.dto.AddressRequestDto;
 import net.chamman.moonnight.domain.user.User;
 
 @Entity

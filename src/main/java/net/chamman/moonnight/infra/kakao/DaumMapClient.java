@@ -1,7 +1,6 @@
 package net.chamman.moonnight.infra.kakao;
 
 import static net.chamman.moonnight.global.exception.HttpStatusCode.ADDRESS_INVALID_VALUE;
-import static net.chamman.moonnight.global.exception.HttpStatusCode.INTERNAL_SERVER_ERROR;
 
 import java.util.List;
 import java.util.Map;
@@ -28,60 +27,81 @@ import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 @Slf4j
 @PropertySource("classpath:application.properties")
 public class DaumMapClient {
-	
+
 	@Value("${kakao-addressSearch.baseUrl}")
 	private String baseUrl;
 	@Value("${kakao-api.restApiKey}")
 	private String kakaoApiRestApiKey;
-	
+	private RestTemplate restTemplate = new RestTemplate();
+
 	/**
 	 * @param postcode
 	 * @param mainAddress
 	 * 
 	 * @throws IllegalAddressValueException {@link #validateAddress} 일치하는 주소가 없음
-	 * @throws DaumStateException {@link #validateAddress} 다음 서버에서 응답 이상
+	 * @throws DaumStateException           {@link #validateAddress} 다음 서버에서 응답 이상
 	 * 
 	 * @return
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public boolean validateAddress(String postcode, String mainAddress) {
-		log.debug("*Daum 주소 검색. mainAddress: [{}]", LogMaskingUtil.maskAddress(mainAddress, MaskLevel.MEDIUM));
-		
-		HttpHeaders headers = new HttpHeaders();
-		headers.add("Authorization", "KakaoAK "+kakaoApiRestApiKey);
-		
-		UriComponents uriComponents = UriComponentsBuilder
-				.fromUriString(baseUrl)
-				.queryParam("query", mainAddress)
-				.queryParam("analyze_type", "exact")
-				.build();
-		
-		RestTemplate restTemplate = new RestTemplate();
-		HttpEntity<String> entity = new HttpEntity<>(headers);
-		
-		ResponseEntity<Map> response = restTemplate.exchange(
-				uriComponents.toUriString(), 
-				HttpMethod.GET, 
-				entity, 
-				Map.class
-				);
-		if(response.getStatusCode()==HttpStatus.OK) {
-			Map<String, Object> responseBody = response.getBody();
-			List<Map<String, Object>> documents = (List<Map<String, Object>>) responseBody.get("documents");
-			for (Map<String, Object> document : documents) {
-				Map<String, Object> roadAddress = (Map<String, Object>) document.get("road_address");
-				
-				if (roadAddress != null && roadAddress.containsKey("zone_no")) {
-					String zoneNo = (String) roadAddress.get("zone_no");
-					if (zoneNo.equals(postcode)) {
-						return true;
-					}
+		log.debug("* 주소 검증 시작. mainAddress: [{}]", LogMaskingUtil.maskAddress(mainAddress, MaskLevel.MEDIUM));
+
+		log.debug("[주소검증] 원본 주소: {}", mainAddress);
+
+		String cleanedAddress = mainAddress.trim().replaceAll("\\s+", " ");
+		log.debug("[주소검증] 전처리 주소: {}", cleanedAddress);
+
+		// 1차: exact 시도
+		if (queryKakao(postcode, mainAddress, "exact"))
+			return true;
+
+		// 2차: similar 시도
+		if (queryKakao(postcode, mainAddress, "similar"))
+			return true;
+
+		// 3차: mainAddress가 길거나 숫자로 끝나는 경우 제거해서 다시 시도
+		String fallbackAddress = mainAddress.replaceAll("\\s+\\d.*$", ""); // ex) "동교로 7" → "동교로"
+		if (queryKakao(postcode, fallbackAddress, "similar"))
+			return true;
+
+		throw new InvalidMainAddressException(ADDRESS_INVALID_VALUE, "입력한 주소와 우편번호가 일치하지 않거나, 올바른 주소 형식이 아닙니다.");
+	}
+
+	private boolean queryKakao(String postcode, String address, String analyzeType) {
+		try {
+			UriComponents uriComponents = UriComponentsBuilder.fromUriString(baseUrl).queryParam("query", address)
+					.queryParam("analyze_type", analyzeType).build();
+
+			log.debug("[주소검증] 요청 URI: {}", uriComponents.toUriString());
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.add("Authorization", "KakaoAK " + kakaoApiRestApiKey);
+
+			HttpEntity<String> entity = new HttpEntity<>(headers);
+			ResponseEntity<Map> response = restTemplate.exchange(uriComponents.toUriString(), HttpMethod.GET, entity,
+					Map.class);
+
+			if (response.getStatusCode() != HttpStatus.OK)
+				return false;
+
+			Map<String, Object> body = response.getBody();
+			log.debug("[주소검증] 카카오 응답 전체: {}", body);
+			List<Map<String, Object>> docs = (List<Map<String, Object>>) body.get("documents");
+
+			if (docs == null || docs.isEmpty())
+				return false;
+
+			for (Map<String, Object> doc : docs) {
+				Map<String, Object> roadAddress = (Map<String, Object>) doc.get("road_address");
+				if (roadAddress != null && postcode.equals(roadAddress.get("zone_no"))) {
+					return true;
 				}
 			}
-			throw new InvalidMainAddressException(ADDRESS_INVALID_VALUE,"일치하는 주소가 없음.");
-		}else {
-			throw new DaumStateException(INTERNAL_SERVER_ERROR,"주소 검증 요청 실패 : Daum 서버에서 응답을 받을 수 없습니다.");
+		} catch (Exception e) {
+			log.warn("카카오 주소 검색 실패. address: [{}], analyzeType: [{}]", address, analyzeType, e);
 		}
+		return false;
 	}
-	
+
 }

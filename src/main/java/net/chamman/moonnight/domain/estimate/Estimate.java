@@ -81,8 +81,8 @@ public class Estimate {
 	@Column(name = "estimate_status", nullable = false)
 	private EstimateStatus estimateStatus;
 	
-	@Column(name = "request_ip", length = 50, nullable = false)
-	private String requestIp;
+	@Column(name = "client_ip", length = 50, nullable = false)
+	private String clientIp;
 	
 	@Generated(event = EventType.INSERT)
 	@Column(name = "created_at", updatable = false)
@@ -92,8 +92,9 @@ public class Estimate {
 	@Column(name = "updated_at")
 	private LocalDateTime updatedAt;
 	
+	
 	public enum CleaningService {
-		신축, 이사, 거주, 리모델링, 준공, 상가, 오피스, 기타
+		신축청소, 입주청소, 거주청소, 리모델링청소, 준공청소, 상가청소, 오피스청소, 기타
 	}
 	
 	public enum EstimateStatus {

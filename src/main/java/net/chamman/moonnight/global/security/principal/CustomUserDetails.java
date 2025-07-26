@@ -3,8 +3,10 @@ package net.chamman.moonnight.global.security.principal;
 
 import java.util.Collection;
 import java.util.List;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import net.chamman.moonnight.domain.user.User.UserProvider;

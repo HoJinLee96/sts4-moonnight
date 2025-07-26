@@ -5,206 +5,123 @@
 <head>
 	<title>로그인 정보</title>
 	<th:block th:replace="~{my/mypageSidebar :: sidebarStyles}"></th:block>
-	<style type="text/css">
-		a {
-			text-decoration: none;
-			color: black;
-		}
-
-		.label {
-			display: block;
-			margin: 20px 0px 10px 0px;
-			font-size: 14px;
-			color: #acacac;
-		}
-
-		.valueDiv {
-			border-bottom: 2px solid #20367a;
-			max-width: 550px;
-			position: relative;
-			padding-bottom: 10px;
-		}
-
-		.value {
-			width: 450px;
-			white-space: nowrap;
-			/* 줄바꿈없음 */
-			overflow: hidden;
-			text-overflow: ellipsis;
-			/*...으로표시  */
-			margin: 15px 0px 10px 0px;
-		}
-
-		.changeButton {
-			z-index: 1;
-			color: #20367a;
-			background: white;
-			border: 1px solid #20367a;
-			border-radius: 10px;
-			cursor: pointer;
-			padding: 6px 8px;
-			position: absolute;
-			right: 0;
-			bottom: 15px;
-		}
-
-		.changeBox {
-			position: absolute;
-			right: 0;
-			bottom: 15px;
-		}
-
-		button:hover {
-			color: white;
-			background: #20367a;
-			border: 1px solid white;
-		}
-
-		.subContent {
-			margin-top: 30px;
-		}
-
-		#overlay {
-			position: flex;
-			top: 0;
-			left: 0;
-			width: 100%;
-			height: 100%;
-			background-color: rgba(128, 128, 128, 0.7);
-			display: none;
-			justify-content: center;
-			align-items: center;
-			z-index: 1000;
-		}
-
-		.switchDiv {
-			position: absolute;
-			right: 0px;
-			bottom: 20px;
-		}
-
-		#stopBtn {
-			color: #20367a;
-			background: white;
-			border: 1px solid #20367a;
-			border-radius: 10px;
-			cursor: pointer;
-			padding: 6px 8px;
-			position: absolute;
-			margin-top: 50px;
-		}
-
-		#stopBtn:hover {
-			background: #20367a;
-			border: 1px solid white;
-			color: white;
-		}
-	</style>
-
-	<!-- 스위치 -->
-	<style type="text/css">
-		/* 스위치 전체 컨테이너 */
-		.switch {
-			position: relative;
-			width: 50px;
-			height: 26px;
-		}
-
-		/* 체크박스는 숨김 */
-		.toggle-checkbox {
-			display: none;
-		}
-
-		/* 라벨: 배경과 껐다 켜졌을 때의 스타일 */
-		.toggle-label {
-			display: block;
-			width: 100%;
-			height: 100%;
-			background-color: #ccc;
-			/* 꺼졌을 때 배경색 */
-			border-radius: 30px;
-			position: relative;
-			cursor: pointer;
-			transition: background-color 0.3s;
-		}
-
-		/* 스위치 버튼 */
-		.toggle-button {
-			content: '';
-			position: absolute;
-			top: 1px;
-			left: 2px;
-			width: 24px;
-			height: 24px;
-			background-color: white;
-			border-radius: 50%;
-			transition: transform 0.3s ease;
-			/* 부드러운 애니메이션 */
-		}
-
-		/* 체크박스가 체크되었을 때의 스타일 */
-		.toggle-checkbox:checked+.toggle-label {
-			background-color: #20367a;
-			/* 켜졌을 때 배경색 */
-		}
-
-		/* 스위치 버튼이 오른쪽으로 이동하는 효과 */
-		.toggle-checkbox:checked+.toggle-label .toggle-button {
-			transform: translateX(22px);
-			/* 부드럽게 이동 */
-		}
-	</style>
 	<style>
 		.profile-form {
-			padding-top: 10px;
+			width: 100%;
+			max-width: 550px;
 		}
 
-		.profile-form .form-group {
+		.form-group {
 			margin-bottom: 25px;
 		}
 
-		.profile-form label {
-			display: block;
+		.form-label {
 			font-weight: bold;
-			margin-bottom: 8px;
 			font-size: 14px;
 			color: #555;
+			margin-right: 20px;
 		}
 
-		.profile-form input[type="text"],
-		.profile-form input[type="email"] {
-			width: 350px;
-			padding: 10px;
-			border: 1px solid #ccc;
-			border-radius: 4px;
+		.form-input[disabled] {
+			width: 400px;
+			height: 40px;
+			border: none;
+			border-bottom: 2px solid #ccc;
+			outline: none;
+			padding-left: 10px;
 		}
 
-		/* 기본적으로는 읽기 전용 스타일 */
-		.profile-form input:read-only,
-		.profile-form input:disabled {
-			background-color: #f2f2f2;
-			cursor: not-allowed;
-			color: #777;
-		}
 
-		/* 수정 모드일 때 스타일 */
-		.profile-form input:not(:read-only) {
-			background-color: #fff;
-		}
-
-		.profile-form .provider-info {
-			font-size: 12px;
-			color: #888;
-			margin-left: 10px;
-		}
-
-		.profile-form .actions {
+		/* 소셜 연동 섹션 */
+		.social-link-section {
 			margin-top: 40px;
 			padding-top: 20px;
 			border-top: 1px solid #eee;
 		}
 
-		/* 버튼 스타일 등은 필요에 따라 추가 */
+		.section-title {
+			font-size: 16px;
+			margin-bottom: 20px;
+		}
+
+		.social-link-item {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 15px 0;
+			border-bottom: 1px solid #f2f2f2;
+		}
+
+		.social-link-item:last-child {
+			border-bottom: none;
+		}
+
+		.social-logo-kakao,
+		.social-logo-naver {
+			font-weight: bold;
+		}
+
+		.link-status {
+			display: flex;
+			align-items: center;
+			gap: 15px;
+		}
+
+		.btn-disconnect {
+			background: none;
+			border: 1px solid #aaa;
+			color: #888;
+			font-size: 12px;
+			padding: 4px 8px;
+		}
+
+		/* 회원탈퇴 등 기타 액션 */
+		.form-actions {
+			text-align: right;
+			margin-top: 40px;
+		}
+
+		.form-actions a {
+			font-size: 14px;
+			color: #888;
+			text-decoration: underline;
+		}
+
+		.account-type-title {
+			display: flex;
+			align-items: center;
+			gap: 15px;
+			/* 제목과 버튼 사이 간격 */
+		}
+
+		.btn-convert {
+			font-size: 12px;
+			padding: 6px 10px;
+			height: auto;
+		}
+
+		.password-confirm-wrapper {
+			display: inline-flex;
+			gap: 5px;
+			align-items: center;
+		}
+
+		.form-input-small {
+			height: 32px;
+			padding: 0 8px;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+		}
+
+		.btn-confirm-unlink {
+			height: 32px;
+			padding: 0 10px;
+			font-size: 12px;
+			background-color: #555;
+			color: white;
+			border: none;
+			border-radius: 4px;
+		}
 	</style>
 </head>
 
@@ -215,77 +132,202 @@
 			<h2 class="contentTitle">로그인 정보</h2>
 
 			<form th:object="${user}" class="profile-form">
+				<h4 class="account-type-title">
+					<th:block th:switch="*{userProvider.name()}">
+						<span th:case="'LOCAL'">통합 계정</span>
+						<span th:case="*">소셜 미디어 계정</span>
+					</th:block>
+					<a th:if="*{userProvider.name() != 'LOCAL'}" href="/my/signInfo/convertToLocal"
+						class="btn btn-tertiary btn-convert">통합 계정으로 변경</a>
+				</h4>
 
 				<div class="form-group">
-					<label for="email">이메일</label>
-					<input type="email" id="email" th:value="*{email}" disabled />
-					<span class="provider-info" th:text="|(*{userProvider} 계정)|"></span>
+					<label for="email" class="form-label">이메일</label>
+					<input type="email" id="email" class="form-input" th:value="*{email}" readonly disabled />
 				</div>
 
-				<div class="form-group">
-					<label for="password">비밀번호</label>
-					<input type="text" id="password" value="********" readonly />
-					<a href="/my/signInfo/password">비밀번호 변경</a>
+				<div class="form-group" th:if="*{userProvider.name() == 'LOCAL'}">
+					<label class="form-label">비밀번호</label>
+					<a href="/my/signInfo/password" class="btn btn-secondary">비밀번호 변경</a>
 				</div>
 
-				<div class="form-group">
-					<label>카카오 연동</label>
-					<button>카카오</button>
+				<div class="social-link-section">
+					<h5 class="section-title">소셜 계정 연동</h5>
+
+					<div class="social-link-item">
+						<span class="social-logo-kakao">카카오</span>
+						<th:block
+							th:with="isKakaoLinked=${#lists.contains(linkOAuths.![oauthProvider.name()], 'KAKAO')}">
+							<div th:if="${isKakaoLinked}" class="link-status">
+								<span>연결됨</span>
+								<div class="password-confirm-wrapper" data-provider="KAKAO"></div>
+								<button type="button" class="btn-disconnect" data-provider="KAKAO"
+									th:data-oauth-id="${linkOAuths.?[oauthProvider.name() == 'KAKAO'][0].oauthId}">연결
+									해제</button>
+							</div>
+							<a th:unless="${isKakaoLinked}" th:href="@{/my/signInfo/link/kakao}"
+								class="btn btn-secondary">
+								연결하기
+							</a>
+						</th:block>
+					</div>
+
+					<div class="social-link-item">
+						<span class="social-logo-naver">네이버</span>
+						<th:block
+							th:with="isNaverLinked=${#lists.contains(linkOAuths.![oauthProvider.name()], 'NAVER')}">
+							<div th:if="${isNaverLinked}" class="link-status">
+								<span>연결됨</span>
+								<div class="password-confirm-wrapper" data-provider="NAVER"></div>
+								<button type="button" class="btn-disconnect" data-provider="NAVER"
+									th:data-oauth-id="${linkOAuths.?[oauthProvider.name() == 'NAVER'][0].oauthId}">연결
+									해제</button>
+							</div>
+							<a th:unless="${isNaverLinked}" th:href="@{/my/signInfo/link/naver}"
+								class="btn btn-secondary">
+								연결하기
+							</a>
+						</th:block>
+					</div>
 				</div>
-				<div class="form-group">
-					<label>네이버 연동</label>
-					<button>네이버</button>
-				</div>
-				<div class="actions">
-					<a th:href="@{/my/withdrawal}" style="margin-left:20px;">회원 탈퇴</a>
+
+				<div class="form-actions">
+					<a id="withdraw-link" th:href="@{/my/signInfo/withdrawal}">회원 탈퇴</a>
 				</div>
 
 			</form>
 		</div>
 	</div>
-
+</main>
+</div>
 </main>
 <th:block layout:fragment="script">
 	<th:block th:replace="~{my/mypageSidebar :: sidebarScripts}"></th:block>
-	<script>
+	<script th:inline="javascript" type="module">
+		import {unlinkOAuth} from '/js/sign.js';
+
 		document.addEventListener('DOMContentLoaded', function () {
-			const editBtn = document.getElementById('editProfileBtn');
-			const saveBtn = document.getElementById('saveProfileBtn');
+			const urlParams = new URLSearchParams(window.location.search);
+			const errorParam = urlParams.get('error'); // 'error'라는 파라미터 값을 가져와
+			let displayMessage = '';
 
-			// 수정 가능한 필드 목록
-			const editableFields = [
-				document.getElementById('profileName'),
-				document.getElementById('profileBirth'),
-				document.getElementById('profilePhone'),
-				document.getElementById('marketingAgree')
-			];
+			// 에러 파라미터 값에 따라 메시지를 다르게 보여주자
+			if (errorParam) {
+				switch (errorParam) {
+					case 'EMAIL_ALREADY_EXISTS':
+						displayMessage = '이미 다른 계정에 연결된 소셜 계정입니다. 다른 계정으로 시도해주세요.';
+						break;
+					case 'USER_NOT_FOUND':
+						displayMessage = '유저를 찾을 수 없습니다. 관리자에게 문의해주세요.';
+						break;
+					case 'USER_STATUS_STAY':
+						displayMessage = '일시 정지된 계정입니다. 계정 상태를 확인해주세요.';
+						break;
+					case 'USER_STATUS_STOP':
+						displayMessage = '정지된 계정입니다. 계정 상태를 확인해주세요.';
+						break;
+					case 'USER_STATUS_DELETE': 
+						displayMessage = '탈퇴한 계정입니다. 계정 상태를 확인해주세요.';
+						break;
+					default:
+						displayMessage = '소셜 계정 연동 중 오류가 발생했습니다. 문제가 계속되면 관리자에게 문의해주세요.';
+						break;
+				}
+				if (displayMessage) {
+					alert(displayMessage);
+					const newUrl = window.location.origin + window.location.pathname;
+					window.history.replaceState({}, document.title, newUrl);
+				}
+			}
 
-			// '정보 수정' 버튼 클릭 시
-			editBtn.addEventListener('click', function () {
-				// 모든 필드를 수정 가능하게 변경
-				editableFields.forEach(field => {
-					field.readOnly = false;
-					field.disabled = false;
-					// input 필드 배경색 변경
-					if (field.type === 'text') {
-						field.style.backgroundColor = '#fff';
+
+			// --- 1. DOM 요소 및 상태 가져오기 ---
+			const form = document.querySelector('.profile-form');
+			const currentUserProvider = /*[[${user.userProvider.name()}]]*/ 'LOCAL';
+
+			// --- 2. 이벤트 리스너 (이벤트 위임 방식) ---
+			form.addEventListener('click', async (e) => {
+
+				const disconnectBtn = e.target.closest('.btn-disconnect');
+				const confirmBtn = e.target.closest('.btn-confirm-unlink');
+				const withdrawLink = e.target.closest('#withdraw-link');
+
+				// '연결 해제' 버튼 클릭 시
+				if (disconnectBtn) {
+					// 소셜 계정 유저가 해제 시도 시
+					if (currentUserProvider !== 'LOCAL') {
+						alert('통합 계정으로 변경 후 연동 해제가 가능합니다.');
+						return;
 					}
-				});
+					// 통합 계정 유저가 해제 시도 시 -> 비밀번호 입력 창 표시
+					showPasswordInput(disconnectBtn);
+					return;
+				}
 
-				// 버튼 표시 상태 변경
-				editBtn.style.display = 'none';
-				saveBtn.style.display = 'inline-block';
+				// '비밀번호 확인' 버튼 클릭 시
+				if (confirmBtn) {
+					const provider = confirmBtn.dataset.provider;
+					// [★★변경★★] '연결 해제' 버튼에서 oauthId를 가져와야 함
+					const originalDisconnectBtn = form.querySelector(`.btn-disconnect[data-provider="${provider}"]`);
+					const oauthId = originalDisconnectBtn.dataset.oauthId;
+
+					const passwordInput = document.getElementById(`password-for-${provider}`);
+					const password = passwordInput.value;
+
+					if (!password) {
+						alert('비밀번호를 입력해주세요.');
+						return;
+					}
+
+					const unlinkOAuthRequestDto = {
+						password: password,
+						oauthProvider: provider,
+						oauthId: oauthId
+					};
+
+					try {
+						await unlinkOAuth(unlinkOAuthRequestDto);
+						alert(`${provider.toUpperCase()} 연결이 해제되었습니다.`);
+						location.reload();
+					} catch (error) {
+						alert(`${error.message}`);
+					}
+				}
+
+				// '회원 탈퇴' 링크 클릭 시
+				if (withdrawLink) {
+					e.preventDefault(); // 일단 페이지 이동을 막는다!
+
+					// 소셜 계정 유저가 탈퇴 시도 시
+					if (currentUserProvider !== 'LOCAL') {
+						alert('회원 탈퇴는 통합 계정으로 변경 후 가능합니다.');
+						return;
+					}
+
+					// 통합 계정 유저라면, 진짜 탈퇴 페이지로 이동
+					if (confirm('정말로 회원을 탈퇴하시겠습니까?')) {
+						window.location.href = withdrawLink.href;
+					}
+				}
+
 			});
 
-			// '저장' 버튼 클릭 이벤트 (폼 제출 로직은 여기에 구현)
-			saveBtn.addEventListener('click', function (e) {
-				e.preventDefault(); // 기본 폼 제출 방지
+			// --- 3. 헬퍼 함수 ---
+			function showPasswordInput(disconnectButton) {
+				const provider = disconnectButton.dataset.provider;
+				const wrapper = form.querySelector(`.password-confirm-wrapper[data-provider="${provider}"]`);
 
-				// 여기에 수정된 정보를 서버로 보내는 API 호출 로직을 구현하면 돼.
-				alert('저장 API를 호출합니다!');
+				// 이미 열려있으면 무시
+				if (wrapper.innerHTML !== '') return;
 
-				// API 호출 성공 후 다시 읽기 전용 모드로 변경하는 로직 추가...
-			});
+				wrapper.innerHTML = `
+					<input type="password" id="password-for-${provider}" class="form-input-small" placeholder="비밀번호 입력">
+					<button type="button" class="btn btn-confirm-unlink" data-provider="${provider}">확인</button>
+				`;
+				disconnectButton.style.display = 'none'; // '연결 해제' 버튼 숨기기
+			}
+
+
 		});
 	</script>
 </th:block>

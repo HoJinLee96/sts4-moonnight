@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.chamman.moonnight.global.exception.token.IllegalTokenException;
 
 @Slf4j
 @Order(0)
@@ -18,6 +19,14 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class GlobalWebExceptionHandler {
 
+	@ExceptionHandler(IllegalTokenException.class)
+	public String handle404(IllegalTokenException ex, HttpServletRequest req, Model model, HttpServletResponse res) {
+		
+		res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+		
+		return "error/400";
+	}
+	
 	@ExceptionHandler(NoResourceFoundException.class)
 	public String handle404(NoResourceFoundException ex, HttpServletRequest req, Model model, HttpServletResponse res) {
 		log.debug("* 404 Not Found: 없는 페이지를 요청했습니다. URL: {}", ex.getResourcePath());

@@ -14,13 +14,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.crypto.Obfuscator;
 import net.chamman.moonnight.domain.comment.Comment.CommentStatus;
+import net.chamman.moonnight.domain.comment.dto.CommentRequestDto;
+import net.chamman.moonnight.domain.comment.dto.CommentResponseDto;
 import net.chamman.moonnight.domain.estimate.Estimate;
 import net.chamman.moonnight.domain.estimate.EstimateService;
 import net.chamman.moonnight.domain.user.User;
 import net.chamman.moonnight.domain.user.UserRepository;
 import net.chamman.moonnight.global.exception.ForbiddenException;
 import net.chamman.moonnight.global.exception.NoSuchDataException;
-import net.chamman.moonnight.global.exception.StatusDeleteException;
+import net.chamman.moonnight.global.exception.status.StatusDeleteException;
 
 @Service
 @Slf4j
