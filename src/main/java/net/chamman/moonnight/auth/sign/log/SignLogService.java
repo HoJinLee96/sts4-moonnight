@@ -21,6 +21,8 @@ public class SignLogService {
 	
 	private final SignLogRepository signLogRepository;
 	
+	public static List<SignResult> failIncludedResults = List.of(SignResult.INVALID_PASSWORD);
+	
 	public void registerSignLog(SignLog signLog) {
 		try {
 			signLogRepository.save(signLog);
@@ -29,8 +31,8 @@ public class SignLogService {
 		}
 	}
 	
-	public void signUser(User user, SignResult signResult, String clientIp) {
-		signLogRepository.save(
+	public SignLog signUser(User user, SignResult signResult, String clientIp) {
+		return signLogRepository.save(
 				SignLog.builder()
 				.provider(user.getUserProvider().name())
 				.id(user.getUserId()+"")
@@ -47,7 +49,7 @@ public class SignLogService {
 	 */
 	public int validSignFailCount(UserProvider userProvider, String id) {
 		
-		int signFailCount = signLogRepository.countUnresolvedWithResults(userProvider.name(), id, List.of(SignResult.INVALID_PASSWORD));
+		int signFailCount = signLogRepository.countUnresolvedWithResults(userProvider.name(), id, failIncludedResults);
 		if (signFailCount >= 10) {
 			throw new TooManySignFailException(SIGNIN_FAILED_OUT,"로그인 실패 10회");
 		}
@@ -60,14 +62,9 @@ public class SignLogService {
 	 * @param ip
 	 */
 	@Transactional
-	public void signFailLogResolve(String id, SignResult signResult, String clientIp) {
-		SignLog signLog = SignLog.builder()
-				.id(id)
-				.clientIp(clientIp)
-				.signResult(signResult)
-				.build();
-		signLogRepository.save(signLog);
-		signLogRepository.resolveUnresolvedLogs(id, signLog);
+	public void signUserAndFailLogResolve(User user, SignResult signResult, String clientIp) {
+		SignLog signLog = signUser(user, signResult, clientIp);
+		signLogRepository.resolveUnresolvedLogs(user.getUserId()+"", signLog, failIncludedResults);
 	}
 	
 }

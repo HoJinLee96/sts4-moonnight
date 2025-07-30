@@ -100,7 +100,7 @@ public class LogMaskingUtil {
 	public static String maskAddress(String main, MaskLevel level) {
 		String maskedMain = (main == null || main.length() < 6) ? "***" : switch (level) {
 		case STRONG -> main.substring(0, 6) + "****";
-		case MEDIUM -> main.substring(0, Math.min(15, main.length())) + "...";
+		case MEDIUM -> main.substring(0, Math.min(10, main.length())) + "...";
 		case NONE -> main;
 		};
 

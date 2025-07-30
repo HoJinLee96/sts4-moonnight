@@ -21,6 +21,7 @@ import net.chamman.moonnight.domain.user.UserRepository;
 import net.chamman.moonnight.global.exception.ForbiddenException;
 import net.chamman.moonnight.global.exception.NoSuchDataException;
 import net.chamman.moonnight.global.exception.status.StatusDeleteException;
+import net.chamman.moonnight.rate.limiter.RateLimitService;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +30,7 @@ public class SimpleEstimateService {
 	private final UserRepository userRepository;
 	private final SimpleEstimateRepository spemRepository;
 	private final Obfuscator obfuscator;
+	private final RateLimitService rateLimitService;
 	
 	// SimpleEstimate = Spem
 	//1.로그인한 유저 조회 OAUTH, USER
@@ -43,6 +45,8 @@ public class SimpleEstimateService {
 	@Transactional
 	public SimpleEstimateResponseDto registerSpem(SimpleEstimateRequestDto spemRequestDto, String clientIp, Integer userId) {
 
+		rateLimitService.checkEstimateByIp(clientIp);
+		
 		User user = userId != null ? userRepository.getReferenceById(userId) : null;
 
 		SimpleEstimate spem = spemRequestDto.toEntity(user, clientIp);

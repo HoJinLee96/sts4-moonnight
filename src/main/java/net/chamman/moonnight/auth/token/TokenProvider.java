@@ -18,7 +18,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.crypto.AesProvider;
-import net.chamman.moonnight.auth.crypto.impl.Encryptable;
+import net.chamman.moonnight.auth.crypto.Encryptable;
 import net.chamman.moonnight.auth.oauth.CustomOAuth2User;
 import net.chamman.moonnight.auth.token.dto.FindPwTokenDto;
 import net.chamman.moonnight.auth.token.dto.PasswordTokenDto;

@@ -3,7 +3,7 @@ package net.chamman.moonnight.rate.limiter;
 public enum RateLimitKeyGenerator {
 	VERIFY_PHONE("rate_limit:verify:phone:", 20),
 	VERIFY_EMAIL("rate_limit:verify:email:", 20),
-	SIMPLE_ESTIMATE("rate_limit:estimate:simple:", 5),
+	ESTIMATE("rate_limit:estimate:", 5),
 	IP("rate_limit:ip:", 40);
 
 	private final String prefix;

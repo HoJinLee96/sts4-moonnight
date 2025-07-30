@@ -8,7 +8,6 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import lombok.RequiredArgsConstructor;
-import net.chamman.moonnight.global.interceptor.CustomInterceptor;
 import net.chamman.moonnight.global.validator.ClientSpecificArgumentResolver;
 import net.chamman.moonnight.global.validator.RedirectResolver;
 
@@ -16,15 +15,14 @@ import net.chamman.moonnight.global.validator.RedirectResolver;
 @RequiredArgsConstructor
 public class MvcConfig implements WebMvcConfigurer {
 	
-	private final CustomInterceptor clientIpInterceptor;
 	private final ClientSpecificArgumentResolver clientSpecificArgumentResolver;
 	private final RedirectResolver redirectResolver;
 	
 	
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
-		registry.addInterceptor(clientIpInterceptor)
-		.addPathPatterns("/**"); 
+//		registry.addInterceptor(clientIpInterceptor)
+//		.addPathPatterns("/**"); 
 	}
 	
 	@Override

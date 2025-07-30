@@ -3,32 +3,40 @@ package net.chamman.moonnight.rate.limiter;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
-import net.chamman.moonnight.rate.limiter.impl.RedisRateLimiter;
+import lombok.extern.slf4j.Slf4j;
+import net.chamman.moonnight.global.util.LogMaskingUtil;
+import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class RateLimitService {
 
-    private final RedisRateLimiter redisRateLimiter;
+    private final RateLimiter rateLimiter;
 
     public void checkPhoneVerify(String phone) {
-        redisRateLimiter.isAllowed(
+    	log.debug("* RateLimitService.checkPhoneVerify() phone: [{}]",LogMaskingUtil.maskPhone(phone, MaskLevel.MEDIUM));
+    	rateLimiter.isAllowed(
             RateLimitKeyGenerator.VERIFY_PHONE.key(phone),
             RateLimitKeyGenerator.VERIFY_PHONE.getMaxRequest()
         );
     }
 
     public void checkEmailVerify(String email) {
-        redisRateLimiter.isAllowed(
+    	log.debug("* RateLimitService.checkEmailVerify() email: [{}]",LogMaskingUtil.maskEmail(email, MaskLevel.MEDIUM));
+
+    	rateLimiter.isAllowed(
             RateLimitKeyGenerator.VERIFY_EMAIL.key(email),
             RateLimitKeyGenerator.VERIFY_EMAIL.getMaxRequest()
         );
     }
 
-    public void checkEstimateByIp(String ip) {
-        redisRateLimiter.isAllowed(
-            RateLimitKeyGenerator.IP.key(ip),
-            RateLimitKeyGenerator.IP.getMaxRequest()
+    public void checkEstimateByIp(String clientIp) {
+    	log.debug("* RateLimitService.checkEstimateByIp() clientIp: [{}]",LogMaskingUtil.maskIp(clientIp, MaskLevel.MEDIUM));
+
+    	rateLimiter.isAllowed(
+            RateLimitKeyGenerator.ESTIMATE.key(clientIp),
+            RateLimitKeyGenerator.ESTIMATE.getMaxRequest()
         );
     }
 }

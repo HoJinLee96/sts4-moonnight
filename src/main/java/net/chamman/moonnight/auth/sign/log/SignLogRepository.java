@@ -27,9 +27,10 @@ public interface SignLogRepository extends JpaRepository<SignLog, Integer> {
 			@Param("includedResults") List<SignResult> includedResults);
 	
 	@Transactional @Modifying
-	@Query("UPDATE SignLog l SET l.resolveBy = :signLog WHERE l.id = :id AND l.resolveBy IS NULL")
+	@Query("UPDATE SignLog l SET l.resolveBy = :signLog WHERE l.id = :id AND l.resolveBy IS NULL AND l.signResult IN :includedResults")
 	int resolveUnresolvedLogs(
 			@Param("id") String id,
-			@Param("signLog") SignLog signLog
+			@Param("signLog") SignLog signLog,
+			@Param("includedResults") List<SignResult> includedResults
 			);
 }

@@ -235,8 +235,9 @@
 		// --- 1. 모듈 임포트 ---
 		import {initPhoneFormatting, initBirthFormatting, initVerificationCodeFormatting} from '/js/format.js';
 		import {validate, ValidationError} from '/js/validate.js';
-		import {sendSms, verifySmsCode, checkPhoneDuplication} from '/js/smsVerification.js';
+		import {sendSms, verifySmsCode} from '/js/smsVerification.js';
 		import {signUpStep2} from '/js/sign.js';
+		import {isPhoneExist} from '/js/user.js';
 		import {initAddressSearch} from '/js/address-api.js';
 		import {startCountdown, stopCountdown} from '/js/timer.js';
 
@@ -277,7 +278,7 @@
 				try {
 					const phone = phoneInput.value;
 					validate('phone', phone); // 클라이언트 유효성 검사
-					await checkPhoneDuplication(phone); // 휴대폰 중복 검사 API
+					await isPhoneExist(phone); // 휴대폰 중복 검사 API
 					await sendSms(phone); // 인증번호 발송 API
 
 					alert('인증번호가 발송되었습니다.');

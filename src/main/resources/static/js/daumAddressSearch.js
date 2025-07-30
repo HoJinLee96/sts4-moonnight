@@ -45,5 +45,5 @@ export function searchAddress(callback) {
 				}
 				
 			}
-		}).open();
+		}).open({popupKey: 'popup1'});
 	}

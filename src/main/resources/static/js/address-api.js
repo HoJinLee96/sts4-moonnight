@@ -16,6 +16,8 @@ export function initAddressSearch(config) {
 	}
 
 	const triggerBtn = document.getElementById(config.triggerBtnId);
+	const postcodeInput = document.getElementById(config.postcodeId);
+	const mainAddressInput = document.getElementById(config.mainAddressId);
 
 	if (!triggerBtn) {
 		console.error(`주소 검색 트리거 버튼 ID '${config.triggerBtnId}'를 찾을 수 없습니다.`);
@@ -23,33 +25,35 @@ export function initAddressSearch(config) {
 	}
 
 
-	triggerBtn.addEventListener('click', () => {
-		// ★★★ 2. 팝업이 이미 열려있는지(null이 아닌지) 확인 ★★★
-		if (currentPostcodePopup) {
-			showFeedbackTooltip(triggerBtn, '이미 주소 검색창이 열려있습니다.');
-			return;
+	triggerBtn.addEventListener('click', () => openduamPostcode(triggerBtn, config));
+	postcodeInput.addEventListener('click', () => openduamPostcode(triggerBtn, config));
+	mainAddressInput.addEventListener('click', () => openduamPostcode(triggerBtn, config));
+}
+
+function openduamPostcode(triggerBtn, config) {
+	if (currentPostcodePopup) {
+		showFeedbackTooltip(triggerBtn, '이미 주소 검색창이 열려있습니다.');
+	}
+
+	// ★★★ 3. 새 팝업 객체를 생성하고, 변수에 할당 ★★★
+	currentPostcodePopup = new daum.Postcode({
+		oncomplete: function(data) {
+			// 검색 결과 처리 함수 호출
+			fillAddressFields(data, config);
+			// 주소 선택 완료 시 onclose가 호출되므로, 여기서는 특별히 할 일 없음
+		},
+
+		// ★★★ 4. onclose 이벤트 핸들러 추가 ★★★
+		// 팝업이 닫혔을 때 (주소를 선택했든, X를 눌렀든) 무조건 실행됨
+		onclose: function(state) {
+			// 팝업이 닫혔으니, 상태 변수를 다시 null로 만들어줌
+			// 이렇게 해야 다음에 다시 '주소 찾기' 버튼을 눌렀을 때 새 팝업을 열 수 있음
+			currentPostcodePopup = null;
 		}
-
-		// ★★★ 3. 새 팝업 객체를 생성하고, 변수에 할당 ★★★
-		currentPostcodePopup = new daum.Postcode({
-			oncomplete: function(data) {
-				// 검색 결과 처리 함수 호출
-				fillAddressFields(data, config);
-				// 주소 선택 완료 시 onclose가 호출되므로, 여기서는 특별히 할 일 없음
-			},
-
-			// ★★★ 4. onclose 이벤트 핸들러 추가 ★★★
-			// 팝업이 닫혔을 때 (주소를 선택했든, X를 눌렀든) 무조건 실행됨
-			onclose: function(state) {
-				// 팝업이 닫혔으니, 상태 변수를 다시 null로 만들어줌
-				// 이렇게 해야 다음에 다시 '주소 찾기' 버튼을 눌렀을 때 새 팝업을 열 수 있음
-				currentPostcodePopup = null;
-			}
-		});
-
-		// 생성된 팝업을 화면에 띄움
-		currentPostcodePopup.open();
 	});
+
+	// 생성된 팝업을 화면에 띄움
+	currentPostcodePopup.open({ popupKey: 'popup1' });
 }
 
 /**

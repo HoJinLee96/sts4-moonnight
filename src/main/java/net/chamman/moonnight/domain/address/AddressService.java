@@ -19,13 +19,13 @@ import net.chamman.moonnight.domain.user.UserRepository;
 import net.chamman.moonnight.domain.user.UserService;
 import net.chamman.moonnight.global.exception.ForbiddenException;
 import net.chamman.moonnight.global.exception.NoSuchDataException;
-import net.chamman.moonnight.global.exception.infra.DaumStateException;
+import net.chamman.moonnight.global.exception.infra.RoadSearchException;
 import net.chamman.moonnight.global.exception.status.StatusDeleteException;
 import net.chamman.moonnight.global.exception.status.StatusStayException;
 import net.chamman.moonnight.global.exception.status.StatusStopException;
 import net.chamman.moonnight.global.util.LogMaskingUtil;
 import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
-import net.chamman.moonnight.infra.kakao.DaumMapClient;
+import net.chamman.moonnight.infra.map.impl.DaumMapClient;
 
 @Service
 @Slf4j
@@ -41,7 +41,7 @@ public class AddressService {
 	 * @param addressRequestDto
 	 * 
 	 * @throws IllegalAddressValueException {@link DaumMapClient#validateAddress} 일치하는 주소가 없음
-	 * @throws DaumStateException {@link DaumMapClient#validateAddress} 다음 서버에서 응답 이상
+	 * @throws RoadSearchException {@link DaumMapClient#validateAddress} 다음 서버에서 응답 이상
 	 * 
 	 * @throws NoSuchDataException {@link UserService#getUserByUserId} 찾을 수 없는 유저
 	 * @throws StatusStayException {@link UserService#getUserByUserId} 일시정지 유저
@@ -103,7 +103,7 @@ public class AddressService {
 	 * @param addressRequestDto
 	 * 
 	 * @throws IllegalAddressValueException {@link DaumMapClient#validateAddress} 일치하는 주소가 없음
-	 * @throws DaumStateException {@link DaumMapClient#validateAddress} 다음 서버에서 응답 이상
+	 * @throws RoadSearchException {@link DaumMapClient#validateAddress} 다음 서버에서 응답 이상
 	 * 
 	 * @throws ForbiddenException {@link #getAuthorizedAddress} 접근 권한 이상
 	 * 

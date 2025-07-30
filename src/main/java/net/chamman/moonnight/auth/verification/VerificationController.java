@@ -12,7 +12,6 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,12 +21,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import net.chamman.moonnight.auth.verification.dto.VerificationEmailRequestDto;
+import net.chamman.moonnight.auth.verification.dto.VerificationPhoneRequestDto;
 import net.chamman.moonnight.global.annotation.ClientSpecific;
 import net.chamman.moonnight.global.annotation.ValidEmail;
 import net.chamman.moonnight.global.annotation.ValidPhone;
+import net.chamman.moonnight.global.context.RequestContextHolder;
 import net.chamman.moonnight.global.util.ApiResponseDto;
 import net.chamman.moonnight.global.util.ApiResponseFactory;
-import net.chamman.moonnight.rate.limiter.impl.RedisRateLimiter;
 
 @Tag(name = "VerificationController", description = "인증 관련 API")
 @RestController
@@ -36,20 +37,17 @@ import net.chamman.moonnight.rate.limiter.impl.RedisRateLimiter;
 public class VerificationController {
 	
 	private final VerificationService verificationService;
-	private final RedisRateLimiter rateLimiter;
 	private final ApiResponseFactory apiResponseFactory;
 	
 	@Operation(summary = "휴대폰 문자 인증번호 검사", description = "휴대폰 문자 인증번호 검사")
 	@PostMapping("/public/compare/sms/uuid")
 	public ResponseEntity<ApiResponseDto<Map<String,String>>> compareSmsVerification(
-			@RequestHeader(required = false, value = "X-Client-Type") String userAgent,
 			@ClientSpecific("X-Verification-Id") String verificationId,
 			@Valid @RequestBody VerificationPhoneRequestDto verificationPhoneRequestDto,
 			HttpServletRequest request) {
 		
-		boolean isMobileApp = userAgent != null && userAgent.contains("mobile");
-		
-		String clientIp = (String) request.getAttribute("clientIp");
+		String clientIp = RequestContextHolder.getContext().getClientIp();
+		boolean isMobileApp = RequestContextHolder.getContext().isMobileApp();
 		
 		String token = verificationService.compareSms(
 				verificationId,
@@ -78,14 +76,12 @@ public class VerificationController {
 	@Operation(summary = "이메일 인증 인증번호 검사", description = "이메일 인증 인증번호 검사")
 	@PostMapping("/public/compare/email/uuid")
 	public ResponseEntity<ApiResponseDto<Map<String,String>>> compareEmailVerification(
-			@RequestHeader(required = false, value = "X-Client-Type")String userAgent,
 			@ClientSpecific("X-Verification-Id") String verificationId,
 			@Valid @RequestBody VerificationEmailRequestDto verificationEmailRequestDto,
 			HttpServletRequest request) {
 		
-		boolean isMobileApp = userAgent != null && userAgent.contains("mobile");
-		
-		String clientIp = (String) request.getAttribute("clientIp");
+		String clientIp = RequestContextHolder.getContext().getClientIp();
+		boolean isMobileApp = RequestContextHolder.getContext().isMobileApp();
 		
 		String token = verificationService.compareEmail(
 				verificationId,
@@ -114,13 +110,11 @@ public class VerificationController {
 	@Operation(summary = "휴대폰 문자 인증번호 발송", description = "휴대폰 문자 인증번호 발송")
 	@PostMapping("/public/sms")
 	public ResponseEntity<ApiResponseDto<Map<String,String>>> verifyToSms(
-			@RequestHeader(required = false, value = "X-Client-Type")String userAgent,
 			@ValidPhone @RequestParam String phone,
 			HttpServletRequest request) {
 		
-		boolean isMobileApp = userAgent != null && userAgent.contains("mobile");
-		
-		String clientIp = (String) request.getAttribute("clientIp");
+		String clientIp = RequestContextHolder.getContext().getClientIp();
+		boolean isMobileApp = RequestContextHolder.getContext().isMobileApp();
 		
 		String encodingVerificationId = verificationService.sendSmsVerificationCode(phone, clientIp)+"";
 		
@@ -145,13 +139,11 @@ public class VerificationController {
 	@Operation(summary = "이메일 인증번호 발송", description = "이메일 인증번호 발송")
 	@PostMapping("/public/email")
 	public ResponseEntity<ApiResponseDto<Map<String,String>>> verifyToEmail(
-			@RequestHeader(required = false, value = "X-Client-Type")String userAgent,
 			@ValidEmail @RequestParam String email,
 			HttpServletRequest request) {
 		
-		boolean isMobileApp = userAgent != null && userAgent.contains("mobile");
-		
-		String clientIp = (String) request.getAttribute("clientIp");
+		String clientIp = RequestContextHolder.getContext().getClientIp();
+		boolean isMobileApp = RequestContextHolder.getContext().isMobileApp();
 		
 		String encodingVerificationId = verificationService.sendEmailVerificationCode(email, clientIp)+"";
 		

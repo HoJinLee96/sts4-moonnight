@@ -1,41 +1,47 @@
 package net.chamman.moonnight.global.security.fillter;
 
-import static net.chamman.moonnight.global.exception.HttpStatusCode.JWT_ILLEGAL;
-
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
+
+import com.nimbusds.oauth2.sdk.util.StringUtils;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import net.chamman.moonnight.auth.sign.SignService;
+import net.chamman.moonnight.auth.sign.log.SignLogService;
+import net.chamman.moonnight.auth.token.JwtProvider;
+import net.chamman.moonnight.auth.token.TokenAuthenticator;
+import net.chamman.moonnight.auth.token.TokenProvider;
 import net.chamman.moonnight.auth.token.TokenProvider.TokenType;
-import net.chamman.moonnight.domain.user.User.UserProvider;
-import net.chamman.moonnight.global.exception.jwt.IllegalJwtException;
+import net.chamman.moonnight.global.context.RequestContext;
+import net.chamman.moonnight.global.context.RequestContextHolder;
 import net.chamman.moonnight.global.exception.jwt.TimeOutJwtException;
 import net.chamman.moonnight.global.security.principal.CustomUserDetails;
+import net.chamman.moonnight.global.util.ClientIpExtractor;
 import net.chamman.moonnight.global.util.LogMaskingUtil;
 import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 
 @Slf4j
 @Component
 public class SilentAuthenticationFilter extends AbstractAccessTokenFilter<CustomUserDetails>{
+
+	public SilentAuthenticationFilter(JwtProvider jwtProvider, TokenProvider tokenProvider,
+			SignLogService signLogService, SignService signService, TokenAuthenticator tokenAuthenticator) {
+		super(jwtProvider, tokenProvider, signLogService, signService, tokenAuthenticator);
+	}
 	
 	@Override
 	protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res,
 			FilterChain filterChain) throws ServletException, IOException {
 		
 		// ClientIp
-		String clientIp = customInterceptor.extractClientIp(req);
+		String clientIp = ClientIpExtractor.extractClientIp(req);
 		
 		// Mobile Or Web
 		String clientType = req.getHeader("X-Client-Type");
@@ -43,6 +49,9 @@ public class SilentAuthenticationFilter extends AbstractAccessTokenFilter<Custom
 		
 		log.debug("* [{}] SilentAuthenticationFilter 실행 - clientIp: [{}], isMobileApp: [{}]", req.getRequestURI(), clientIp, isMobileApp);
 
+		RequestContext requestContext = new RequestContext(clientIp, isMobileApp);
+		RequestContextHolder.setContext(requestContext);
+		
 		// AccessToken
 		String accessToken = getAccessToken(isMobileApp, req);
 		String refreshToken = getRefreshToken(isMobileApp, req);
@@ -50,7 +59,7 @@ public class SilentAuthenticationFilter extends AbstractAccessTokenFilter<Custom
 		log.debug("* AccessToken: [{}], RefreshToken: [{}]", LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM), LogMaskingUtil.maskToken(refreshToken, MaskLevel.MEDIUM));
 
 		// 1. 토큰 null 체크
-		if(!validateTokens(new String[] {accessToken,refreshToken})) {
+		if(StringUtils.isBlank(accessToken) || StringUtils.isBlank(refreshToken)) {
 			log.warn("* 토큰 누락 또는 빈 값.");
 			initTokenToCookie(res);
 			filterChain.doFilter(req, res);
@@ -60,12 +69,14 @@ public class SilentAuthenticationFilter extends AbstractAccessTokenFilter<Custom
 //		 2. 블랙리스트 확인
 		String value = tokenProvider.getBlackListValue(accessToken);
 		log.debug("* 블랙리스트 조회 결과 value: [{}]",value);
+		
 //		 2-1. 로그아웃한 토큰
 		if(Objects.equals(value, "SIGNOUT")) {
 			initTokenToCookie(res);
 			filterChain.doFilter(req, res);
 			return;
 //		2-2. 유저 정보 업데이트된 토큰
+			
 		} else if(Objects.equals(value, "UPDATE")) {
 			try {
 				refresh(refreshToken, clientIp, res, isMobileApp);
@@ -110,43 +121,10 @@ public class SilentAuthenticationFilter extends AbstractAccessTokenFilter<Custom
 	}
 	
 	@Override
-	protected CustomUserDetails buildUserDetails(Map<String, Object> claims) {
+	protected CustomUserDetails buildUserDetails(String accessToken) {
 		log.debug("* SilentAuthenticationFilter.buildUserDetails 실행.");
 		
-		// 복호화 때문에 claims.getSbuject()가 아님.
-		Object subjectRaw = claims.get("subject");
-		if (subjectRaw == null) {
-			throw new IllegalJwtException(JWT_ILLEGAL,"JWT CustomUserDetails 생성중 오류 발생. subject");
-		}
-		int userId = Integer.parseInt(subjectRaw.toString());
-		if(userId==0) {
-			throw new IllegalJwtException(JWT_ILLEGAL,"JWT CustomUserDetails 생성중 오류 발생. subject");
-		}
-		
-		Object rolesObj = claims.get("roles");
-		if (!(rolesObj instanceof List)) {
-			throw new IllegalJwtException(JWT_ILLEGAL,"JWT AuthUserDetails 생성중 오류 발생. - roles");
-		}
-		@SuppressWarnings("unchecked")
-		List<String> roles = (List<String>) rolesObj;
-		List<GrantedAuthority> authorities =
-				roles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
-		
-		String providerStr = (String) claims.get("provider");
-		if (providerStr == null || providerStr.isEmpty()) {
-			throw new IllegalJwtException(JWT_ILLEGAL,"JWT AuthUserDetails 생성중 오류 발생. - provider");
-		}
-		UserProvider userProvider = UserProvider.valueOf(providerStr); // 문자열을 Provider Enum으로 변환
-		String email = (String) claims.get("email");
-		if (email == null || email.isEmpty()) {
-			throw new IllegalJwtException(JWT_ILLEGAL,"JWT AuthUserDetails 생성중 오류 발생. - email");
-		}
-		String name = (String) claims.get("name");
-		if (name == null || name.isEmpty()) {
-			throw new IllegalJwtException(JWT_ILLEGAL,"JWT AuthUserDetails 생성중 오류 발생. - name");
-		}
-		
-		return new CustomUserDetails(userId, userProvider, email, name, authorities);
+		return tokenAuthenticator.authenticateAccessToken(accessToken);
 	}
 	
 	@Override
