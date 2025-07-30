@@ -93,11 +93,14 @@ public enum HttpStatusCode {
 	S3_UPLOAD_FAIL(500,"4610","message.s3.upload_fail"),
 	S3_DELETE_FAIL(500,"4611","message.s3.delete_fail"),
 	
-	// Mail 462
-	MAIL_SEND_FAIL(500,"5006","message.mail.send_fail"),
+	// Email 462
+	EMAIL_SEND_FAIL(500,"5006","message.mail.send_fail"),
 	
 	// Sms 463
 	SMS_SEND_FAIL(500,"5007","message.sms.send_fail"),
+	
+	// Map Road Search
+	ROAD_SEARCH_FAIL(500,"5008","message.map.road_search_fail"),
 	
 	// Transaction 464
 	ENCODING_FAIL(400, "4000", "message.common.illegal_input_value"),

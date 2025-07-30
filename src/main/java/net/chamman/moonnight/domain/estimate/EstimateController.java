@@ -34,11 +34,11 @@ import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.domain.estimate.dto.EstimateRequestDto;
 import net.chamman.moonnight.domain.estimate.dto.EstimateResponseDto;
 import net.chamman.moonnight.global.annotation.ImageConstraint;
+import net.chamman.moonnight.global.context.RequestContextHolder;
 import net.chamman.moonnight.global.security.principal.AuthDetails;
 import net.chamman.moonnight.global.security.principal.CustomUserDetails;
 import net.chamman.moonnight.global.util.ApiResponseDto;
 import net.chamman.moonnight.global.util.ApiResponseFactory;
-import net.chamman.moonnight.rate.limiter.RateLimiter;
 
 @RestController
 @RequestMapping("/api/estimate")
@@ -63,10 +63,10 @@ public class EstimateController {
 			images.forEach(path -> log.debug("* image: {}", path.getName()));
 		}
 
-		String clientIp = (String) request.getAttribute("clientIp");
+		String clientIp = RequestContextHolder.getContext().getClientIp();
 
 		Integer userId = userDetails != null ? userDetails.getUserId() : null;
-		EstimateResponseDto estimateResponseDto = estimateService.registerEstimate(estimateRequestDto, images, userId);
+		EstimateResponseDto estimateResponseDto = estimateService.registerEstimate(estimateRequestDto, images, userId, clientIp);
 
 		return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(CREATE_SUCCESS, estimateResponseDto));
 	}

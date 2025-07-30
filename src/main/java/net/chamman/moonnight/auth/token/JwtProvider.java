@@ -67,6 +67,7 @@ public class JwtProvider {
 	public Map<String,String> createSignToken(int userId, List<String> roles, Map<String, Object> claims) {
 		String accessToken = createAccessToken(userId, roles, claims);
 		String refreshToken = createRefreshToken(userId);
+//		log.debug("* 로그인 토큰 발행 완료. accessToken: [{}], refreshToken: [{}]", accessToken, refreshToken);
 		return Map.of("accessToken",accessToken,"refreshToken",refreshToken);
 	}
 	

@@ -8,7 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import net.chamman.moonnight.auth.crypto.AesProvider;
-import net.chamman.moonnight.auth.crypto.impl.Encryptable;
+import net.chamman.moonnight.auth.crypto.Encryptable;
 import net.chamman.moonnight.auth.token.TokenProvider.TokenType;
 import net.chamman.moonnight.global.exception.HttpStatusCode;
 import net.chamman.moonnight.global.exception.IllegalRequestException;

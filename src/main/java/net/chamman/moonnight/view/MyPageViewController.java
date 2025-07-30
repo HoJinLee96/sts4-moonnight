@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import net.chamman.moonnight.auth.crypto.AesProvider;
 import net.chamman.moonnight.auth.oauth.OAuthResponseDto;
 import net.chamman.moonnight.auth.oauth.OAuthService;
 import net.chamman.moonnight.domain.address.AddressService;
@@ -32,6 +33,7 @@ public class MyPageViewController {
 	private final EstimateService estimateService; 
 	private final UserService userService; 
 	private final OAuthService oauthService; 
+	private final AesProvider aesProvider; 
 	
 	
 	@GetMapping("/my")
@@ -85,10 +87,10 @@ public class MyPageViewController {
     		@AuthenticationPrincipal CustomUserDetails userDetails,
     		HttpServletRequest request) {
 
-
+    	String userId = userDetails.getUsername();
         // 1. 세션에 "계정 연동 작업 중"이라는 깃발을 꽂는다.
         request.getSession().setAttribute("OAUTH_LINK_IN_PROGRESS", true);
-        request.getSession().setAttribute("LINKING_USER_ID", userDetails.getUsername());
+        request.getSession().setAttribute("LINKING_USER_ID", aesProvider.encrypt(userId));
         
         // 2. 원래의 소셜 로그인 주소로 리다이렉트
         return "redirect:/oauth2/authorization/" + provider;

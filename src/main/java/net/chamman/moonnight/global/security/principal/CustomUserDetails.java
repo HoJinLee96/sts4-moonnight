@@ -3,12 +3,15 @@ package net.chamman.moonnight.global.security.principal;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import net.chamman.moonnight.domain.user.User;
 import net.chamman.moonnight.domain.user.User.UserProvider;
 
 @SuppressWarnings("serial")
@@ -56,5 +59,19 @@ public class CustomUserDetails implements UserDetails {
 	public boolean isEnabled() {
 		return true;
 	}
+	
+	public CustomUserDetails(User user) {
+		super();
+		List<String> roles = List.of("ROLE_"+user.getUserProvider().name());
+		List<GrantedAuthority> authorities =
+				roles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
+				
+		this.userId = user.getUserId();
+		this.userProvider = user.getUserProvider();
+		this.email = user.getEmail();
+		this.name = user.getName();
+		this.authorities = authorities;
+	}
+
 
 }

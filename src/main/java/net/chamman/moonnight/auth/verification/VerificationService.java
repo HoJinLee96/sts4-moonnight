@@ -6,11 +6,10 @@ import static net.chamman.moonnight.global.exception.HttpStatusCode.NOT_VERIFY;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.SMS_SEND_FAIL;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.VERIFICATION_EXPIRED;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.VERIFICATION_NOT_FOUND;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.EMAIL_SEND_FAIL;
 
-import java.util.List;
 import java.util.Random;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +23,7 @@ import net.chamman.moonnight.auth.verification.Verification.VerificationBuilder;
 import net.chamman.moonnight.auth.verification.VerificationRepository.VerificationProjection;
 import net.chamman.moonnight.global.exception.NoSuchDataException;
 import net.chamman.moonnight.global.exception.crypto.EncryptException;
-import net.chamman.moonnight.global.exception.infra.MailSendException;
+import net.chamman.moonnight.global.exception.infra.EmailSendException;
 import net.chamman.moonnight.global.exception.infra.SmsSendException;
 import net.chamman.moonnight.global.exception.redis.RedisSetException;
 import net.chamman.moonnight.global.exception.verification.IllegalVerificationException;
@@ -33,12 +32,11 @@ import net.chamman.moonnight.global.exception.verification.NotVerifyException;
 import net.chamman.moonnight.global.exception.verification.VerificationExpiredException;
 import net.chamman.moonnight.global.util.LogMaskingUtil;
 import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
-import net.chamman.moonnight.infra.naver.mail.MailRecipientPayload;
-import net.chamman.moonnight.infra.naver.mail.NaverMailClient;
-import net.chamman.moonnight.infra.naver.mail.NaverMailPayload;
-import net.chamman.moonnight.infra.naver.sms.NaverSmsClient;
-import net.chamman.moonnight.infra.naver.sms.NaverSmsPayload;
-import net.chamman.moonnight.infra.naver.sms.SmsRecipientPayload;
+import net.chamman.moonnight.infra.email.EmailSender;
+import net.chamman.moonnight.infra.email.impl.NaverMailClient;
+import net.chamman.moonnight.infra.sms.SmsSender;
+import net.chamman.moonnight.infra.sms.impl.NaverSmsClient;
+import net.chamman.moonnight.rate.limiter.RateLimitService;
 
 @Service
 @Slf4j
@@ -46,16 +44,11 @@ import net.chamman.moonnight.infra.naver.sms.SmsRecipientPayload;
 public class VerificationService {
 	
 	private final VerificationRepository verificationRepository;
-	private final NaverMailClient naverMailClient;
-	private final NaverSmsClient naverSmsClient;
+	private final EmailSender emailSender;
+	private final SmsSender smsSender;
 	private final TokenProvider tokenProvider;
 	private final Obfuscator obfuscator;
-	
-	@Value("${naver-sms.senderPhone}")
-	private String senderPhone;
-	
-	@Value("${naver-email.senderEmail}")
-	private String senderEmail;
+	private final RateLimitService rateLimitService;
 	
 	/** 문자 인증번호 발송
 	 * @param recipientPhone
@@ -64,51 +57,39 @@ public class VerificationService {
 	 * @throws SmsSendException {@link NaverSmsClient#sendVerificationCode}
 	 */
 	public int sendSmsVerificationCode(String recipientPhone, String clientIp) {
-		log.debug("*인증번호 문자 발송. RecipientPhone: [{}], RequestIp: [{}]",
+		log.debug("* 인증번호 문자 발송. RecipientPhone: [{}], ClientIp: [{}]",
 				LogMaskingUtil.maskPhone(recipientPhone, MaskLevel.MEDIUM),
 				clientIp
 				);
 		
+		rateLimitService.checkPhoneVerify(recipientPhone);
+		
 		String verificationCode = generateVerificationCode();
-		String body = "인증번호 [" + verificationCode + "]를 입력해주세요.";
-		
-		// 수신자 설정
-		SmsRecipientPayload smsRecipientPayload = new SmsRecipientPayload(recipientPhone.replaceAll("[^0-9]", ""),body);
-		List<SmsRecipientPayload> messages = List.of(smsRecipientPayload);
-		
-		// 요청 데이터 생성
-		NaverSmsPayload naverSmsPayload = NaverSmsPayload.builder()
-				.type("SMS")
-				.contentType("COMM")
-				.countryCode("82")
-				.from(senderPhone)
-				.content("달밤청소 인증번호")
-//            .content("[ 달밤청소 가입 인증번호 ]\n[" + verificationCode + "]를 입력해주세요")
-				.messages(messages)
-				.build();
+		String message = "[달밤청소 휴대폰 인증 요청]\n인증번호 [" + verificationCode + "]를 입력해주세요.";
 		
 		VerificationBuilder verificationBuilder = Verification.builder()
 				.clientIp(clientIp)
 				.recipient(recipientPhone)
 				.verificationCode(verificationCode);
 		
+		int sendStatus = 0;
 		try {
-			int sendStatus = naverSmsClient.sendSms(naverSmsPayload);
-			verificationBuilder.sendStatus(sendStatus);
-			if((sendStatus/100)!=2) {
-				log.error("인증번호 발송 요청 응답코드 실패: SendStatus: [{}], RecipientPhone: [{}] , RequestIp: [{}]", sendStatus, recipientPhone, clientIp);
-				verificationRepository.save(verificationBuilder.build());
-				throw new SmsSendException(SMS_SEND_FAIL, "인증번호 발송 실패: sendStatus: "+sendStatus);
-			}
+			sendStatus = smsSender.sendSms(recipientPhone, message);
 		} catch (Exception e) {
-			log.error("인증번호 발송 요청 실패: RecipientPhone: [{}] , RequestIp: [{}]", recipientPhone, clientIp, e);
+			log.error("* 인증번호 발송 요청 실패: RecipientPhone: [{}] , ClientIp: [{}]", recipientPhone, clientIp, e);
 			verificationBuilder.sendStatus(500);
 			verificationRepository.save(verificationBuilder.build());
 			throw e;
 		}
 		
+		verificationBuilder.sendStatus(sendStatus);
 		Verification verification = verificationBuilder.build();
 		verificationRepository.save(verification);
+		
+		if((sendStatus/100)!=2) {
+			log.error("* 인증번호 발송 요청 응답코드 실패: SendStatus: [{}], RecipientPhone: [{}] , ClientIp: [{}]", sendStatus, recipientPhone, clientIp);
+			throw new SmsSendException(SMS_SEND_FAIL, "인증번호 발송 실패: sendStatus: "+sendStatus);
+		}
 		
 		return obfuscator.encode(verification.getVerificationId());
 	}
@@ -116,55 +97,44 @@ public class VerificationService {
 	/** 이메일 인증번호 발송
 	 * @param recipientEmail
 	 * @param clientIp
-	 * @throws MailSendException {@link NaverMailClient#sendMail}
+	 * @throws EmailSendException {@link NaverMailClient#sendMail}
 	 * @return
 	 */
 	public int sendEmailVerificationCode(String recipientEmail, String clientIp) {
-		log.debug("*인증번호 이메일 발송. RecipientEmail: [{}], RequestIp: [{}]",
+		log.debug("* 인증번호 이메일 발송. RecipientEmail: [{}], ClientIp: [{}]",
 				LogMaskingUtil.maskEmail(recipientEmail, MaskLevel.MEDIUM),
 				clientIp
 				);
 		
+		rateLimitService.checkEmailVerify(recipientEmail);
+		
 		String verificationCode = generateVerificationCode();
-		String body = "인증번호 [" + verificationCode + "]를 입력해주세요.";
-		
-		// 수신자 설정
-		MailRecipientPayload mailRecipientPayload = new MailRecipientPayload(recipientEmail,recipientEmail,"R");
-		List<MailRecipientPayload> mails = List.of(mailRecipientPayload);
-		
-		// 요청 데이터 생성
-		NaverMailPayload naverMailPayload = NaverMailPayload.builder()
-				.senderAddress(senderEmail)
-				.title("달밤청소 인증번호")
-				.body(body)
-				.recipients(mails)
-				.individual(true)
-				.advertising(false)
-				.build();
+		String message = "인증번호 [" + verificationCode + "]를 입력해주세요.";
+		String title = "달밤청소 인증번호";
+
 		
 		VerificationBuilder verificationBuilder = Verification.builder()
 				.clientIp(clientIp)
 				.recipient(recipientEmail)
 				.verificationCode(verificationCode);
-		
+		int sendStatus = 0;
 		try {
-			int sendStatus = naverMailClient.sendMail(naverMailPayload);
-			verificationBuilder.sendStatus(sendStatus);
-			if((sendStatus/100)!=2) {
-				log.error("인증번호 발송 요청 응답코드 실패: SendStatus: [{}], RecipientEmail: [{}] , RequestIp: [{}]", sendStatus, recipientEmail, clientIp);
-				Verification verification = verificationBuilder.build();
-				verificationRepository.save(verification);
-			}
+			sendStatus = emailSender.sendEmail(recipientEmail, title, message);
 		} catch (Exception e) {
-			log.error("인증번호 발송 요청 실패: RecipientEmail: [{}] , RequestIp: [{}]", recipientEmail, clientIp, e);
+			log.error("* 인증번호 발송 요청 실패: RecipientEmail: [{}] , ClientIp: [{}]", recipientEmail, clientIp, e);
 			verificationBuilder.sendStatus(500);
-			Verification verification = verificationBuilder.build();
-			verificationRepository.save(verification);
+			verificationRepository.save(verificationBuilder.build());
 			throw e;
 		}
 		
+		verificationBuilder.sendStatus(sendStatus);
 		Verification verification = verificationBuilder.build();
 		verificationRepository.save(verification);
+
+		if((sendStatus/100)!=2) {
+			log.error("* 인증번호 발송 요청 응답코드 실패: SendStatus: [{}], RecipientEmail: [{}] , ClientIp: [{}]", sendStatus, recipientEmail, clientIp);
+			throw new EmailSendException(EMAIL_SEND_FAIL, "인증번호 발송 실패: sendStatus: "+sendStatus);
+		}
 		
 		return obfuscator.encode(verification.getVerificationId());
 	}
@@ -191,7 +161,7 @@ public class VerificationService {
 		
 		int verificationId = obfuscator.decode(Integer.parseInt(encodedVerificationId));
 		
-		log.debug("*문자 인증번호 검증. VerificationId: [{}], RequestIp: [{}]",
+		log.debug("*문자 인증번호 검증. VerificationId: [{}], ClientIp: [{}]",
 				LogMaskingUtil.maskId(verificationId, MaskLevel.MEDIUM),
 				clientIp
 				);
@@ -223,7 +193,7 @@ public class VerificationService {
 		
 		int verificationId = obfuscator.decode(Integer.parseInt(encodedVerificationId));
 		
-		log.debug("*이메일 인증번호 검증. VerificationId: [{}], RequestIp: [{}]",
+		log.debug("*이메일 인증번호 검증. VerificationId: [{}], ClientIp: [{}]",
 				LogMaskingUtil.maskId(verificationId, MaskLevel.MEDIUM),
 				clientIp
 				);

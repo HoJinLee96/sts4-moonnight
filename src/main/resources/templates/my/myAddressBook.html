@@ -12,10 +12,10 @@
 		}
 
 		.content {
-			flex-grow: 1;
-			/* 남는 공간을 모두 차지하도록 설정 */
-			max-width: 900px;
-			/* 최대 너비 제한 */
+		    flex-grow: 1;
+		    min-width: 713px;
+		    max-width: 989px;
+		    padding: 0px 40px;
 		}
 
 		.contentTitle {
@@ -196,7 +196,37 @@
 			text-decoration: none;
 			transition: all 0.2s;
 		}
-		
+		/* --- 피드백 말풍선(Tooltip) 스타일 --- */
+		.feedback-tooltip {
+			position: absolute;
+			/* 다른 요소에 영향을 주지 않고 위치를 잡기 위해 */
+			padding: 10px 15px;
+			background-color: #333;
+			/* 어두운 배경 */
+			color: white;
+			/* 흰색 글씨 */
+			border-radius: 6px;
+			font-size: 14px;
+			z-index: 1001;
+			/* 모달보다는 위에, 다른 요소들보다도 위에 */
+
+			/* 기본 상태는 숨김 */
+			opacity: 0;
+			visibility: hidden;
+			transform: translateY(10px);
+			/* 살짝 아래에서 시작 */
+
+			/* 부드러운 전환 효과 */
+			transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+		}
+
+		/* 말풍선을 보여줄 때 적용할 클래스 */
+		.feedback-tooltip.show {
+			opacity: 1;
+			visibility: visible;
+			transform: translateY(0);
+			/* 원래 위치로 */
+		}
 	</style>
 </head>
 <main layout:fragment="content">
@@ -245,7 +275,7 @@
 
 	<script type="module" th:inline="javascript">
 		import {registerAddress, updateAddress, updatePrimary, deleteAddress} from '/js/address.js';
-		import {searchAddress} from '/js/daumAddressSearch.js';
+		import {initAddressSearch} from '/js/address-api.js';
 
 		document.addEventListener("DOMContentLoaded", () => {
 			const contentDiv = document.querySelector('.content');
@@ -363,19 +393,12 @@
 				if (e.target === overlay) closeModal(); // 배경 클릭 시 닫기
 			});
 
-			// Daum 주소 검색 API 호출
-			const openDaumPostcode = () => {
-				new daum.Postcode({
-					oncomplete: function (data) {
-						overlay.querySelector('#modal_postcode').value = data.zonecode;
-						overlay.querySelector('#modal_mainAddress').value = data.roadAddress;
-						overlay.querySelector('#modal_detailAddress').focus();
-					}
-				}).open();
-			};
-
-			overlay.querySelector('#searchAddressBtn').addEventListener('click', openDaumPostcode);
-			overlay.querySelector('#modal_mainAddress').addEventListener('click', openDaumPostcode);
+			initAddressSearch({
+				triggerBtnId: 'searchAddressBtn',
+				postcodeId: 'modal_postcode',
+				mainAddressId: 'modal_mainAddress',
+				detailAddressId: 'modal_detailAddress'
+			});
 
 			// 저장 버튼 클릭 이벤트
 			overlay.querySelector('#submitBtn').addEventListener('click', async () => {

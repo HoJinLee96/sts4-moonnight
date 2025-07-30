@@ -23,13 +23,12 @@ import net.chamman.moonnight.auth.oauth.OAuthResponseDto;
 import net.chamman.moonnight.auth.oauth.OAuthService;
 import net.chamman.moonnight.auth.sign.SignService;
 import net.chamman.moonnight.auth.sign.log.SignLog.SignResult;
-import net.chamman.moonnight.auth.token.JwtProvider;
+import net.chamman.moonnight.auth.sign.log.SignLogService;
 import net.chamman.moonnight.auth.token.TokenProvider;
 import net.chamman.moonnight.auth.token.TokenProvider.TokenType;
 import net.chamman.moonnight.auth.token.dto.FindPwTokenDto;
 import net.chamman.moonnight.auth.token.dto.VerificationEmailTokenDto;
 import net.chamman.moonnight.auth.token.dto.VerificationPhoneTokenDto;
-import net.chamman.moonnight.auth.sign.log.SignLogService;
 import net.chamman.moonnight.auth.verification.VerificationService;
 import net.chamman.moonnight.domain.user.User.UserProvider;
 import net.chamman.moonnight.domain.user.User.UserStatus;
@@ -133,7 +132,6 @@ public class UserService {
 
 		User user = userRepository.findByUserProviderAndEmailAndPhone(userProvider, email, phone)
 				.orElseThrow(() -> new NoSuchDataException(USER_NOT_FOUND, "찾을 수 없는 유저."));
-		validateStatus(user);
 
 		return user;
 	}
@@ -231,6 +229,7 @@ public class UserService {
 	 * 
 	 * @return 비밀번호 변경 자격 토큰
 	 */
+	@SuppressWarnings("incomplete-switch")
 	public String createFindPwTokenByVerifyPhone(UserProvider userProvider, String email, String phone,
 			String verificationPhoneToken) {
 
@@ -239,7 +238,11 @@ public class UserService {
 		verificationService.isVerify(verificationPhoneTokenDto.getIntVerificationId());
 
 		User user = getUserByUserProviderAndEmailAndPhone(userProvider, email, phone);
-
+		switch (user.getUserStatus()) {
+		case STOP -> throw new StatusStopException(USER_STATUS_STOP, "정지된 계정. user.id: " + user.getUserId());
+		case DELETE -> throw new StatusDeleteException(USER_STATUS_DELETE, "탈퇴한 계정. user.id: " + user.getUserId());
+		}
+		
 		String findPwToken = tokenProvider.createToken(new FindPwTokenDto(user.getUserId() + "", email),
 				FindPwTokenDto.TOKENTYPE);
 
@@ -286,6 +289,7 @@ public class UserService {
 	 * 
 	 * @return 비밀번호 변경 자격 토큰
 	 */
+	@SuppressWarnings("incomplete-switch")
 	public String createFindPwTokenByVerifyEmail(UserProvider userProvider, String email,
 			String verificationEmailToken) {
 
@@ -293,7 +297,11 @@ public class UserService {
 				.getDecryptedTokenDto(VerificationEmailTokenDto.TOKENTYPE, verificationEmailToken);
 		verificationService.isVerify(verificationEmailTokenDto.getIntVerificationId());
 
-		User user = getActiveUserByEmail(email);
+		User user = getUserByEmail(email);
+		switch (user.getUserStatus()) {
+		case STOP -> throw new StatusStopException(USER_STATUS_STOP, "정지된 계정. user.id: " + user.getUserId());
+		case DELETE -> throw new StatusDeleteException(USER_STATUS_DELETE, "탈퇴한 계정. user.id: " + user.getUserId());
+		}
 
 		String findPwToken = tokenProvider.createToken(new FindPwTokenDto(user.getUserId() + "", email),
 				FindPwTokenDto.TOKENTYPE);
@@ -324,19 +332,26 @@ public class UserService {
 	 * @throws StatusStopException   {@link #validateStatus} 중지 유저
 	 * @throws StatusDeleteException {@link #validateStatus} 탈퇴 유저
 	 */
+	@SuppressWarnings("incomplete-switch")
 	@Transactional
-	public void updatePasswordByFindPwToken(String token, String newPassword, String ip) {
+	public void updatePasswordByFindPwToken(String token, String newPassword, String clientIp) {
 
 		FindPwTokenDto findPwTokenDto = tokenProvider.getDecryptedTokenDto(FindPwTokenDto.TOKENTYPE, token);
 
-		User user = getActiveUserByUserId(findPwTokenDto.getIntUserId());
+		User user = userRepository.findById(findPwTokenDto.getIntUserId())
+				.orElseThrow(() -> new NoSuchDataException(USER_NOT_FOUND, "찾을 수 없는 유저."));
 
+		switch (user.getUserStatus()) {
+		case STOP -> throw new StatusStopException(USER_STATUS_STOP, "정지된 계정. user.id: " + user.getUserId());
+		case DELETE -> throw new StatusDeleteException(USER_STATUS_DELETE, "탈퇴한 계정. user.id: " + user.getUserId());
+		}
+		
 		user.setPassword(passwordEncoder.encode(newPassword));
 		user.setUserStatus(UserStatus.ACTIVE);
 		userRepository.save(user);
 
 		// 로그인 실패기록에 비밀번호 변경으로 초기화 진행
-		signLogService.signFailLogResolve(user.getUserId() + "", SignResult.UPDATE_PASSWORD, ip);
+		signLogService.signUserAndFailLogResolve(user, SignResult.UPDATE_PASSWORD, clientIp);
 
 		tokenProvider.removeToken(TokenType.ACCESS_FINDPW, token);
 	}
@@ -408,13 +423,10 @@ public class UserService {
 	public void updateProfile(int userId, String name, String birth, boolean marketingReceivedStatus, String clientIp) {
 
 		User user = getActiveUserByUserId(userId);
-		String oldName = user.getName();
 		user.setName(name);
 		user.setBirth(birth);
 		user.setMarketingReceivedStatus(marketingReceivedStatus);
 		userRepository.save(user);
-		
-		
 	}
 	
 
@@ -503,10 +515,7 @@ public class UserService {
 				throw e;
 			}
 			throw new MismatchPasswordException(SIGNIN_FAILED, "비밀번호 불일치. 실패 횟수: " + signFailCount);
-		} else {
-			signLogService.signFailLogResolve(user.getUserId() + "", SignResult.SIGNIN,
-					clientIp);
-		}
+		} 
 	}
 
 	/**

@@ -17,7 +17,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,6 +42,7 @@ import net.chamman.moonnight.global.annotation.ClientSpecific;
 import net.chamman.moonnight.global.annotation.ValidEmail;
 import net.chamman.moonnight.global.annotation.ValidPassword;
 import net.chamman.moonnight.global.annotation.ValidPhone;
+import net.chamman.moonnight.global.context.RequestContextHolder;
 import net.chamman.moonnight.global.exception.IllegalRequestException;
 import net.chamman.moonnight.global.security.principal.CustomUserDetails;
 import net.chamman.moonnight.global.util.ApiResponseDto;
@@ -83,11 +83,10 @@ public class UserInfoController {
 	@Operation(summary = "LOCAL 유저 비밀번호 찾기 2단계", description = "휴대폰 인증 토큰 통해 비밀번호 변경할 자격이 있는지 검증 이 후 Access-FindPw-Token 토큰 발급.")
 	@PostMapping("/public/find/pw/by/phone")
 	public ResponseEntity<ApiResponseDto<Map<String, String>>> verifyPhoneAndCreateFindPwToken(
-			@RequestHeader(required = false, value = "X-Client-Type") String userAgent,
 			@ClientSpecific("X-Verification-Phone-Token") String token, @ValidEmail @RequestParam String email,
 			@ValidPhone @RequestParam String phone, HttpServletResponse res) {
 
-		boolean isMobileApp = userAgent != null && userAgent.contains("mobile");
+		boolean isMobileApp = RequestContextHolder.getContext().isMobileApp();
 
 		String findPwToken = userService.createFindPwTokenByVerifyPhone(UserProvider.LOCAL, email, phone, token);
 
@@ -103,11 +102,10 @@ public class UserInfoController {
 	@Operation(summary = "LOCAL 유저 비밀번호 찾기 2단계", description = "이메일 인증 토큰 통해 비밀번호 변경할 자격이 있는지 검증 이 후 Access-FindPw-Token 토큰 발급.")
 	@PostMapping("/public/find/pw/by/email")
 	public ResponseEntity<ApiResponseDto<Map<String, String>>> verifyEmailAndCreateFindPwToken(
-			@RequestHeader(required = false, value = "X-Client-Type") String userAgent,
 			@ClientSpecific("X-Verification-Email-Token") String token, @ValidEmail @RequestParam String email,
 			HttpServletResponse res) {
 
-		boolean isMobileApp = userAgent != null && userAgent.contains("mobile");
+		boolean isMobileApp = RequestContextHolder.getContext().isMobileApp();
 
 		String findPwToken = userService.createFindPwTokenByVerifyEmail(UserProvider.LOCAL, email, token);
 
@@ -132,7 +130,7 @@ public class UserInfoController {
 					"새로운 두 비밀번호가 일치하지 않음. password: " + password + ", confirmPassword: " + confirmPassword);
 		}
 
-		String clientIp = (String) request.getAttribute("clientIp");
+		String clientIp = RequestContextHolder.getContext().getClientIp();
 
 		userService.updatePasswordByFindPwToken(accessFindPwToken, password, clientIp);
 
@@ -146,7 +144,7 @@ public class UserInfoController {
 			@ClientSpecific("X-Verification-Phone-Token") String verificationPhoneToken,
 			@ValidPhone @RequestParam String phone, HttpServletRequest request) {
 
-		String clientIp = (String) request.getAttribute("clientIp");
+		String clientIp = RequestContextHolder.getContext().getClientIp();
 
 		userService.updatePhoneByVerification(userDetails.getUserId(), phone, verificationPhoneToken, clientIp);
 
@@ -160,7 +158,7 @@ public class UserInfoController {
 			@AuthenticationPrincipal CustomUserDetails userDetails,
 			@Valid @RequestBody UserProfileRequestDto userProfileRequestDto, HttpServletRequest request) {
 
-		String clientIp = (String) request.getAttribute("clientIp");
+		String clientIp = RequestContextHolder.getContext().getClientIp();
 
 		userService.updateProfile(userDetails.getUserId(), userProfileRequestDto.name(), userProfileRequestDto.birth(),
 				userProfileRequestDto.marketingReceivedStatus(), clientIp);
@@ -172,30 +170,6 @@ public class UserInfoController {
 
 		return ResponseEntity.ok(apiResponseFactory.success(UPDATE_SUCCESS));
 	}
-
-//	@Operation(summary = "LOCAL 회원 탈퇴 1단계", description = "회원탈퇴를 위해 비밀번호를 입력받고 Access-Password-Token 발급.")
-//	@PreAuthorize("hasRole('LOCAL')")
-//	@PostMapping("/private/password")
-//	public ResponseEntity<ApiResponseDto<Map<String, String>>> validPassword(
-//			@AuthenticationPrincipal CustomUserDetails userDetails,
-//			@RequestHeader(required = false, value = "X-Client-Type") String userAgent,
-//			@ValidPassword @RequestParam String password, HttpServletRequest req, HttpServletResponse res) {
-//
-//		String clientIp = (String) req.getAttribute("clientIp");
-//		boolean isMobileApp = userAgent != null && userAgent.contains("mobile");
-//
-//		String accessPasswordToken = userService.confirmPasswordAndCreatePasswordToken(userDetails.getUserId(),
-//				password, clientIp);
-//
-//		if (isMobileApp) {
-//			return ResponseEntity.ok(
-//					apiResponseFactory.success(READ_SUCCESS, Map.of("X-Access-Password-Token", accessPasswordToken)));
-//		} else {
-//			CookieUtil.addCookie(res, "X-Access-Password-Token", accessPasswordToken, Duration.ofMinutes(10));
-//
-//			return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(SUCCESS_NO_DATA, null));
-//		}
-//	}
 
 	// 이메일 중복 검사
 	@Operation(summary = "이메일 중복 검사", description = "2070: 중복 없음, 4531: 이메일 중복.")

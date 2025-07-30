@@ -187,8 +187,9 @@
 		// --- 1. 모듈 임포트 ---
 		import {initVerificationCodeFormatting} from '/js/format.js';
 		import {validate, ValidationError, validateConfirmPassword} from '/js/validate.js';
-		import {isEmailExist, sendEmail, verifyMailCode} from '/js/emailVerification.js'; // 수정된 API 함수
+		import {sendEmail, verifyMailCode} from '/js/emailVerification.js'; // 수정된 API 함수
 		import {signUpStep1} from '/js/sign.js';
+		import {isEmailExist} from '/js/user.js';
 		import {startCountdown, stopCountdown} from '/js/timer.js';
 
 		document.addEventListener('DOMContentLoaded', () => {

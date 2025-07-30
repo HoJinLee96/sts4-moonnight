@@ -245,7 +245,7 @@ public class SecurityConfig {
 		@Override
 		public void handle(HttpServletRequest request, HttpServletResponse response,
 				AccessDeniedException accessDeniedException) throws IOException {
-			log.debug("* AccessDeniedHandler 실행됨.");
+			log.debug("* CustomAccessDeniedHandler 실행됨.");
 
 			String clientType = request.getHeader("X-Client-Type");
 			boolean isMobileApp = clientType != null && clientType.contains("mobile");

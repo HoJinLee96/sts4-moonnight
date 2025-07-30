@@ -19,12 +19,17 @@ public class NaverSignatureGenerator {
 	@Value("${naver-api.secretKey}")
 	private String secretKey;
 	
-	public String getNaverSignature(String method, String url, String time)
-			throws UnsupportedEncodingException, NoSuchAlgorithmException,
-			java.security.InvalidKeyException {
+	public String getNaverSignature(String method, String url, String time) throws UnsupportedEncodingException, NoSuchAlgorithmException, java.security.InvalidKeyException {
 		
-		String message = new StringBuilder().append(method).append(" ").append(url).append("\n")
-				.append(time).append("\n").append(accessKey).toString();
+		String message = new StringBuilder()
+				.append(method)
+				.append(" ")
+				.append(url)
+				.append("\n")
+				.append(time)
+				.append("\n")
+				.append(accessKey)
+				.toString();
 		
 		SecretKeySpec signingKey = new SecretKeySpec(secretKey.getBytes("UTF-8"), "HmacSHA256");
 		Mac mac = Mac.getInstance("HmacSHA256");

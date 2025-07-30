@@ -90,7 +90,7 @@ export async function updateProfile(profileData) {
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(profileData)
 	});
-	
+
 	if (response.ok) {
 		return await response.json();
 	} else {
@@ -110,7 +110,7 @@ export async function updatePhone(phone) {
 		headers: { "Content-Type": "application/x-www-form-urlencoded" },
 		body: new URLSearchParams({ phone })
 	});
-	
+
 	if (response.ok) {
 		return await response.json();
 	} else {
@@ -219,5 +219,33 @@ export async function isEmailExistsForFindPassword(email) {
 		error.code = json.code;
 		error.type = "SERVER";
 		throw error;
+	}
+}
+
+export async function isPhoneExist(phone) {
+
+	validate('phone', phone);
+
+	const response = await fetch("/api/user/public/exist/phone", {
+		method: "POST",
+		headers: { "Content-Type": "application/x-www-form-urlencoded" },
+		body: new URLSearchParams({ phone })
+	});
+
+	if (response.ok) {
+		return await response.json();
+	} else {
+		const json = await response.json();
+		if (json.code == '4532') {
+			const error = new Error('이미 가입되어 있는 휴대폰 입니다.');
+			error.code = json.code;
+			error.type = "SERVER";
+			throw error;
+		} else {
+			const error = new Error(json.message || '서버 요청에 실패했습니다.');
+			error.code = json.code;
+			error.type = "SERVER";
+			throw error;
+		}
 	}
 }

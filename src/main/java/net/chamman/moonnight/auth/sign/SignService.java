@@ -22,15 +22,18 @@ import net.chamman.moonnight.auth.oauth.OAuth;
 import net.chamman.moonnight.auth.oauth.OAuth.OAuthStatus;
 import net.chamman.moonnight.auth.oauth.OAuthRepository;
 import net.chamman.moonnight.auth.oauth.OAuthService;
+import net.chamman.moonnight.auth.sign.dto.SignInRequestDto;
+import net.chamman.moonnight.auth.sign.dto.SignUpRequestDto;
+import net.chamman.moonnight.auth.sign.dto.UnlinkOAuthRequestDto;
 import net.chamman.moonnight.auth.sign.log.SignLog;
 import net.chamman.moonnight.auth.sign.log.SignLog.SignResult;
+import net.chamman.moonnight.auth.sign.log.SignLogService;
 import net.chamman.moonnight.auth.token.JwtProvider;
 import net.chamman.moonnight.auth.token.TokenProvider;
 import net.chamman.moonnight.auth.token.TokenProvider.TokenType;
 import net.chamman.moonnight.auth.token.dto.SignUpTokenDto;
 import net.chamman.moonnight.auth.token.dto.VerificationEmailTokenDto;
 import net.chamman.moonnight.auth.token.dto.VerificationPhoneTokenDto;
-import net.chamman.moonnight.auth.sign.log.SignLogService;
 import net.chamman.moonnight.auth.verification.VerificationService;
 import net.chamman.moonnight.domain.address.Address;
 import net.chamman.moonnight.domain.address.AddressRepository;
@@ -388,7 +391,7 @@ public class SignService {
 
 			userService.validatePassword(user, password, clientIp);
 
-			signLogService.signUser(user, SignResult.SIGNIN, clientIp);
+			signLogService.signUserAndFailLogResolve(user, SignResult.SIGNIN, clientIp);
 
 			return handleJwt(user);
 		} catch (NoSuchDataException e) {
@@ -600,7 +603,9 @@ public class SignService {
 		log.debug("* [{}] 로그아웃 요청.", provider);
 		log.debug("* AccessToken: [{}]", LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM));
 		log.debug("* RefreshToken: [{}]", LogMaskingUtil.maskToken(refreshToken, MaskLevel.MEDIUM));
-
+		signLogService.registerSignLog(SignLog.builder().provider(provider).id(userId).clientIp(clientIp)
+				.signResult(SignResult.SIGNOUT).build());
+		
 //		1. accessToken 블랙리스트 등록
 		try {
 			long ttl = jwtProvider.getAccessTokenRemainingTime(accessToken);
@@ -612,7 +617,7 @@ public class SignService {
 
 //		2. refreshToken 삭제
 		String userIdStr = jwtProvider.validateRefreshToken(refreshToken);
-		if (Objects.equals(userIdStr, userId)) {
+		if (!Objects.equals(userIdStr, userId)) {
 			log.warn(
 					"* 로그아웃 중 RefreshToken 부적합. 도용된 userId: [{}], RefreshToken.userId: [{}], RefreshToken: [{}], RequestIp: [{}]",
 					userId, userIdStr, refreshToken, clientIp);
@@ -624,8 +629,7 @@ public class SignService {
 			return;
 		}
 
-		signLogService.registerSignLog(SignLog.builder().provider(provider).id(userId).clientIp(clientIp)
-				.signResult(SignResult.SIGNOUT).build());
+
 	}
 
 	/**

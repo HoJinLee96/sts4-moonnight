@@ -16,7 +16,7 @@ import net.chamman.moonnight.domain.user.User.UserStatus;
 public interface UserRepository extends JpaRepository<User, Integer> {
 	
 	Optional<User> findByEmail(String email);
-
+	
 	Optional<User> findByUserProviderAndEmail(UserProvider userProvider, String email);
 
 	Optional<User> findByPhone(String phone);
@@ -44,11 +44,5 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 			@Param("userStatus") UserStatus userStatus);
 	
 	
-
-//	List<User> findByPhoneAndUserStatusNotIn(String phone, Collection<UserStatus> statuses);
-
-//  @Modifying(clearAutomatically = true)
-//  @Query("UPDATE User u SET u.status = 'STAY' WHERE u.userProvider = :userProvider AND u.email = :email")
-//  int updateStatusSetStayByEmailAndUserProvider(@Param("userProvider") UserProvider userProvider, @Param("email") String email);
 
 }

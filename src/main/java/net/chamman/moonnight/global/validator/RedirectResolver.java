@@ -1,7 +1,6 @@
 package net.chamman.moonnight.global.validator;
 
 import static net.chamman.moonnight.global.exception.HttpStatusCode.ILLEGAL_INPUT_VALUE;
-import static net.chamman.moonnight.global.exception.HttpStatusCode.ILLEGAL_REQUEST;
 
 import java.net.URI;
 import java.util.Base64;
@@ -14,9 +13,9 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.global.annotation.Redirect;
+import net.chamman.moonnight.global.context.RequestContextHolder;
 import net.chamman.moonnight.global.exception.IllegalRequestException;
 
 @Component
@@ -41,13 +40,7 @@ public class RedirectResolver implements HandlerMethodArgumentResolver {
 		Redirect clientSpecificAnnotation = parameter.getParameterAnnotation(Redirect.class);
 		boolean isRequired = clientSpecificAnnotation.required();
 
-		HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
-		if (request == null) {
-			throw new IllegalRequestException(ILLEGAL_REQUEST, "HttpServletRequest가 비어있음.");
-		}
-
-		String clientType = request.getHeader("X-Client-Type");
-		boolean isMobileApp = clientType != null && clientType.contains("mobile");
+		boolean isMobileApp = RequestContextHolder.getContext().isMobileApp();
 		String clientTypeKr = isMobileApp ? "모바일 앱" : "웹";
 
 		String redirect = "/";

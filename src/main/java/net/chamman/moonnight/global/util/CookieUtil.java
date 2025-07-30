@@ -8,16 +8,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.util.SerializationUtils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public class CookieUtil {
-	
-    private static final ObjectMapper objectMapper = new ObjectMapper();
-
 
     public static Optional<Cookie> getCookie(HttpServletRequest request, String name) {
         Cookie[] cookies = request.getCookies();
@@ -31,14 +26,6 @@ public class CookieUtil {
         return Optional.empty();
     }
 
-//    public static void addCookie(HttpServletResponse response, String name, String value, int maxAge) {
-//        Cookie cookie = new Cookie(name, value);
-//        cookie.setPath("/");
-//        cookie.setHttpOnly(true);
-//        cookie.setMaxAge(maxAge);
-//        response.addCookie(cookie);
-//    }
-    
 	public static void addCookie(HttpServletResponse res, String name, String value, Duration duration) {
 		ResponseCookie cookie = ResponseCookie.from(name, value)
 				.httpOnly(true)
@@ -69,7 +56,7 @@ public class CookieUtil {
         return Base64.getUrlEncoder().encodeToString(SerializationUtils.serialize(object));
     }
 
-    public static <T> T deserialize(Cookie cookie, Class<T> cls) {
+	public static <T> T deserialize(Cookie cookie, Class<T> cls) {
         return cls.cast(SerializationUtils.deserialize(
                         Base64.getUrlDecoder().decode(cookie.getValue())));
     }

@@ -23,20 +23,21 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.chamman.moonnight.auth.crypto.AesProvider;
 import net.chamman.moonnight.auth.oauth.OAuth.OAuthProvider;
 import net.chamman.moonnight.auth.sign.SignService;
 import net.chamman.moonnight.auth.sign.log.SignLog;
 import net.chamman.moonnight.auth.sign.log.SignLog.SignResult;
+import net.chamman.moonnight.auth.sign.log.SignLogService;
 import net.chamman.moonnight.auth.token.TokenProvider;
 import net.chamman.moonnight.auth.token.TokenProvider.TokenType;
-import net.chamman.moonnight.auth.sign.log.SignLogService;
 import net.chamman.moonnight.domain.user.User;
 import net.chamman.moonnight.domain.user.User.UserProvider;
 import net.chamman.moonnight.domain.user.UserService;
 import net.chamman.moonnight.global.exception.CustomException;
 import net.chamman.moonnight.global.exception.status.StatusException;
 import net.chamman.moonnight.global.exception.user.DuplicationException;
-import net.chamman.moonnight.global.interceptor.CustomInterceptor;
+import net.chamman.moonnight.global.util.ClientIpExtractor;
 import net.chamman.moonnight.global.util.CookieUtil;
 import net.chamman.moonnight.global.util.LogMaskingUtil;
 import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
@@ -52,7 +53,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 	private final SignService signService;
 	private final TokenProvider tokenProvider;
 	private final SignLogService signLogService;
-	private final CustomInterceptor customInterceptor;
+	private final AesProvider aesProvider;
 	private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 	private final RedirectResolver redirectResolver;
 	private final RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
@@ -63,11 +64,11 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 			throws IOException {
 
 		// 1. 정보 추출
-		String clientIp = customInterceptor.extractClientIp(req);
+		String clientIp = ClientIpExtractor.extractClientIp(req);
 		CustomOAuth2User customOAuth2User = extractAuthentication(authentication);
 		String email = customOAuth2User.getEmail();
 		OAuthProvider oauthProvider = customOAuth2User.getOauthProvider();
-		log.debug("* OAuth 인증 성공 핸들러 작동. ClientIp: [{}], {}", clientIp, customOAuth2User.toString(MaskLevel.NONE));
+		log.debug("* OAuth 인증 성공 핸들러 작동. ClientIp: [{}], [{}]", clientIp, customOAuth2User.toString(MaskLevel.MEDIUM));
 
 		try {
 			
@@ -76,7 +77,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
 	        // Link 로직
 	        if (isLinkingFlow) {
-	        	int userId = Integer.parseInt((String) session.getAttribute("LINKING_USER_ID"));
+	        	String userIdStr = aesProvider.decrypt((String) session.getAttribute("LINKING_USER_ID"));
+	        	int userId = Integer.parseInt(userIdStr);
 	            session.removeAttribute("LINKING_USER_ID");
 	            session.removeAttribute("OAUTH_LINK_IN_PROGRESS");
 	            try {
@@ -94,7 +96,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
 			// 신규 유저
 			if (existOauth.isEmpty()) {
-				log.debug("* OAuth {} 신규 유저. email: {}", oauthProvider, LogMaskingUtil.maskEmail(email, MaskLevel.NONE));
+				log.debug("* OAuth [{}] 신규 유저. email: [{}]", oauthProvider, LogMaskingUtil.maskEmail(email, MaskLevel.NONE));
 				
 				// 이메일 중복 검사 (DuplicationException)
 				userService.isEmailExistsForRegistration(email);

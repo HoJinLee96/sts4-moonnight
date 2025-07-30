@@ -28,12 +28,12 @@ import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.domain.estimate.simple.dto.SimpleEstimateRequestDto;
 import net.chamman.moonnight.domain.estimate.simple.dto.SimpleEstimateResponseDto;
 import net.chamman.moonnight.global.annotation.ValidId;
+import net.chamman.moonnight.global.context.RequestContextHolder;
 import net.chamman.moonnight.global.exception.HttpStatusCode;
 import net.chamman.moonnight.global.exception.IllegalRequestException;
 import net.chamman.moonnight.global.security.principal.CustomUserDetails;
 import net.chamman.moonnight.global.util.ApiResponseDto;
 import net.chamman.moonnight.global.util.ApiResponseFactory;
-import net.chamman.moonnight.rate.limiter.RateLimitService;
 
 @RestController
 @RequestMapping("/api/spem")
@@ -42,7 +42,6 @@ import net.chamman.moonnight.rate.limiter.RateLimitService;
 public class SimpleEstimateController {
 
 	private final SimpleEstimateService spemService;
-	private final RateLimitService rateLimitService;
 	private final ApiResponseFactory apiResponseFactory;
 
 	// SimpleEstimate = Spem
@@ -56,13 +55,13 @@ public class SimpleEstimateController {
 			@AuthenticationPrincipal CustomUserDetails userDetails,
 			@Valid @RequestBody SimpleEstimateRequestDto simpleEstimateRequestDto, HttpServletRequest request) {
 
-		String clientIp = (String) request.getAttribute("clientIp");
+		String clientIp = RequestContextHolder.getContext().getClientIp();
+		
 		String trap = simpleEstimateRequestDto.trap();
 		if (trap != null && !trap.isEmpty()) {
 			log.warn("* 간편 견적 봇 감지 확인. clientIp: [{}], trap: [{}]",clientIp, trap);
 			throw new IllegalRequestException(HttpStatusCode.ILLEGAL_REQUEST);
 		}
-		rateLimitService.checkEstimateByIp(clientIp);
 		
 		Integer userId = userDetails != null ? userDetails.getUserId() : null;
 

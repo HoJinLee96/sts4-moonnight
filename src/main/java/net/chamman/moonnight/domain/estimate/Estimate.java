@@ -2,8 +2,10 @@ package net.chamman.moonnight.domain.estimate;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
 import org.hibernate.annotations.Generated;
 import org.hibernate.generator.EventType;
+
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -23,6 +25,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import net.chamman.moonnight.domain.user.User;
 import net.chamman.moonnight.global.util.StringListConverter;
 
@@ -31,6 +34,7 @@ import net.chamman.moonnight.global.util.StringListConverter;
 @Builder
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
+@ToString
 public class Estimate {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

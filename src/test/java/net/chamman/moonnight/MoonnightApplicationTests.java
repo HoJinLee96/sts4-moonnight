@@ -8,13 +8,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @SpringBootTest
 class MoonnightApplicationTests {
 	
-	@Autowired
-	PasswordEncoder passwordEncoder;
 
 	@Test
 	void contextLoads() {
-		String a = passwordEncoder.encode("Leeought21!@");
-		System.out.println(a);
 	}
 	
 

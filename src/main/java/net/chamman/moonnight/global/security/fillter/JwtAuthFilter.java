@@ -1,16 +1,9 @@
 package net.chamman.moonnight.global.security.fillter;
 
-import static net.chamman.moonnight.global.exception.HttpStatusCode.JWT_ILLEGAL;
-
 import java.io.IOException;
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.WebUtils;
@@ -21,14 +14,26 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import net.chamman.moonnight.global.exception.jwt.IllegalJwtException;
+import net.chamman.moonnight.auth.sign.SignService;
+import net.chamman.moonnight.auth.sign.log.SignLogService;
+import net.chamman.moonnight.auth.token.JwtProvider;
+import net.chamman.moonnight.auth.token.TokenAuthenticator;
+import net.chamman.moonnight.auth.token.TokenProvider;
+import net.chamman.moonnight.global.context.RequestContext;
+import net.chamman.moonnight.global.context.RequestContextHolder;
 import net.chamman.moonnight.global.exception.jwt.TimeOutJwtException;
 import net.chamman.moonnight.global.security.principal.AuthDetails;
+import net.chamman.moonnight.global.util.ClientIpExtractor;
 import net.chamman.moonnight.global.util.CookieUtil;
 
 @Component
 @Slf4j
 public class JwtAuthFilter extends AbstractAccessTokenFilter<AuthDetails> {
+
+	public JwtAuthFilter(JwtProvider jwtProvider, TokenProvider tokenProvider, SignLogService signLogService,
+			SignService signService, TokenAuthenticator tokenAuthenticator) {
+		super(jwtProvider, tokenProvider, signLogService, signService, tokenAuthenticator);
+	}
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain filterChain)
@@ -36,11 +41,14 @@ public class JwtAuthFilter extends AbstractAccessTokenFilter<AuthDetails> {
 		log.debug("* JwtAuthFilter.doFilterInternal 실행.");
 
 		// ClientIp
-//		String clientIp = (String) req.getAttribute("clientIp");
+		String clientIp = ClientIpExtractor.extractClientIp(req);
 
 		// Mobile Or Web
 		String clientType = req.getHeader("X-Client-Type");
 		boolean isMobileApp = clientType != null && clientType.contains("mobile");
+		
+		RequestContext requestContext = new RequestContext(clientIp, isMobileApp);
+		RequestContextHolder.setContext(requestContext);
 
 		String authToken = null;
 		if (isMobileApp) {
@@ -91,40 +99,15 @@ public class JwtAuthFilter extends AbstractAccessTokenFilter<AuthDetails> {
 	}
 
 	@Override
-	protected AuthDetails buildUserDetails(Map<String, Object> claims) {
-		log.debug("*JwtAuthFilter.buildUserDetails 실행.");
-
-		Object subjectRaw = claims.get("subject");
-		if (subjectRaw == null) {
-			throw new IllegalJwtException(JWT_ILLEGAL, "JWT AuthUserDetails 생성중 오류 발생. subject");
-		}
-		int verificationId = Integer.parseInt(subjectRaw.toString());
-		if (verificationId == 0) {
-			throw new IllegalJwtException(JWT_ILLEGAL, "JWT AuthUserDetails 생성중 오류 발생. - subject");
-		}
-
-		Object rolesObj = claims.get("roles");
-		if (!(rolesObj instanceof List)) {
-			throw new IllegalJwtException(JWT_ILLEGAL, "JWT AuthUserDetails 생성중 오류 발생. - roles");
-
-		}
-		@SuppressWarnings("unchecked")
-		List<String> roles = (List<String>) rolesObj;
-		List<GrantedAuthority> authorities = roles.stream().map(SimpleGrantedAuthority::new)
-				.collect(Collectors.toList());
-
-		String recipient = (String) claims.get("recipient");
-		if (recipient == null || recipient.isEmpty()) {
-			throw new IllegalJwtException(JWT_ILLEGAL, "JWT AuthUserDetails 생성중 오류 발생. - recipient");
-		}
-
-		return new AuthDetails(verificationId, recipient, authorities);
+	protected AuthDetails buildUserDetails(String accessToken) {
+		log.debug("* JwtAuthFilter.buildUserDetails 실행.");
+		
+		return tokenAuthenticator.authenticateAuthToken(accessToken);
 	}
 
 	@Override
 	protected void setAuthentication(String authToken) {
-		Map<String, Object> claims = jwtProvider.validateAuthToken(authToken);
-		AuthDetails userDetails = buildUserDetails(claims);
+		AuthDetails userDetails = buildUserDetails(authToken);
 		UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null,
 				userDetails.getAuthorities());
 		SecurityContextHolder.getContext().setAuthentication(authentication);
